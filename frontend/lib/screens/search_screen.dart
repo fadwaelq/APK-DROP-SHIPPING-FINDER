@@ -39,21 +39,18 @@ class _SearchScreenState extends State<SearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-          color: AppTheme.textPrimary,
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          _buildCategoryFilter(),
-          Expanded(child: _buildProductList()),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            _buildCategoryFilter(),
+            Expanded(child: _buildProductList()),
+          ],
+        ),
       ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
@@ -126,15 +123,16 @@ class _SearchScreenState extends State<SearchScreen> {
             itemBuilder: (context, index) {
               final category = ProductCategory.allCategories[index];
               final isSelected = productProvider.selectedCategory == category;
-              
+
               return Padding(
-                padding: EdgeInsets.only(right: AppTheme.spacingS),
+                padding: EdgeInsets.only(right: AppTheme.spacingM),
                 child: FilterChip(
                   label: Text(
                     category,
                     style: AppTheme.labelMedium.copyWith(
                       color: isSelected ? Colors.white : AppTheme.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                   selected: isSelected,
@@ -144,7 +142,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   backgroundColor: AppTheme.lightGray,
                   selectedColor: AppTheme.secondaryOrange,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusCircle),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.borderRadiusCircle),
                   ),
                   checkmarkColor: Colors.white,
                   padding: EdgeInsets.symmetric(
@@ -333,7 +332,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.borderRadiusMedium),
                     ),
                     elevation: 0,
                     shadowColor: Colors.transparent,

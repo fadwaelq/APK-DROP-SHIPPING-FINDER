@@ -33,16 +33,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppTheme.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
-      body: Consumer<ProductProvider>(
-        builder: (context, productProvider, child) {
+      body: SafeArea(
+        child: Consumer<ProductProvider>(
+          builder: (context, productProvider, child) {
           if (productProvider.isLoading) {
             return Center(
               child: CircularProgressIndicator(
@@ -97,16 +94,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           );
         },
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          _navigateToPage(index);
-        },
-      ),
-    );
+    ),
+    bottomNavigationBar: CustomBottomNavBar(
+      currentIndex: _currentIndex,
+      onTap: (index) {
+        setState(() {
+          _currentIndex = index;
+        });
+        _navigateToPage(index);
+      },
+    ),
+  );
   }
 
   Widget _buildFavoriteItem(BuildContext context, product) {

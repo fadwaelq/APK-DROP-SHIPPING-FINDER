@@ -15,6 +15,8 @@ import 'screens/favorites_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/subscription_screen.dart';
 import 'utils/theme.dart';
+import 'widgets/with_status_bar.dart';
+import 'widgets/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,9 +29,16 @@ void main() async {
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white, // White background for navigation bar
+      systemNavigationBarIconBrightness: Brightness.dark, // Black icons for navigation bar
+      statusBarIconBrightness: Brightness.dark, // Black icons for status bar
+      statusBarColor: Colors.white, // White background for status bar
     ),
+  );
+
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+    overlays: [SystemUiOverlay.top],
   );
 
   GoogleAuthService().initialize(
@@ -78,15 +87,15 @@ class DropshippingFinderApp extends StatelessWidget {
             title: 'Dropshipping Finder',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
-            home: const OnboardingScreen(),
+            home: const WithStatusBar(child: AuthWrapper()),
             routes: {
-              '/onboarding': (context) => const OnboardingScreen(),
-              '/login': (context) => const LoginScreen(),
-              '/home': (context) => const HomeScreenV2(),
-              '/search': (context) => const SearchScreen(),
-              '/favorites': (context) => const FavoritesScreen(),
-              '/profile': (context) => const ProfileScreen(),
-              '/subscription': (context) => const SubscriptionScreen(),
+              '/onboarding': (context) => const WithStatusBar(child: OnboardingScreen()),
+              '/login': (context) => const WithStatusBar(child: LoginScreen()),
+              '/home': (context) => const WithStatusBar(child: HomeScreenV2()),
+              '/search': (context) => const WithStatusBar(child: SearchScreen()),
+              '/favorites': (context) => const WithStatusBar(child: FavoritesScreen()),
+              '/profile': (context) => const WithStatusBar(child: ProfileScreen()),
+              '/subscription': (context) => const WithStatusBar(child: SubscriptionScreen()),
             },
           );
         },

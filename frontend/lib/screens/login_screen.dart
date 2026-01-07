@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/theme.dart';
-import 'home_screen.dart';
+import 'home_screen_v2.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +20,20 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _isGoogleLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if user is already authenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.isAuthenticated) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreenV2()),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -47,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Future.microtask(() {
             if (mounted) {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                MaterialPageRoute(builder: (_) => const HomeScreenV2()),
               );
             }
           });
@@ -101,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Future.microtask(() {
             if (mounted) {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                MaterialPageRoute(builder: (_) => const HomeScreenV2()),
               );
             }
           });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/theme.dart';
+import 'home_screen_v2.dart';
 import 'verify_otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -20,6 +21,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if user is already authenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.isAuthenticated) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreenV2()),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {

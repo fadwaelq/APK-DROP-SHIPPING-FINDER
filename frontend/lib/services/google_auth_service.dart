@@ -7,12 +7,12 @@ class GoogleAuthService {
   GoogleAuthService._internal();
 
   late final GoogleSignIn _googleSignIn;
-  
+
   void initialize({required String clientId, String? serverClientId}) {
     _googleSignIn = GoogleSignIn(
       scopes: ['email', 'profile'],
-      // For Android, use your Web Client ID from Google Console
-      serverClientId: serverClientId,
+      clientId: clientId, // Use the client ID for iOS
+      serverClientId: serverClientId, // Use the server client ID for web
     );
   }
 
@@ -21,7 +21,7 @@ class GoogleAuthService {
     try {
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         // User canceled the sign-in
         return {
@@ -31,7 +31,8 @@ class GoogleAuthService {
       }
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // Get the access token
       final String? accessToken = googleAuth.accessToken;

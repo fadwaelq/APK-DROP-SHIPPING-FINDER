@@ -8,6 +8,8 @@ import '../widgets/bottom_nav_bar.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
+
+  
   const ProfileScreen({super.key});
 
   @override
@@ -15,6 +17,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+
+  
   int _currentIndex = 3;
 
   @override
@@ -77,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 'Profil',
                 style: AppTheme.headlineMedium.copyWith(
-                  color: Colors.white,
+                  color: AppTheme.backgroundColor,
                   fontSize: 20,
                 ),
               ),
@@ -95,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           SizedBox(height: AppTheme.spacingL),
-          
+
           // Avatar
           CircleAvatar(
             radius: 45,
@@ -116,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
           ),
           SizedBox(height: AppTheme.spacingS),
-          
+
           // User info
           Text(
             user?.name ?? 'Omar beniss',
@@ -134,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           SizedBox(height: AppTheme.spacingL),
-          
+
           // Subscription Badge
           GestureDetector(
             onTap: () {
@@ -147,7 +151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               decoration: BoxDecoration(
                 color: AppTheme.warningYellow,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusCircle),
+                borderRadius:
+                    BorderRadius.circular(AppTheme.borderRadiusCircle),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -362,7 +367,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               decoration: BoxDecoration(
                 color: AppTheme.secondaryOrange,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusCircle),
+                borderRadius:
+                    BorderRadius.circular(AppTheme.borderRadiusCircle),
               ),
               child: Text(
                 '-50%',
@@ -441,7 +447,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               context: context,
               builder: (context) => AlertDialog(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.borderRadiusLarge),
                 ),
                 title: Text(
                   'Se déconnecter',
