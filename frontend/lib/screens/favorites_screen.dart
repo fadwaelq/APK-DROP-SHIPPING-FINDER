@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/product_card.dart';
+import '../widgets/product_card_grid.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});

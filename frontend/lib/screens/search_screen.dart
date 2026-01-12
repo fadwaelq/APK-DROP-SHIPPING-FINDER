@@ -4,7 +4,7 @@ import '../providers/product_provider.dart';
 import '../models/product.dart';
 import '../utils/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/product_card.dart';
+import '../widgets/product_card_grid.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -213,15 +213,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 padding: EdgeInsets.all(AppTheme.spacingM),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.65, // Changed from 0.7 to 0.65 for taller cards
                   crossAxisSpacing: AppTheme.spacingM,
                   mainAxisSpacing: AppTheme.spacingM,
                 ),
                 itemCount: products.length,
                 itemBuilder: (context, index) {
-                  return ProductCard(
+                  return ProductCardGrid(
                     product: products[index],
-                    isGridView: true,
                   );
                 },
               ),

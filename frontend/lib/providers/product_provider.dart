@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
@@ -122,7 +123,10 @@ class ProductProvider with ChangeNotifier {
   Future<void> loadProducts() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       final response = await _apiService.getProducts();
@@ -142,7 +146,10 @@ class ProductProvider with ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> loadTrendingProducts() async {
@@ -231,20 +238,29 @@ class ProductProvider with ChangeNotifier {
       // Update isFavorite status based on saved favorites
       _updateFavoriteStatus();
       
-      notifyListeners();
+      // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
       debugPrint('✅ Loaded ${_trendingProducts.length} trending products');
     } catch (e, stackTrace) {
       debugPrint('❌ Error loading trending products: ${e.toString()}');
       debugPrint('❌ Stack trace: ${stackTrace.toString()}');
       _error = 'Failed to load products';
       _trendingProducts = [];
-      notifyListeners();
+      // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
   Future<void> loadFavorites() async {
     _isLoading = true;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       // Load from local storage first
@@ -285,7 +301,10 @@ class ProductProvider with ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> toggleFavorite(String productId) async {
@@ -337,7 +356,10 @@ class ProductProvider with ChangeNotifier {
       // Save favorites to local storage
       await _saveFavoritesToStorage();
       
-      notifyListeners();
+      // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
 
       // Try API call (will fail if not authenticated, but that's ok)
       try {
@@ -358,18 +380,27 @@ class ProductProvider with ChangeNotifier {
 
   void setCategory(String category) {
     _selectedCategory = category;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   void setSearchQuery(String query) {
     _searchQuery = query;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> searchProducts(String query) async {
     _searchQuery = query;
     _isLoading = true;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       final response = await _apiService.searchProducts(query);
@@ -384,12 +415,18 @@ class ProductProvider with ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   void clearError() {
     _error = null;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   // Set current user and load their favorites
@@ -415,14 +452,23 @@ class ProductProvider with ChangeNotifier {
       debugPrint('✅ Favorites loaded: ${_favorites.length} items');
     }
     
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    // Schedule notification after build phase using addPostFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_currentUserId == userId) { // Only notify if user hasn't changed again
+        notifyListeners();
+      }
+    });
   }
 
   // Clear all favorites (for logout)
   Future<void> clearFavorites() async {
     _favorites = [];
     _currentUserId = null;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
     debugPrint('🧹 All favorites cleared');
   }
 }

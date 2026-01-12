@@ -1,3 +1,4 @@
+import 'package:dropshipping_finder/widgets/product_card_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
@@ -5,7 +6,7 @@ import '../providers/user_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/product_card.dart';
+import '../widgets/product_card_grid.dart';
 import '../widgets/stat_card.dart';
 
 class HomeScreenV2 extends StatefulWidget {
@@ -424,7 +425,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
               itemCount: products.length,
               separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacingM),
               itemBuilder: (context, index) {
-                return ProductCard(product: products[index]);
+                return ProductCardList(product: products[index]);
               },
             );
           },

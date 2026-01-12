@@ -22,20 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading = false;
 
   @override
-  void initState() {
-    super.initState();
-    // Check if user is already authenticated
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = context.read<AuthProvider>();
-      if (authProvider.isAuthenticated) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreenV2()),
-        );
-      }
-    });
-  }
-
-  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();

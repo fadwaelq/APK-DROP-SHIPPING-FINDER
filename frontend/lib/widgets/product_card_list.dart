@@ -5,25 +5,16 @@ import '../providers/product_provider.dart';
 import '../screens/product_detail_screen.dart';
 import '../utils/theme.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCardList extends StatelessWidget {
   final Product product;
-  final bool isGridView;
 
-  const ProductCard({
+  const ProductCardList({
     super.key,
     required this.product,
-    this.isGridView = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isGridView) {
-      return _buildGridCard(context);
-    }
-    return _buildListCard(context);
-  }
-
-  Widget _buildListCard(BuildContext context) {
     return GestureDetector(
       onTap: () => _navigateToDetail(context),
       child: Container(
@@ -82,10 +73,12 @@ class ProductCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: _getScoreColor(product.score),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusCircle),
+                          borderRadius: BorderRadius.circular(
+                              AppTheme.borderRadiusCircle),
                           boxShadow: [
                             BoxShadow(
-                              color: _getScoreColor(product.score).withOpacity(0.3),
+                              color: _getScoreColor(product.score)
+                                  .withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -116,7 +109,7 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Product Info
             Expanded(
               child: Padding(
@@ -226,189 +219,6 @@ class ProductCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: _getTrendColor(product.trendPercentage),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _navigateToDetail(context),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.cardBackground,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-          boxShadow: AppTheme.cardShadow,
-          border: Border.all(
-            color: AppTheme.borderColor,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product Image
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppTheme.borderRadiusLarge),
-                topRight: Radius.circular(AppTheme.borderRadiusLarge),
-              ),
-              child: Container(
-                height: 140,
-                color: AppTheme.lightGray,
-                child: Stack(
-                  children: [
-                    if (product.imageUrl.isNotEmpty)
-                      Image.network(
-                        product.imageUrl,
-                        width: double.infinity,
-                        height: 140,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 40,
-                              color: AppTheme.mediumGray,
-                            ),
-                          );
-                        },
-                      )
-                    else
-                      const Center(
-                        child: Icon(
-                          Icons.image,
-                          size: 40,
-                          color: AppTheme.mediumGray,
-                        ),
-                      ),
-                    Positioned(
-                      top: AppTheme.spacingS,
-                      right: AppTheme.spacingS,
-                      child: Consumer<ProductProvider>(
-                        builder: (context, provider, child) {
-                          return GestureDetector(
-                            onTap: () {
-                              provider.toggleFavorite(product.id);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppTheme.cardBackground,
-                                shape: BoxShape.circle,
-                                boxShadow: AppTheme.cardShadow,
-                              ),
-                              child: Icon(
-                                product.isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: product.isFavorite
-                                    ? AppTheme.errorRed
-                                    : AppTheme.textTertiary,
-                                size: 16,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      top: AppTheme.spacingS,
-                      left: AppTheme.spacingS,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacingS,
-                          vertical: AppTheme.spacingXS,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getScoreColor(product.score),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        ),
-                        child: Text(
-                          'Score: ${product.score}',
-                          style: AppTheme.labelMedium.copyWith(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Product Info
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.spacingM),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: AppTheme.bodyMedium.copyWith(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Prix',
-                              style: AppTheme.labelMedium.copyWith(
-                                fontSize: 9,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${product.price.toStringAsFixed(2)}€',
-                              style: AppTheme.titleMedium.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Profit',
-                              style: AppTheme.labelMedium.copyWith(
-                                fontSize: 9,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${product.profit.toStringAsFixed(2)}€',
-                              style: AppTheme.titleMedium.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.successGreen,
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),

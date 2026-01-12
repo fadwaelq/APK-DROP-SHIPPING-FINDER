@@ -1,10 +1,11 @@
+import 'package:dropshipping_finder/widgets/product_card_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/product_card.dart';
+import '../widgets/product_card_grid.dart';
 import '../widgets/stat_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -326,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final product = productProvider.trendingProducts[index];
                 return Padding(
                   padding: EdgeInsets.only(bottom: AppTheme.spacingM),
-                  child: ProductCard(product: product),
+                  child: ProductCardList(product: product),
                 );
               },
             );

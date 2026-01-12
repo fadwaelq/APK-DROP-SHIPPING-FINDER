@@ -12,180 +12,193 @@ class ProductDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context),
+          _buildSliverAppBar(context),
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProductInfo(),
-                _buildColorOptions(),
-                _buildPricing(),
-                _buildPerformanceMetrics(),
-                _buildInsights(),
-                _buildSupplierInfo(),
-                SizedBox(height: AppTheme.spacingXXL),
+                _buildColorDots(),
+                _buildProductMainInfo(),
+                _buildPricingSection(),
+                _buildPerformanceAnalysis(),
+                _buildMarketInsights(),
+                _buildSupplierSection(),
+                SizedBox(height: 100), // space for bottom sheet
               ],
             ),
           ),
         ],
       ),
-      bottomSheet: _buildBottomActions(context),
+      bottomSheet: _buildBottomSheet(context),
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildSliverAppBar(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 300,
+      expandedHeight: 340,
       pinned: true,
-      leading: IconButton(
-        icon: Container(
-          padding: EdgeInsets.all(AppTheme.spacingS),
-          decoration: BoxDecoration(
-            color: AppTheme.cardBackground,
-            shape: BoxShape.circle,
-            boxShadow: AppTheme.cardShadow,
-          ),
-          child: Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+      backgroundColor: Colors.white,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white,
+          child: Icon(Icons.arrow_back, color: Colors.black87),
         ),
-        onPressed: () => Navigator.pop(context),
       ),
       actions: [
-        IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(AppTheme.spacingS),
-            decoration: BoxDecoration(
-              color: AppTheme.cardBackground,
-              shape: BoxShape.circle,
-              boxShadow: AppTheme.cardShadow,
-            ),
-            child: Consumer<ProductProvider>(
-              builder: (context, provider, child) {
-                return Icon(
-                  product.isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: product.isFavorite ? AppTheme.errorRed : AppTheme.textPrimary,
-                );
-              },
-            ),
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.favorite_border, color: Colors.black87),
           ),
-          onPressed: () {
-            Provider.of<ProductProvider>(context, listen: false)
-                .toggleFavorite(product.id);
-          },
         ),
-        IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(AppTheme.spacingS),
-            decoration: BoxDecoration(
-              color: AppTheme.cardBackground,
-              shape: BoxShape.circle,
-              boxShadow: AppTheme.cardShadow,
-            ),
-            child: Icon(Icons.share, color: AppTheme.textPrimary),
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.share, color: Colors.black87),
           ),
-          onPressed: () {
-            // TODO: Implement share
-          },
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          color: AppTheme.lightGray,
-          child: product.imageUrl.isNotEmpty
-              ? Image.network(
-                  product.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(Icons.image, size: 80, color: AppTheme.mediumGray),
-                    );
-                  },
-                )
-              : Center(
-                  child: Icon(Icons.image, size: 80, color: AppTheme.mediumGray),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Replace with your real product image url
+            Image.network(
+              product.imageUrl.isNotEmpty
+                  ? product.imageUrl
+                  : 'https://images.stockcake.com/public/b/7/0/b7047247-e333-4ec5-b823-f1e3befc6931_large/floating-premium-headphones-stockcake.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.headphones, size: 120, color: Colors.grey),
+            ),
+            // Bottom gradient
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.white, Colors.white.withOpacity(0)],
+                  ),
                 ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProductInfo() {
+  Widget _buildColorDots() {
     return Padding(
-      padding: EdgeInsets.all(AppTheme.spacingL),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _colorDot(const Color(0xFFFFD3B6)), // orange/peach
+          const SizedBox(width: 12),
+          _colorDot(Colors.green.shade700),
+          const SizedBox(width: 12),
+          _colorDot(Colors.blue.shade700),
+          const SizedBox(width: 12),
+          _colorDot(Colors.pink.shade400),
+        ],
+      ),
+    );
+  }
+
+  Widget _colorDot(Color color) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductMainInfo() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacingS,
-                  vertical: AppTheme.spacingXS,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getScoreColor(product.score).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusCircle),
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Audio & Tech',
+                  style: TextStyle(
+                    color: Colors.deepPurple,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(30),
                 ),
                 child: Row(
                   children: [
+                    const Icon(Icons.star, color: Colors.green, size: 18),
+                    const SizedBox(width: 4),
                     Text(
-                      'Score',
-                      style: AppTheme.labelMedium.copyWith(
+                      '95',
+                      style: TextStyle(
+                        color: Colors.green.shade800,
                         fontWeight: FontWeight.bold,
-                        color: _getScoreColor(product.score),
-                      ),
-                    ),
-                    SizedBox(width: AppTheme.spacingXS),
-                    Text(
-                      '${product.score}',
-                      style: AppTheme.labelMedium.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _getScoreColor(product.score),
+                        fontSize: 16,
                       ),
                     ),
                   ],
-                ),
-              ),
-              SizedBox(width: AppTheme.spacingS),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacingS,
-                  vertical: AppTheme.spacingXS,
-                ),
-                decoration: BoxDecoration(
-                  color: product.category == 'Sport'
-                      ? AppTheme.infoBlue.withOpacity(0.1)
-                      : AppTheme.mediumGray.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusCircle),
-                ),
-                child: Text(
-                  product.category,
-                  style: AppTheme.labelMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: product.category == 'Sport'
-                        ? AppTheme.infoBlue
-                        : AppTheme.textSecondary,
-                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: 16),
           Text(
-            product.name,
-            style: AppTheme.displaySmall.copyWith(
-              fontSize: 22,
-              color: AppTheme.textPrimary,
+            'Casque Sans-fil Premium',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              height: 1.1,
             ),
           ),
-          SizedBox(height: AppTheme.spacingS),
+          const SizedBox(height: 8),
           Text(
-            product.description,
-            style: AppTheme.bodyMedium.copyWith(
-              color: AppTheme.textSecondary,
-              height: 1.5,
+            'Casque audio Bluetooth haute qualité avec réduction de bruit active, '
+            'autonomie de 30h et design ergonomique pour un confort optimal.',
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey.shade700,
+              height: 1.45,
             ),
           ),
         ],
@@ -193,178 +206,129 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildColorOptions() {
-    if (product.availableColors.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingL),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Couleurs disponibles',
-            style: AppTheme.titleMedium.copyWith(
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          SizedBox(height: AppTheme.spacingS),
-          Row(
-            children: product.availableColors.map((color) {
-              return Container(
-                margin: EdgeInsets.only(right: AppTheme.spacingS),
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _getColorFromName(color),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.mediumGray, width: 2),
-                ),
-              );
-            }).toList(),
-          ),
-          SizedBox(height: AppTheme.spacingL),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPricing() {
+  Widget _buildPricingSection() {
     return Container(
-      margin: EdgeInsets.all(AppTheme.spacingL),
-      padding: EdgeInsets.all(AppTheme.spacingL),
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        boxShadow: AppTheme.cardShadow,
-        border: Border.all(
-          color: AppTheme.borderColor,
-          width: 1,
-        ),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.shopping_cart_outlined, 
-                        size: 16, 
-                        color: AppTheme.textSecondary),
-                    SizedBox(width: AppTheme.spacingXS),
                     Text(
                       'Prix de vente',
-                      style: AppTheme.labelMedium.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                      style:
+                          TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '29,99€',
+                      style:
+                          TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
-                SizedBox(height: AppTheme.spacingXS),
-                Text(
-                  '${product.price.toStringAsFixed(2)}€',
-                  style: AppTheme.displayMedium.copyWith(
-                    fontSize: 20,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppTheme.mediumGray,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              ),
+              Container(
+                width: 1,
+                height: 60,
+                color: Colors.grey.shade300,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.trending_up, 
-                        size: 16, 
-                        color: AppTheme.successGreen),
-                    SizedBox(width: AppTheme.spacingXS),
                     Text(
                       'Profit estimé',
-                      style: AppTheme.labelMedium.copyWith(
-                        color: AppTheme.textSecondary,
+                      style:
+                          TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '15,50€',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade700,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: AppTheme.spacingXS),
-                Text(
-                  '${product.profit.toStringAsFixed(2)}€',
-                  style: AppTheme.displayMedium.copyWith(
-                    fontSize: 20,
-                    color: AppTheme.successGreen,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Ces prix sont estimés et peuvent varier en fonction de la quantité commandée',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontStyle: FontStyle.italic,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPerformanceMetrics() {
-    return Padding(
-      padding: EdgeInsets.all(AppTheme.spacingL),
+  Widget _buildPerformanceAnalysis() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Analyse de Performance',
-            style: AppTheme.headlineSmall.copyWith(
-              color: AppTheme.textPrimary,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: AppTheme.spacingM),
-          _buildMetricBar('Demande', product.performanceMetrics.demandLevel),
-          _buildMetricBar('Popularité', product.performanceMetrics.popularity),
-          _buildMetricBar('Concurrence', product.performanceMetrics.competition),
-          _buildMetricBar('Rentabilité', product.performanceMetrics.profitability),
+          const SizedBox(height: 20),
+          _buildMetricBar('Demande', 92, Colors.orange),
+          _buildMetricBar('Rentabilité', 88, Colors.orange),
+          _buildMetricBar('Concurrence', 65, Colors.orange),
+          _buildMetricBar('Tendance', 95, Colors.orange),
         ],
       ),
     );
   }
 
-  Widget _buildMetricBar(String label, int value) {
+  Widget _buildMetricBar(String label, int percent, Color color) {
     return Padding(
-      padding: EdgeInsets.only(bottom: AppTheme.spacingM),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: AppTheme.bodyMedium.copyWith(
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              Text(
-                '$value%',
-                style: AppTheme.bodyMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.secondaryOrange,
-                ),
-              ),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text('$percent%',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
-          SizedBox(height: AppTheme.spacingS),
+          const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: value / 100,
-              minHeight: 8,
-              backgroundColor: AppTheme.lightGray,
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryOrange),
+              value: percent / 100,
+              minHeight: 10,
+              backgroundColor: Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
         ],
@@ -372,149 +336,131 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInsights() {
-    return Container(
-      margin: EdgeInsets.all(AppTheme.spacingL),
-      padding: EdgeInsets.all(AppTheme.spacingL),
-      decoration: BoxDecoration(
-        color: AppTheme.successGreen.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        border: Border.all(
-          color: AppTheme.successGreen.withOpacity(0.3),
-        ),
-      ),
+  Widget _buildMarketInsights() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Text(
+            'Insights Marché',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              Icon(Icons.lightbulb, color: AppTheme.successGreen, size: 20),
-              SizedBox(width: AppTheme.spacingS),
-              Text(
-                'Insights Marché',
-                style: AppTheme.headlineSmall.copyWith(
-                  fontSize: 16,
-                  color: AppTheme.textPrimary,
-                ),
+              _insightChip(
+                Icons.trending_up,
+                'Tendance à la hausse',
+                '+45% de recherches cette semaine',
+                Colors.green.shade100,
+                Colors.green.shade700,
+              ),
+              _insightChip(
+                Icons.people,
+                'Forte demande',
+                '15K+ ventes mensuelles estimées',
+                Colors.blue.shade50,
+                Colors.blue.shade700,
+              ),
+              _insightChip(
+                Icons.attach_money,
+                'Marge importante',
+                '51% de marge bénéficiaire',
+                Colors.amber.shade50,
+                Colors.amber.shade800,
               ),
             ],
           ),
-          SizedBox(height: AppTheme.spacingM),
-          _buildInsightItem(
-            'Tendance à la hausse',
-            '+${product.trendPercentage.toStringAsFixed(0)}% cette semaine',
-          ),
-          _buildInsightItem(
-            'Faible demande',
-            'Peu de concurrence sur ce marché',
-          ),
-          _buildInsightItem(
-            'Marge importante',
-            'Potentiel de profit élevé',
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildInsightItem(String title, String description) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: AppTheme.spacingS),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.check_circle, color: AppTheme.successGreen, size: 16),
-          SizedBox(width: AppTheme.spacingS),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                Text(
-                  description,
-                  style: AppTheme.labelMedium.copyWith(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSupplierInfo() {
+  Widget _insightChip(
+      IconData icon, String title, String subtitle, Color bg, Color textColor) {
     return Container(
-      margin: EdgeInsets.all(AppTheme.spacingL),
-      padding: EdgeInsets.all(AppTheme.spacingL),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        boxShadow: AppTheme.cardShadow,
-        border: Border.all(
-          color: AppTheme.borderColor,
-          width: 1,
-        ),
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: textColor),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.85)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupplierSection() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Fournisseur',
-            style: AppTheme.headlineSmall.copyWith(
-              fontSize: 16,
-              color: AppTheme.textPrimary,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: 16),
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(AppTheme.spacingS),
-                decoration: BoxDecoration(
-                  color: AppTheme.infoBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                ),
-                child: Icon(Icons.store, color: AppTheme.infoBlue),
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.orange.shade50,
+                child: const Icon(Icons.store,
+                    color: AppTheme.primaryOrange, size: 32),
               ),
-              SizedBox(width: AppTheme.spacingM),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      product.supplier.name,
-                      style: AppTheme.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
+                    const Text(
+                      'AliExpress Premium',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    SizedBox(height: AppTheme.spacingXS),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        ...List.generate(5, (index) {
-                          return Icon(
-                            index < product.supplier.rating.floor()
-                                ? Icons.star
-                                : Icons.star_border,
-                            size: 14,
-                            color: AppTheme.warningYellow,
-                          );
-                        }),
-                        SizedBox(width: AppTheme.spacingXS),
-                        Text(
-                          '${product.supplier.rating} • ${product.supplier.reviewCount} avis',
-                          style: AppTheme.labelMedium.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
+                        ...List.generate(
+                            5,
+                            (i) => Icon(
+                                  i < 4 ? Icons.star : Icons.star_half,
+                                  size: 16,
+                                  color: Colors.amber,
+                                )),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '4.8/5 • 2.5K avis',
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
@@ -523,111 +469,112 @@ class ProductDetailScreen extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppTheme.primaryOrange),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Contacter'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryOrange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Voir'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Prix fournisseur',
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '14,49 €',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      ' (MOQ: 10 pcs)',
+                      style: TextStyle(color: Colors.grey.shade700),
+                    )
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomActions(BuildContext context) {
+  Widget _buildBottomSheet(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacingL),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        boxShadow: AppTheme.cardShadow.map((shadow) {
-          return BoxShadow(
-            color: shadow.color,
-            blurRadius: shadow.blurRadius,
-            offset: Offset(shadow.offset.dx, -shadow.offset.dy),
-            spreadRadius: shadow.spreadRadius,
-          );
-        }).toList(),
-        border: Border(
-          top: BorderSide(
-            color: AppTheme.borderColor,
-            width: 1,
-          ),
-        ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
+        ],
       ),
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                // TODO: Add to list
-              },
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.bookmark_border),
+              label: const Text('Enregistrer'),
+              onPressed: () {},
               style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
-                side: BorderSide(color: AppTheme.secondaryOrange),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                ),
-              ),
-              child: Text(
-                'Enregistrer',
-                style: AppTheme.labelMedium.copyWith(
-                  color: AppTheme.secondaryOrange,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: BorderSide(style: BorderStyle.none),
               ),
             ),
           ),
-          SizedBox(width: AppTheme.spacingM),
+          const SizedBox(width: 12),
           Expanded(
             flex: 2,
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: Open source link
-              },
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Voir sur AliExpress'),
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryOrange,
+                backgroundColor: AppTheme.primaryOrange,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                ),
-                elevation: 0,
-                shadowColor: Colors.transparent,
-              ),
-              child: Text(
-                'Voir sur ${product.source.displayName}',
-                style: AppTheme.labelMedium.copyWith(
-                  color: Colors.white,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  Color _getScoreColor(int score) {
-    if (score >= 90) return AppTheme.successGreen;
-    if (score >= 75) return const Color(0xFF94D82D);
-    if (score >= 60) return AppTheme.warningYellow;
-    return AppTheme.errorRed;
-  }
-
-  Color _getColorFromName(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'beige':
-        return const Color(0xFFF5F5DC);
-      case 'green':
-      case 'vert':
-        return Colors.green;
-      case 'blue':
-      case 'bleu':
-        return Colors.blue;
-      case 'pink':
-      case 'rose':
-        return Colors.pink;
-      case 'black':
-      case 'noir':
-        return Colors.black;
-      case 'white':
-      case 'blanc':
-        return Colors.white;
-      default:
-        return AppTheme.mediumGray;
-    }
   }
 }

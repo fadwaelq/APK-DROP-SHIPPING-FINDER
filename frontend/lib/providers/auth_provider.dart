@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../services/api_service.dart';
 import '../services/secure_storage_service.dart';
 import '../services/google_auth_service.dart';
@@ -9,11 +10,12 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   String? _token;
   bool _isLoading = false;
+  bool _isCheckingInitialAuth = true; // Flag to indicate initial auth check is pending
   String? _error;
 
   User? get user => _user;
   String? get token => _token;
-  bool get isLoading => _isLoading;
+  bool get isLoading => _isLoading || _isCheckingInitialAuth;
   String? get error => _error;
   bool get isAuthenticated => _token != null && _user != null;
 
@@ -22,7 +24,17 @@ class AuthProvider with ChangeNotifier {
   final GoogleAuthService _googleAuth = GoogleAuthService();
 
   AuthProvider() {
-    _loadStoredAuth();
+    _initializeAuth();
+  }
+
+  Future<void> _initializeAuth() async {
+    // _isCheckingInitialAuth is already true by default
+    // Use Future.delayed to ensure UI can catch the loading state
+    await Future.delayed(Duration.zero);
+    notifyListeners();
+    
+    // Load stored auth (this will set _isCheckingInitialAuth to false when done)
+    await _loadStoredAuth();
   }
 
   Future<void> _loadStoredAuth() async {
@@ -34,7 +46,6 @@ class AuthProvider with ChangeNotifier {
         try {
           _user = User.fromJson(jsonDecode(userJson));
           _apiService.setAuthToken(_token!);
-          notifyListeners();
         } catch (e) {
           debugPrint('Error parsing stored user data: $e');
           await logout();
@@ -43,6 +54,11 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error loading stored auth: $e');
       await logout();
+    } finally {
+      // Set loading to false and notify listeners when done
+      _isLoading = false;
+      _isCheckingInitialAuth = false; // Mark initial auth check as complete
+      notifyListeners();
     }
   }
 

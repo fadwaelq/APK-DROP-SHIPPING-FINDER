@@ -18,20 +18,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    // Check if user is already authenticated
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = context.read<AuthProvider>();
-      if (authProvider.isAuthenticated) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreenV2()),
-        );
-      }
-    });
-  }
-
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Bienvenue sur DropShippingFinder',

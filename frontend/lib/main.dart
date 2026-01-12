@@ -69,35 +69,19 @@ class DropshippingFinderApp extends StatelessWidget {
           },
         ),
       ],
-      // Add this Consumer to sync UserProvider with AuthProvider
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
-          // Update UserProvider when AuthProvider changes
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
-
-          // Use addPostFrameCallback to avoid build-time updates
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (authProvider.user?.id != userProvider.user?.id) {
-              userProvider.setUser(authProvider.user);
-            }
-          });
-
-          return MaterialApp(
-            title: 'Dropshipping Finder',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            home: const WithStatusBar(child: AuthWrapper()),
-            routes: {
-              '/onboarding': (context) => const WithStatusBar(child: OnboardingScreen()),
-              '/login': (context) => const WithStatusBar(child: LoginScreen()),
-              '/home': (context) => const WithStatusBar(child: HomeScreenV2()),
-              '/search': (context) => const WithStatusBar(child: SearchScreen()),
-              '/favorites': (context) => const WithStatusBar(child: FavoritesScreen()),
-              '/profile': (context) => const WithStatusBar(child: ProfileScreen()),
-              '/subscription': (context) => const WithStatusBar(child: SubscriptionScreen()),
-            },
-          );
+      child: MaterialApp(
+        title: 'Dropshipping Finder',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const WithStatusBar(child: AuthWrapper()),
+        routes: {
+          '/onboarding': (context) => const WithStatusBar(child: OnboardingScreen()),
+          '/login': (context) => const WithStatusBar(child: LoginScreen()),
+          '/home': (context) => const WithStatusBar(child: HomeScreenV2()),
+          '/search': (context) => const WithStatusBar(child: SearchScreen()),
+          '/favorites': (context) => const WithStatusBar(child: FavoritesScreen()),
+          '/profile': (context) => const WithStatusBar(child: ProfileScreen()),
+          '/subscription': (context) => const WithStatusBar(child: SubscriptionScreen()),
         },
       ),
     );
