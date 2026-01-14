@@ -1,0 +1,111 @@
+Clean Architecture Structure for libnew/
+
+libnew/
+├── core/
+│   ├── constants/
+│   │   └── api_constants.dart
+│   ├── errors/
+│   │   ├── exceptions.dart
+│   │   └── failures.dart
+│   ├── network/
+│   │   └── network_info.dart
+│   ├── utils/
+│   │   ├── date_utils.dart
+│   │   ├── string_utils.dart
+│   │   └── validators.dart
+│   └── theme/
+│       └── app_theme.dart
+├── data/
+│   ├── datasources/
+│   │   ├── local/
+│   │   │   ├── auth_local_data_source.dart
+│   │   │   ├── product_local_data_source.dart
+│   │   │   └── user_local_data_source.dart
+│   │   └── remote/
+│   │       ├── auth_remote_data_source.dart
+│   │       ├── product_remote_data_source.dart
+│   │       └── user_remote_data_source.dart
+│   ├── models/
+│   │   ├── auth/
+│   │   │   ├── user_model.dart
+│   │   │   └── auth_model.dart
+│   │   ├── product/
+│   │   │   └── product_model.dart
+│   │   └── user/
+│   │       └── user_model.dart
+│   ├── repositories/
+│   │   ├── auth_repository_impl.dart
+│   │   ├── product_repository_impl.dart
+│   │   └── user_repository_impl.dart
+│   └── services/
+│       ├── api_service.dart
+│       ├── secure_storage_service.dart
+│       └── google_auth_service.dart
+├── domain/
+│   ├── entities/
+│   │   ├── user_entity.dart
+│   │   ├── product_entity.dart
+│   │   └── auth_entity.dart
+│   ├── repositories/
+│   │   ├── auth_repository.dart
+│   │   ├── product_repository.dart
+│   │   └── user_repository.dart
+│   ├── usecases/
+│   │   ├── auth/
+│   │   │   ├── login_usecase.dart
+│   │   │   ├── register_usecase.dart
+│   │   │   └── logout_usecase.dart
+│   │   ├── product/
+│   │   │   ├── get_products_usecase.dart
+│   │   │   ├── get_product_by_id_usecase.dart
+│   │   │   └── toggle_favorite_usecase.dart
+│   │   └── user/
+│   │       ├── get_user_profile_usecase.dart
+│   │       └── update_user_profile_usecase.dart
+│   └── errors/
+│       └── exceptions.dart
+├── presentation/
+│   ├── providers/
+│   │   ├── auth_provider.dart
+│   │   ├── product_provider.dart
+│   │   └── user_provider.dart
+│   ├── screens/
+│   │   ├── auth/
+│   │   │   ├── login_screen.dart
+│   │   │   ├── register_screen.dart
+│   │   │   └── verify_otp_screen.dart
+│   │   ├── home/
+│   │   │   └── home_screen.dart
+│   │   ├── product/
+│   │   │   ├── product_list_screen.dart
+│   │   │   └── product_detail_screen.dart
+│   │   ├── favorites/
+│   │   │   └── favorites_screen.dart
+│   │   ├── profile/
+│   │   │   └── profile_screen.dart
+│   │   └── shared/
+│   │       └── splash_screen.dart
+│   ├── widgets/
+│   │   ├── auth/
+│   │   │   └── auth_wrapper.dart
+│   │   ├── common/
+│   │   │   ├── loading_widget.dart
+│   │   │   ├── error_widget.dart
+│   │   │   └── empty_widget.dart
+│   │   ├── product/
+│   │   │   ├── product_card.dart
+│   │   │   └── product_list_item.dart
+│   │   └── shared/
+│   │       ├── bottom_nav_bar.dart
+│   │       └── with_status_bar.dart
+│   └── routes/
+│       └── app_routes.dart
+└── main.dart
+
+This structure provides:
+1. Clear separation of concerns
+2. Testability
+3. Maintainability
+4. Scalability
+5. Follows SOLID principles
+6. Decouples business logic from UI and data sources
