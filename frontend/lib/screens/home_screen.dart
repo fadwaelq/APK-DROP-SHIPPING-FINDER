@@ -3,19 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/product_card_grid.dart';
 import '../widgets/stat_card.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreenV2 extends StatefulWidget {
+  const HomeScreenV2({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreenV2> createState() => _HomeScreenV2State();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenV2State extends State<HomeScreenV2> {
   int _currentIndex = 0;
 
   @override
@@ -37,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadData,
@@ -50,9 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildHeader(),
                   SizedBox(height: AppTheme.spacingL),
-                  _buildProfitabilityCard(),
+                  _buildScoreCard(),
                   SizedBox(height: AppTheme.spacingL),
-                  _buildStatsRow(),
+                  _buildStatsCards(),
                   SizedBox(height: AppTheme.spacingXL),
                   _buildTrendingSection(),
                   SizedBox(height: AppTheme.spacingXXL),
@@ -75,9 +77,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        final user = userProvider.user;
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.user;
+        final firstName = user?.name.split(' ').first ?? 'OMAR';
         
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -88,38 +91,53 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Bonjour,',
                   style: AppTheme.bodyLarge.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.textTertiary,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
-                Text(
-                  user?.name.split(' ').first ?? 'OMAR',
-                  style: AppTheme.displaySmall.copyWith(
-                    fontSize: 24,
-                    color: AppTheme.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      firstName.toUpperCase(),
+                      style: AppTheme.displaySmall.copyWith(
+                        fontSize: 24,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacingS),
+                    const Text(
+                      '👋',
+                      style: TextStyle(fontSize: 24),
+                    ),
+                  ],
                 ),
               ],
             ),
             Stack(
               children: [
-                IconButton(
-                  icon: Icon(
+                Container(
+                  padding: EdgeInsets.all(AppTheme.spacingS),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                    boxShadow: AppTheme.subtleShadow,
+                  ),
+                  child: Icon(
                     Icons.notifications_outlined,
                     color: AppTheme.textPrimary,
+                    size: 24,
                   ),
-                  onPressed: () {
-                    // TODO: Show notifications
-                  },
                 ),
                 Positioned(
                   right: 8,
                   top: 8,
                   child: Container(
-                    width: 8,
-                    height: 8,
+                    width: 10,
+                    height: 10,
                     decoration: BoxDecoration(
-                      color: AppTheme.errorRed,
+                      color: AppTheme.secondaryOrange,
                       shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.cardBackground, width: 2),
                     ),
                   ),
                 ),
@@ -131,18 +149,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProfitabilityCard() {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
+  Widget _buildScoreCard() {
+    return Consumer2<UserProvider, ProductProvider>(
+      builder: (context, userProvider, productProvider, child) {
         final user = userProvider.user;
+        final products = productProvider.trendingProducts;
+        
+        // Calculer les vraies statistiques
         final score = user?.profitabilityScore ?? 87;
+        final followedProducts = productProvider.favorites.length;
+        final activeTrends = products.where((p) => p.trendPercentage > 0).length;
         
         return Container(
           padding: EdgeInsets.all(AppTheme.spacingL),
           decoration: BoxDecoration(
             gradient: AppTheme.orangeGradient,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-            boxShadow: AppTheme.cardShadow,
+            boxShadow: AppTheme.buttonShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,21 +197,57 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 '$score/100',
                 style: AppTheme.displayLarge.copyWith(
-                  fontSize: 32,
+                  fontSize: 36,
                   color: Colors.white,
+                  letterSpacing: -1,
                 ),
               ),
               SizedBox(height: AppTheme.spacingL),
               Row(
                 children: [
-                  _buildMiniStat(
-                    'Produits suivis',
-                    '${user?.favoriteCount ?? 12}',
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Produits suivis',
+                          style: AppTheme.labelMedium.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacingXS),
+                        Text(
+                          '$followedProducts',
+                          style: AppTheme.displayMedium.copyWith(
+                            fontSize: 24,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(width: AppTheme.spacingXL),
-                  _buildMiniStat(
-                    'Tendances actives',
-                    '5',
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tendances actives',
+                          style: AppTheme.labelMedium.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacingXS),
+                        Text(
+                          '$activeTrends',
+                          style: AppTheme.displayMedium.copyWith(
+                            fontSize: 24,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -199,58 +258,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMiniStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTheme.labelMedium.copyWith(
-            color: Colors.white.withOpacity(0.8),
-          ),
-        ),
-        SizedBox(height: AppTheme.spacingXS),
-        Text(
-          value,
-          style: AppTheme.headlineMedium.copyWith(
-            fontSize: 18,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsRow() {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        final user = userProvider.user;
+  Widget _buildStatsCards() {
+    return Consumer<ProductProvider>(
+      builder: (context, productProvider, child) {
+        final products = productProvider.trendingProducts;
+        
+        // Calculer les vraies statistiques
+        double avgProfit = 0;
+        if (products.isNotEmpty) {
+          avgProfit = products.map((p) => p.profit).reduce((a, b) => a + b) / products.length;
+        }
+        
+        final totalProducts = products.length;
+        final topNiches = products.map((p) => p.category).toSet().length;
         
         return Row(
           children: [
-            const Expanded(
+            Expanded(
               child: StatCard(
                 icon: Icons.attach_money,
                 label: 'Profit moy.',
-                value: '15.50€',
+                value: '${avgProfit.toStringAsFixed(2)}€',
                 color: AppTheme.successGreen,
               ),
             ),
-            SizedBox(width: AppTheme.spacingM),
+            SizedBox(width: AppTheme.spacingS),
             Expanded(
               child: StatCard(
                 icon: Icons.inventory_2_outlined,
                 label: 'Produits',
-                value: '${user?.viewCount ?? 847}',
+                value: '$totalProducts',
                 color: AppTheme.infoBlue,
               ),
             ),
-            SizedBox(width: AppTheme.spacingM),
-            const Expanded(
+            SizedBox(width: AppTheme.spacingS),
+            Expanded(
               child: StatCard(
                 icon: Icons.star_outline,
                 label: 'Top niches',
-                value: '24',
+                value: '$topNiches',
                 color: AppTheme.warningYellow,
               ),
             ),
@@ -276,9 +322,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 SizedBox(width: AppTheme.spacingS),
-                Text(
+                const Text(
                   '🔥',
-                  style: const TextStyle(fontSize: 20),
+                  style: TextStyle(fontSize: 20),
                 ),
               ],
             ),
@@ -303,8 +349,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         SizedBox(height: AppTheme.spacingM),
         Consumer<ProductProvider>(
-          builder: (context, productProvider, child) {
-            if (productProvider.isLoading) {
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
               return Center(
                 child: Padding(
                   padding: EdgeInsets.all(AppTheme.spacingXL),
@@ -315,102 +361,76 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
 
-            if (productProvider.trendingProducts.isEmpty) {
-              return _buildEmptyState();
+            final products = provider.trendingProducts;
+
+            if (products.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacingXL),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        size: 64,
+                        color: AppTheme.mediumGray,
+                      ),
+                      SizedBox(height: AppTheme.spacingM),
+                      Text(
+                        'Chargement des produits...',
+                        style: AppTheme.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: AppTheme.spacingS),
+                      Text(
+                        'Les produits tendance apparaîtront ici',
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: AppTheme.textSecondary.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: AppTheme.spacingL),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          provider.loadTrendingProducts();
+                        },
+                        icon: Icon(Icons.refresh, size: 20),
+                        label: Text('Réessayer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryOrange,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacingL,
+                            vertical: AppTheme.spacingS,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          ),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
             }
 
-            return ListView.builder(
+            return ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: productProvider.trendingProducts.length,
+              itemCount: products.length,
+              separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacingM),
               itemBuilder: (context, index) {
-                final product = productProvider.trendingProducts[index];
-                return Padding(
-                  padding: EdgeInsets.only(bottom: AppTheme.spacingM),
-                  child: ProductCardList(product: product),
-                );
+                return ProductCardList(product: products[index]);
               },
             );
           },
         ),
-        SizedBox(height: AppTheme.spacingL),
-        _buildTrendAlert(),
       ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: EdgeInsets.all(AppTheme.spacingXL),
-      child: Column(
-        children: [
-          Icon(
-            Icons.trending_up,
-            size: 64,
-            color: AppTheme.mediumGray,
-          ),
-          SizedBox(height: AppTheme.spacingM),
-          Text(
-            'Aucun produit tendance pour le moment',
-            style: AppTheme.bodyLarge.copyWith(
-              color: AppTheme.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrendAlert() {
-    return Container(
-      padding: EdgeInsets.all(AppTheme.spacingL),
-      decoration: BoxDecoration(
-        color: AppTheme.warningYellow.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        border: Border.all(
-          color: AppTheme.warningYellow.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppTheme.spacingS),
-            decoration: BoxDecoration(
-              color: AppTheme.warningYellow,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-            child: Icon(
-              Icons.lightbulb_outline,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          SizedBox(width: AppTheme.spacingM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Conseil',
-                  style: AppTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                SizedBox(height: AppTheme.spacingXS),
-                Text(
-                  'La catégorie "Sport & Fitness" connaît une hausse de 32% cette semaine',
-                  style: AppTheme.labelMedium.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

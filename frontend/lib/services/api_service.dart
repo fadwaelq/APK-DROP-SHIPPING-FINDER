@@ -182,7 +182,7 @@ class ApiService {
       {int page = 1, int limit = 20}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/products/?page=$page&limit=$limit'),
+        Uri.parse('$baseUrl/products/?page=$page'),
         headers: _headers,
       );
 
@@ -193,42 +193,43 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getTrendingProducts() async {
-  try {
-    final response = await http.get(
-      Uri.parse('$baseUrl/products/trending/'),
-      headers: _headers,
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/trending/'),
+        headers: _headers,
+      );
 
-    // Add this debug logging
-    print('📦 Trending products raw response: ${response.body.substring(0, 200)}...');
-    print('📦 Response status code: ${response.statusCode}');
-    
-    final result = _handleResponse(response);
-    
-    // Debug the structure
-    if (result['success'] == true && result['data'] != null) {
-      print('📦 First product structure:');
-      final products = result['data'] as List;
-      if (products.isNotEmpty) {
-        final firstProduct = products[0];
-        print('First product keys: ${firstProduct.keys}');
-        print('First product type: ${firstProduct.runtimeType}');
-        
-        // Check specific fields
-        if (firstProduct is Map) {
-          firstProduct.forEach((key, value) {
-            print('$key: ${value.runtimeType} - $value');
-          });
+      // Add this debug logging
+      print(
+          '📦 Trending products raw response: ${response.body.substring(0, 200)}...');
+      print('📦 Response status code: ${response.statusCode}');
+
+      final result = _handleResponse(response);
+
+      // Debug the structure
+      if (result['success'] == true && result['data'] != null) {
+        print('📦 First product structure:');
+        final products = result['data'] as List;
+        if (products.isNotEmpty) {
+          final firstProduct = products[0];
+          print('First product keys: ${firstProduct.keys}');
+          print('First product type: ${firstProduct.runtimeType}');
+
+          // Check specific fields
+          if (firstProduct is Map) {
+            firstProduct.forEach((key, value) {
+              print('$key: ${value.runtimeType} - $value');
+            });
+          }
         }
       }
+
+      return result;
+    } catch (e) {
+      print('❌ Error in getTrendingProducts: $e');
+      return {'success': false, 'message': e.toString()};
     }
-    
-    return result;
-  } catch (e) {
-    print('❌ Error in getTrendingProducts: $e');
-    return {'success': false, 'message': e.toString()};
   }
-}
 
   Future<Map<String, dynamic>> searchProducts(String query) async {
     try {
@@ -370,9 +371,9 @@ class ApiService {
     }
   }
 
-
-    /// Google Sign-In
-  Future<Map<String, dynamic>> loginWithGoogle(String accessToken, {String? idToken}) async {
+  /// Google Sign-In
+  Future<Map<String, dynamic>> loginWithGoogle(String accessToken,
+      {String? idToken}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/google/login/'),
@@ -406,5 +407,3 @@ class ApiService {
     }
   }
 }
-
-

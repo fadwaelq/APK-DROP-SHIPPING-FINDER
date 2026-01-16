@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../utils/theme.dart';
 import 'login_screen.dart';
 import '../providers/auth_provider.dart';
-import 'home_screen_v2.dart';
+import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

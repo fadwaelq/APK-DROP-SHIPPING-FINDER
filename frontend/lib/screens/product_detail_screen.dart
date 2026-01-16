@@ -435,7 +435,7 @@ class ProductDetailScreen extends StatelessWidget {
                 radius: 30,
                 backgroundColor: Colors.orange.shade50,
                 child: const Icon(Icons.store,
-                    color: AppTheme.primaryOrange, size: 32),
+                    color: Color(0xFFFF7A00), size: 32),
               ),
               const SizedBox(width: 16),
               Expanded(

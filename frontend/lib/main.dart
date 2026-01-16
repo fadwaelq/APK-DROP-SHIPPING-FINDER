@@ -9,7 +9,7 @@ import 'providers/product_provider.dart';
 import 'providers/user_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/home_screen_v2.dart';
+import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/profile_screen.dart';
@@ -29,8 +29,10 @@ void main() async {
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.white, // White background for navigation bar
-      systemNavigationBarIconBrightness: Brightness.dark, // Black icons for navigation bar
+      systemNavigationBarColor:
+          Colors.white, // White background for navigation bar
+      systemNavigationBarIconBrightness:
+          Brightness.dark, // Black icons for navigation bar
       statusBarIconBrightness: Brightness.dark, // Black icons for status bar
       statusBarColor: Colors.white, // White background for status bar
     ),
@@ -57,7 +59,16 @@ class DropshippingFinderApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, UserProvider>(
+          create: (_) => UserProvider(),
+          update: (context, auth, userProvider) {
+            // Sync UserProvider with AuthProvider user changes
+            if (userProvider != null) {
+              userProvider.setUser(auth.user);
+            }
+            return userProvider!;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, ProductProvider>(
           create: (_) => ProductProvider(),
           update: (context, auth, productProvider) {
@@ -75,13 +86,16 @@ class DropshippingFinderApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: const WithStatusBar(child: AuthWrapper()),
         routes: {
-          '/onboarding': (context) => const WithStatusBar(child: OnboardingScreen()),
+          '/onboarding': (context) =>
+              const WithStatusBar(child: OnboardingScreen()),
           '/login': (context) => const WithStatusBar(child: LoginScreen()),
           '/home': (context) => const WithStatusBar(child: HomeScreenV2()),
           '/search': (context) => const WithStatusBar(child: SearchScreen()),
-          '/favorites': (context) => const WithStatusBar(child: FavoritesScreen()),
+          '/favorites': (context) =>
+              const WithStatusBar(child: FavoritesScreen()),
           '/profile': (context) => const WithStatusBar(child: ProfileScreen()),
-          '/subscription': (context) => const WithStatusBar(child: SubscriptionScreen()),
+          '/subscription': (context) =>
+              const WithStatusBar(child: SubscriptionScreen()),
         },
       ),
     );

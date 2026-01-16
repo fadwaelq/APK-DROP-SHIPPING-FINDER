@@ -19,20 +19,25 @@ class UserProvider with ChangeNotifier {
     if (_user?.id == user?.id && identical(_user, user)) {
       return;
     }
-    
+
     _user = user;
-    
-    // Don't notify listeners here - let the proxy provider handle it
-    // The ChangeNotifierProxyProvider will automatically notify listeners
+
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> loadUserProfile() async {
     _isLoading = true;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       final response = await _apiService.getUserProfile();
-     
+
       if (response['success']) {
         _user = User.fromJson(response['user']);
       } else {
@@ -43,12 +48,18 @@ class UserProvider with ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> updateProfile(String fullName) async {
     _isLoading = true;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       final response = await _apiService.updateProfile(fullName);
@@ -62,39 +73,57 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       _error = 'Failed to update profile: ${e.toString()}';
       _isLoading = false;
-      notifyListeners();
+      // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
       rethrow;
     }
 
     _isLoading = false;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<bool> updateSubscription(SubscriptionPlan plan) async {
     _isLoading = true;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       final response = await _apiService.updateSubscription(plan.name);
-     
+
       if (response['success'] && _user != null) {
         _user = _user!.copyWith(
           subscriptionPlan: plan,
           subscriptionExpiryDate: DateTime.now().add(const Duration(days: 30)),
         );
         _isLoading = false;
-        notifyListeners();
+        // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
         return true;
       } else {
         _error = response['message'] ?? 'Failed to update subscription';
         _isLoading = false;
-        notifyListeners();
+        // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
         return false;
       }
     } catch (e) {
       _error = 'Network error: ${e.toString()}';
       _isLoading = false;
-      notifyListeners();
+      // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
       return false;
     }
   }
@@ -104,25 +133,37 @@ class UserProvider with ChangeNotifier {
 
     // Optimistic update
     _user = _user!.copyWith(notificationsEnabled: enabled);
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
     try {
       final response = await _apiService.updateNotificationSettings(enabled);
-     
+
       if (!response['success']) {
         // Revert on failure
         _user = _user!.copyWith(notificationsEnabled: !enabled);
-        notifyListeners();
+        // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
       }
     } catch (e) {
       // Revert on error
       _user = _user!.copyWith(notificationsEnabled: !enabled);
-      notifyListeners();
+      // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
   void clearError() {
     _error = null;
-    notifyListeners();
+    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 }

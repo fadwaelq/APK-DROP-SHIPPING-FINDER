@@ -28,23 +28,24 @@ class ProductCardList extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Product Image
             ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppTheme.borderRadiusLarge),
-                bottomLeft: Radius.circular(AppTheme.borderRadiusLarge),
+              borderRadius: const BorderRadius.all(
+                Radius.circular(AppTheme.borderRadiusLarge),
               ),
               child: Container(
-                width: 130,
-                height: 130,
+                width: 100,
+                height: 100,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
                       AppTheme.lightGray,
-                      Colors.white,
+                      Colors.red,
                     ],
                   ),
                 ),
@@ -153,7 +154,7 @@ class ProductCardList extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppTheme.spacingS),
+                    // const SizedBox(height: AppTheme.spacingS),
                     Row(
                       children: [
                         Column(
@@ -177,7 +178,7 @@ class ProductCardList extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(width: AppTheme.spacingL),
+                        // SizedBox(width: AppTheme.spacingL),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -201,7 +202,7 @@ class ProductCardList extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppTheme.spacingS),
+                    // const SizedBox(height: AppTheme.spacingS),
                     Row(
                       children: [
                         Icon(

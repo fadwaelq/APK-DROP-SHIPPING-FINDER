@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/theme.dart';
-import 'home_screen_v2.dart';
+import 'home_screen.dart';
 import 'verify_otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
