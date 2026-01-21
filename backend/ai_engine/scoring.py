@@ -53,9 +53,9 @@ class ProductScorer:
         """
         # Simulated demand calculation
         # In production, this would use real market data
-        sales_count = data.get('sales_count', 0)
-        views_count = data.get('views_count', 0)
-        search_volume = data.get('search_volume', 0)
+        sales_count = float(data.get('sales_count', 0))
+        views_count = float(data.get('views_count', 0))
+        search_volume = float(data.get('search_volume', 0))
         
         # Normalize values
         sales_score = min(100, (sales_count / 1000) * 100)
@@ -72,9 +72,9 @@ class ProductScorer:
         Calculate popularity score (0-100)
         Based on reviews, ratings, and social signals
         """
-        review_count = data.get('review_count', 0)
-        rating = data.get('rating', 0)
-        social_shares = data.get('social_shares', 0)
+        review_count = float(data.get('review_count', 0))
+        rating = float(data.get('rating', 0))
+        social_shares = float(data.get('social_shares', 0))
         
         # Normalize
         review_score = min(100, (review_count / 500) * 100)
@@ -90,8 +90,8 @@ class ProductScorer:
         Calculate competition score (0-100)
         Lower competition = higher score
         """
-        competitor_count = data.get('competitor_count', 0)
-        market_saturation = data.get('market_saturation', 0)
+        competitor_count = float(data.get('competitor_count', 0))
+        market_saturation = float(data.get('market_saturation', 0))
         
         # Inverse scoring - less competition is better
         competitor_score = max(0, 100 - (competitor_count / 100) * 100)
@@ -106,8 +106,8 @@ class ProductScorer:
         Calculate profitability score (0-100)
         Based on profit margin and absolute profit
         """
-        price = data.get('price', 0)
-        cost = data.get('cost', 0)
+        price = float(data.get('price', 0))
+        cost = float(data.get('cost', 0))
         
         if price <= 0 or cost <= 0:
             return 50  # Default score if data is missing
@@ -128,8 +128,8 @@ class ProductScorer:
         Calculate trend score (0-100)
         Based on growth rate and momentum
         """
-        trend_percentage = data.get('trend_percentage', 0)
-        growth_rate = data.get('growth_rate', 0)
+        trend_percentage = float(data.get('trend_percentage', 0))
+        growth_rate = float(data.get('growth_rate', 0))
         
         # Positive trends score higher
         trend_score = min(100, max(0, 50 + trend_percentage))
