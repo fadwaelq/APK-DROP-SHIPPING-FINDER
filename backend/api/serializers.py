@@ -205,3 +205,77 @@ class ProductAnalysisSerializer(serializers.Serializer):
 class ProductImportSerializer(serializers.Serializer):
     url = serializers.URLField(required=True)
 
+
+class EmailOTPSerializer(serializers.Serializer):
+    """Serializer for sending OTP to email"""
+    email = serializers.EmailField(required=True)
+
+
+class OTPVerificationSerializer(serializers.Serializer):
+    """Serializer for verifying OTP code"""
+    email = serializers.EmailField(required=True)
+    otp_code = serializers.CharField(max_length=6, min_length=6, required=True)
+    
+    def validate_otp_code(self, value):
+        """Validate that OTP code contains only digits"""
+        if not value.isdigit():
+            raise serializers.ValidationError("OTP code must contain only digits")
+        return value
+
+
+class OTPResendSerializer(serializers.Serializer):
+    """Serializer for resending OTP"""
+    email = serializers.EmailField(required=True)
+
+
+class RegisterWithOTPSerializer(serializers.ModelSerializer):
+    """Register user with email and OTP verification"""
+    password_confirm = serializers.CharField(write_only=True)
+    otp_code = serializers.CharField(max_length=6, min_length=6, required=True)
+    
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'password_confirm', 'first_name', 'last_name', 'otp_code']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'first_name': {'required': False},
+            'last_name': {'required': False},
+        }
+    
+    def validate(self, data):
+        if data['password'] != data['password_confirm']:
+            raise serializers.ValidationError({"password": "Passwords do not match"})
+        
+        # Check if OTP is verified for this email
+        from core.models import EmailOTP
+        from django.utils import timezone
+        
+        email = data.get('email')
+        otp_code = data.get('otp_code')
+        
+        try:
+            otp = EmailOTP.objects.get(email=email, otp_code=otp_code)
+            
+            if not otp.is_verified:
+                raise serializers.ValidationError({"otp_code": "Please verify your OTP first"})
+            
+            if otp.is_expired:
+                raise serializers.ValidationError({"otp_code": "OTP has expired"})
+        except EmailOTP.DoesNotExist:
+            raise serializers.ValidationError({"otp_code": "Invalid OTP code"})
+        
+        return data
+    
+    def create(self, validated_data):
+        validated_data.pop('password_confirm')
+        validated_data.pop('otp_code')
+        
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+        )
+        return user
+

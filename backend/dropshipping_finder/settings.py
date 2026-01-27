@@ -246,3 +246,19 @@ LOGGING = {
 
 # Create logs directory if it doesn't exist
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
+# ========== EMAIL CONFIGURATION ==========
+# Email backend configuration for OTP
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+
+# SMTP Configuration (Gmail example - update with your email provider)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your-email@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your-app-password')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@dropshippingfinder.com')
+
+# For development, you can use console backend (prints to console instead of sending emails)
+# Uncomment the line below to use console backend in development
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

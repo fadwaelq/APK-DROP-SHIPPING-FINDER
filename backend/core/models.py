@@ -211,3 +211,30 @@ class ScrapingJob(models.Model):
     
     def __str__(self):
         return f"{self.source} - {self.status}"
+
+
+class EmailOTP(models.Model):
+    """Email OTP for user verification"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='email_otp')
+    email = models.EmailField()
+    otp_code = models.CharField(max_length=6)
+    is_verified = models.BooleanField(default=False)
+    attempts = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    verified_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.email} - {'Verified' if self.is_verified else 'Pending'}"
+    
+    @property
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+    
+    @property
+    def is_active(self):
+        return not self.is_expired and not self.is_verified
