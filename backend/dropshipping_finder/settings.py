@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     # Third party apps
     'rest_framework',
@@ -33,6 +34,12 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_yasg',
     'django_celery_beat',
+    
+    # Social Auth & OAuth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 
     # Local apps
     'api',
@@ -49,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -262,3 +270,40 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@dropshippingfinder
 # For development, you can use console backend (prints to console instead of sending emails)
 # Uncomment the line below to use console backend in development
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# ========== GOOGLE OAUTH CONFIGURATION ==========
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    }
+}
+
+# Google OAuth Settings
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
+
+# AllAuth Settings
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_USERNAME_REQUIRED = False
+SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
+SOCIALACCOUNT_AUTO_SIGNUP = True

@@ -19,7 +19,8 @@ from .serializers import (
     ProductListSerializer, FavoriteSerializer, ProductViewSerializer,
     SearchHistorySerializer, TrendAlertSerializer, RegisterSerializer,
     PasswordChangeSerializer, ProductAnalysisSerializer, EmailOTPSerializer,
-    OTPVerificationSerializer, OTPResendSerializer, RegisterWithOTPSerializer
+    OTPVerificationSerializer, OTPResendSerializer, RegisterWithOTPSerializer,
+    GoogleAuthSerializer, GoogleLoginSerializer
 )
 # Email OTP service
 from core.email_service import (
@@ -376,14 +377,15 @@ def register(request):
         email = user.email
         otp = create_otp_for_email(email, user=user)
         
+        # Get fullname from first_name and last_name
+        fullname = f"{user.first_name} {user.last_name}".strip()
+        
         return Response({
             'message': 'Registration successful! OTP sent to your email. Please verify your account.',
             'user': {
                 'id': user.id,
-                'username': user.username,
                 'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
+                'fullname': fullname,
             },
             'email': email,
             'otp_expires_in': '10 minutes',
@@ -396,26 +398,22 @@ def register(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    """Login user"""
-    username = request.data.get('username') or request.data.get('email')
+    """Login user with email and password"""
+    email = request.data.get('email')
     password = request.data.get('password')
     
-    if not username or not password:
+    if not email or not password:
         return Response(
-            {'error': 'Username/email and password required'},
+            {'error': 'Email and password are required'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Try to authenticate with username or email
-    user = authenticate(username=username, password=password)
-    
-    if not user:
-        # Try with email
-        try:
-            user_obj = User.objects.get(email=username)
-            user = authenticate(username=user_obj.username, password=password)
-        except User.DoesNotExist:
-            pass
+    # Authenticate with email
+    try:
+        user_obj = User.objects.get(email=email)
+        user = authenticate(username=user_obj.username, password=password)
+    except User.DoesNotExist:
+        user = None
     
     if user:
         refresh = RefreshToken.for_user(user)
@@ -431,7 +429,7 @@ def login(request):
         })
     
     return Response(
-        {'error': 'Invalid credentials'},
+        {'error': 'Invalid email or password'},
         status=status.HTTP_401_UNAUTHORIZED
     )
 
@@ -614,6 +612,171 @@ def resend_otp_code(request):
             )
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ========== GOOGLE OAUTH ENDPOINTS ==========
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_auth(request):
+    """
+    Google OAuth authentication endpoint
+    Verifies Google token and creates/returns user with JWT tokens
+    """
+    serializer = GoogleAuthSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        access_token = serializer.validated_data['access_token']
+        
+        # Verify token with Google using access token info endpoint
+        import requests as req
+        response = req.get(
+            'https://www.googleapis.com/oauth2/v2/userinfo',
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=5
+        )
+        
+        if response.status_code != 200:
+            return Response(
+                {'error': 'Invalid Google token'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        user_data = response.json()
+        email = user_data.get('email')
+        name = user_data.get('name', '')
+        picture = user_data.get('picture', '')
+        
+        if not email:
+            return Response(
+                {'error': 'Email not provided by Google'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get or create user
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'username': email.split('@')[0],
+                'is_active': True,
+            }
+        )
+        
+        # Update user info from Google
+        if created or not user.first_name:
+            name_parts = name.strip().split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            user.save()
+        
+        # Create/get user profile
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            'message': 'Google authentication successful!',
+            'user': UserSerializer(user).data,
+            'profile': UserProfileSerializer(profile).data,
+            'token': str(refresh.access_token),
+            'refresh': str(refresh),
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Authentication failed: {str(e)}'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_login(request):
+    """
+    Google ID token verification endpoint
+    Use this if you have id_token from Google Sign-In
+    """
+    id_token_str = request.data.get('id_token')
+    
+    if not id_token_str:
+        return Response(
+            {'error': 'id_token is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        import os
+        
+        client_id = os.getenv('GOOGLE_CLIENT_ID')
+        if not client_id:
+            return Response(
+                {'error': 'Google Client ID not configured'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Verify ID token with Google
+        idinfo = id_token.verify_oauth2_token(
+            id_token_str,
+            google_requests.Request(),
+            client_id
+        )
+        
+        # Extract user info
+        email = idinfo.get('email')
+        name = idinfo.get('name', '')
+        picture = idinfo.get('picture', '')
+        
+        if not email:
+            return Response(
+                {'error': 'Email not provided in token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get or create user
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'username': email.split('@')[0],
+                'is_active': True,
+            }
+        )
+        
+        # Update user name if not set
+        if created or not user.first_name:
+            name_parts = name.strip().split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            user.save()
+        
+        # Create/get user profile
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            'message': 'Google login successful!',
+            'user': UserSerializer(user).data,
+            'profile': UserProfileSerializer(profile).data,
+            'token': str(refresh.access_token),
+            'refresh': str(refresh),
+        }, status=status.HTTP_200_OK)
+        
+    except ValueError as e:
+        return Response(
+            {'error': 'Invalid ID token'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Login failed: {str(e)}'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
 
 
 

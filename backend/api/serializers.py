@@ -163,10 +163,18 @@ class ScrapingJobSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     password_confirm = serializers.CharField(write_only=True, min_length=6)
+    fullname = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password_confirm', 'first_name', 'last_name']
+        fields = ['username', 'email', 'password', 'password_confirm', 'fullname']
+    
+    def validate_email(self, value):
+        """Ensure email is unique"""
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already registered")
+        return value
     
     def validate(self, data):
         if data['password'] != data['password_confirm']:
@@ -175,6 +183,27 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        fullname = validated_data.pop('fullname')
+        
+        # Auto-generate username from email if not provided
+        username = validated_data.get('username', '').strip()
+        if not username:
+            email = validated_data['email']
+            username = email.split('@')[0]
+            # Ensure username is unique
+            base_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+        
+        validated_data['username'] = username
+        
+        # Split fullname into first_name and last_name
+        name_parts = fullname.strip().split(' ', 1)
+        validated_data['first_name'] = name_parts[0]
+        validated_data['last_name'] = name_parts[1] if len(name_parts) > 1 else ''
+        
         user = User.objects.create_user(**validated_data)
         
         # Create user profile
@@ -279,3 +308,25 @@ class RegisterWithOTPSerializer(serializers.ModelSerializer):
         )
         return user
 
+
+class GoogleAuthSerializer(serializers.Serializer):
+    """Serializer for Google OAuth token verification"""
+    access_token = serializers.CharField(required=True)
+    id_token = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate(self, data):
+        """Validate Google token"""
+        access_token = data.get('access_token')
+        
+        if not access_token:
+            raise serializers.ValidationError({"access_token": "This field is required"})
+        
+        return data
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    """Response serializer for Google login"""
+    user = UserSerializer(read_only=True)
+    token = serializers.CharField(read_only=True)
+    refresh = serializers.CharField(read_only=True)
+    message = serializers.CharField(read_only=True)

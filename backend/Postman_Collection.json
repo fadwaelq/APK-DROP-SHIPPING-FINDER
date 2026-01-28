@@ -133,6 +133,124 @@
               ]
             }
           }
+        },
+        {
+          "name": "Google Login with ID Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjFiOTRj...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/google-login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "google-login",
+                ""
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjFiOTRj...\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/google-login/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "google-login",
+                    ""
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Google login successful!\",\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"user@gmail.com\",\n    \"username\": \"user\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"name\": \"John Doe\"\n  },\n  \"profile\": {\n    \"id\": 1,\n    \"subscription_plan\": \"free\",\n    \"notifications_enabled\": true\n  },\n  \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGc...\",\n  \"refresh\": \"eyJ0eXAiOiJKV1QiLCJhbGc...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Google Auth with Access Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"access_token\": \"ya29.a0AfH6SMBx...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/google/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "google",
+                ""
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"access_token\": \"ya29.a0AfH6SMBx...\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/google/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "google",
+                    ""
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Google authentication successful!\",\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"user@gmail.com\",\n    \"username\": \"user\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"name\": \"John Doe\"\n  },\n  \"profile\": {\n    \"id\": 1,\n    \"subscription_plan\": \"free\",\n    \"notifications_enabled\": true\n  },\n  \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGc...\",\n  \"refresh\": \"eyJ0eXAiOiJKV1QiLCJhbGc...\"\n}"
+            }
+          ]
         }
       ]
     },
