@@ -12,13 +12,18 @@ from core.scrapers.aliexpress_import import import_product_from_aliexpress
 
 from core.models import (
     UserProfile, Product, Favorite, ProductView,
-    SearchHistory, TrendAlert, ScrapingJob
+    SearchHistory, TrendAlert, ScrapingJob, EmailOTP
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, ProductSerializer,
     ProductListSerializer, FavoriteSerializer, ProductViewSerializer,
     SearchHistorySerializer, TrendAlertSerializer, RegisterSerializer,
-    PasswordChangeSerializer, ProductAnalysisSerializer
+    PasswordChangeSerializer, ProductAnalysisSerializer, EmailOTPSerializer,
+    OTPVerificationSerializer, OTPResendSerializer, RegisterWithOTPSerializer
+)
+# Email OTP service
+from core.email_service import (
+    create_otp_for_email, verify_otp, resend_otp
 )
 # Temporarily commented out for initial setup
 from ai_engine.scoring import ProductScorer, TrendAnalyzer
@@ -238,17 +243,60 @@ class ProductViewSet(viewsets.ModelViewSet):
         if not data:
             return Response({"error": "Scraping failed or structure changed"}, status=400)
 
-        product = Product.objects.create(
-            name=data["title"],
-            price=data.get("price", 0),
-            description=data.get("description", "Imported from AliExpress"),
-            source="AliExpress",
-            source_url=data["url"],
-            image_urls=data.get("images", []),  # doit exister dans modèle Product
-            score=0,
-        )
+        try:
+            # Gère les prix invalides avec fallback
+            try:
+                price = float(data.get("price", 0))
+                if price == 0:
+                    price = None
+            except (ValueError, TypeError):
+                price = None
+            
+            # Si le prix n'a pas pu être récupéré, utilise une estimation par défaut
+            if price is None or price == 0:
+                # Estimation par catégorie (valeurs par défaut pour MVP)
+                category_defaults = {
+                    "tech": 25.0,
+                    "electronics": 30.0,
+                    "clothing": 15.0,
+                    "home": 20.0,
+                    "beauty": 12.0,
+                }
+                price = category_defaults.get(data.get("category", "tech").lower(), 20.0)
+                price_source = "estimated"
+            else:
+                price_source = "scraped"
+            
+            # Calcule le profit (prix de vente - coût)
+            cost = float(data.get("cost", price * 0.3)) if price > 0 else 0
+            profit = price - cost
 
-        return Response(ProductSerializer(product).data, status=201)
+            product = Product.objects.create(
+                name=data["title"],
+                description=data.get("description", "Imported from AliExpress"),
+                price=price,
+                cost=cost,
+                profit=profit,
+                source="aliexpress",
+                source_url=url,
+                source_id=data.get("source_id", url.split('/')[-1]),
+                category=data.get("category", "tech"),
+                image_url=data.get("image", data.get("images", [])[0] if data.get("images") else ""),
+                images=data.get("images", []),
+                supplier_name=data.get("supplier", "Unknown"),
+                supplier_rating=float(data.get("rating", 0)),
+                supplier_review_count=int(data.get("review_count", 0)),
+                trend_percentage=float(data.get("trend_percentage", 0)),
+                score=0,
+            )
+
+            response_data = ProductSerializer(product).data
+            if price_source == "estimated":
+                response_data["warning"] = f"Price was estimated (${price:.2f}) as it couldn't be scraped. Please verify on AliExpress."
+            
+            return Response(response_data, status=201)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
 
 
 
@@ -316,18 +364,30 @@ class TrendAlertViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    """Register new user"""
+    """Register new user - OTP automatically sent to email"""
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
+        # Create user but inactive until email verification
         user = serializer.save()
+        user.is_active = False  # Inactive until verified
+        user.save()
         
-        # Generate tokens
-        refresh = RefreshToken.for_user(user)
+        # Create OTP and send to email
+        email = user.email
+        otp = create_otp_for_email(email, user=user)
         
         return Response({
-            'user': UserSerializer(user).data,
-            'token': str(refresh.access_token),
-            'refresh': str(refresh),
+            'message': 'Registration successful! OTP sent to your email. Please verify your account.',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            },
+            'email': email,
+            'otp_expires_in': '10 minutes',
+            'next_step': 'Verify your email with the OTP code sent to your email address'
         }, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -405,37 +465,155 @@ def dashboard_stats(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def import_products(request):
-    """Import products from external sources temporarily using dummy data"""
+    """Import product from AliExpress URL"""
     
-    sample_products = [
-        {
-            "name": "Smart Watch Pro",
-            "price": 15.99,
-            "source": "AliExpress",
-            "image_url": "https://example.com/watch.jpg",
-            "category": "electronics"
-        },
-        {
-            "name": "Wireless Earbuds",
-            "price": 9.50,
-            "source": "AliExpress",
-            "image_url": "https://example.com/earbuds.jpg",
-            "category": "audio"
-        }
-    ]
-
-    created_count = 0
-
-    for p in sample_products:
-        Product.objects.create(
-            name=p["name"],
-            price=p["price"],
-            image_url=p["image_url"],
-            category=p["category"],
-            source=p["source"],
-            score=0  # sera calculé plus tard
+    url = request.data.get('url')
+    
+    if not url:
+        return Response(
+            {'error': 'url is required'},
+            status=status.HTTP_400_BAD_REQUEST
         )
-        created_count += 1
+    
+    try:
+        # Scrape les données AliExpress
+        data = import_product_from_aliexpress(url)
+        
+        if not data:
+            return Response(
+                {'error': 'Scraping failed or structure changed'}, 
+                status=400
+            )
+        
+        # Gère les prix invalides avec fallback
+        try:
+            price = float(data.get("price", 0))
+            if price == 0:
+                price = None
+        except (ValueError, TypeError):
+            price = None
+        
+        # Si le prix n'a pas pu être récupéré, utilise une estimation par défaut
+        if price is None or price == 0:
+            # Estimation par catégorie (valeurs par défaut pour MVP)
+            category_defaults = {
+                "tech": 25.0,
+                "electronics": 30.0,
+                "clothing": 15.0,
+                "home": 20.0,
+                "beauty": 12.0,
+            }
+            price = category_defaults.get(data.get("category", "tech").lower(), 20.0)
+            price_source = "estimated"
+        else:
+            price_source = "scraped"
+        
+        # Calcule le profit (prix de vente - coût)
+        cost = float(data.get("cost", price * 0.3)) if price > 0 else 0
+        profit = price - cost
+        
+        # Crée le produit en base de données
+        product = Product.objects.create(
+            name=data["title"],
+            description=data.get("description", "Imported from AliExpress"),
+            price=price,
+            cost=cost,
+            profit=profit,
+            source="aliexpress",
+            source_url=url,
+            source_id=data.get("source_id", url.split('/')[-1]),
+            category=data.get("category", "tech"),
+            image_url=data.get("image", data.get("images", [])[0] if data.get("images") else ""),
+            images=data.get("images", []),
+            supplier_name=data.get("supplier", "Unknown"),
+            supplier_rating=float(data.get("rating", 0)),
+            supplier_review_count=int(data.get("review_count", 0)),
+            trend_percentage=float(data.get("trend_percentage", 0)),
+            score=0,
+        )
+        
+        response_data = ProductSerializer(product).data
+        if price_source == "estimated":
+            response_data["warning"] = f"Price was estimated (${price:.2f}) as it couldn't be scraped. Please verify on AliExpress."
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
 
-    return Response({"message": "Products imported", "imported": created_count})
+
+
+# ========== EMAIL OTP VERIFICATION ENDPOINTS ==========
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_email_otp(request):
+    """Verify OTP code and activate account"""
+    serializer = OTPVerificationSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        otp_code = serializer.validated_data['otp_code']
+        
+        result = verify_otp(email, otp_code)
+        
+        if result['success']:
+            try:
+                # Get user and activate account
+                user = User.objects.get(email=email)
+                user.is_active = True
+                user.save()
+                
+                # Create user profile
+                UserProfile.objects.get_or_create(user=user)
+                
+                # Generate JWT tokens
+                refresh = RefreshToken.for_user(user)
+                
+                return Response({
+                    'message': 'Email verified successfully! Your account is now active.',
+                    'email': email,
+                    'verified': True,
+                    'user': UserSerializer(user).data,
+                    'token': str(refresh.access_token),
+                    'refresh': str(refresh),
+                }, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response(
+                    {'error': 'User not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {'error': result['error']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def resend_otp_code(request):
+    """Resend OTP code to email"""
+    serializer = OTPResendSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        
+        result = resend_otp(email)
+        
+        if result['success']:
+            return Response({
+                'message': result['message'],
+                'email': email,
+                'expires_in': '10 minutes'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {'error': result['error']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
