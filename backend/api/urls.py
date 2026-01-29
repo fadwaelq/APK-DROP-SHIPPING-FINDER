@@ -13,7 +13,9 @@ from .views import (
     dashboard_stats,
     import_products,
     verify_email_otp,
-    resend_otp_code
+    resend_otp_code,
+    google_auth,
+    google_login
 )
 
 # ------------------- Router ---------------------
@@ -34,6 +36,10 @@ urlpatterns = [
     # Email Verification
     path('auth/verify-otp/', verify_email_otp, name='verify_otp'),  # Step 2: Verify OTP + Activate
     path('auth/resend-otp/', resend_otp_code, name='resend_otp'),   # Resend if needed
+    
+    # Google OAuth
+    path('auth/google/', google_auth, name='google_auth'),           # Google access token auth
+    path('auth/google-login/', google_login, name='google_login'),   # Google ID token auth
     
     # Dashboard
     path('dashboard/stats/', dashboard_stats, name='dashboard_stats'),
