@@ -5,38 +5,66 @@ services:
   db:
     image: postgres:15-alpine
     container_name: apk-db
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: dropshipping_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${DB_NAME:-dropshipping_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - apk-network
+    restart: unless-stopped
 
   # Django Backend
   backend:
     build: .
     container_name: apk-backend
     command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
     environment:
-      DEBUG: "True"
+      DEBUG: "True"      git add .
+      git commit -m "feat: configure docker-compose with environment variables and add email OTP system
+      
+      - Switch from SQLite to PostgreSQL database in Docker
+      - Add env_file support to docker-compose.yml for secure credential management
+      - Configure all services (backend, db, redis) with proper environment variables
+      - Add Redis cache container with healthcheck
+      - Implement Gmail SMTP email configuration for OTP delivery
+      - Update backend to use environment variables from .env file
+      - Add restart policies and healthchecks to all services
+      - Support both development (console) and production (SMTP) email backends
+      - Ensure sensitive data is never committed (credentials in .env)
+      
+      Services configured:
+      - PostgreSQL 15 database with persistent volumes
+      - Django REST backend with auto-restart
+      - Redis 7 cache layer with persistence
+      - Email OTP system for user registration verification"
       SECRET_KEY: "django-insecure-change-this-in-production"
-      DATABASE_URL: "postgresql://postgres:postgres123@db:5432/dropshipping_db"
-      GOOGLE_CLIENT_ID: "your-google-client-id"
-      GOOGLE_CLIENT_SECRET: "your-google-client-secret"
-      EMAIL_BACKEND: "django.core.mail.backends.console.EmailBackend"
-      EMAIL_HOST: "smtp.gmail.com"
-      EMAIL_PORT: "587"
-      EMAIL_USE_TLS: "True"
-      EMAIL_HOST_USER: "your-email@gmail.com"
-      EMAIL_HOST_PASSWORD: "your-app-password"
-      ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres123}@db:5432/${DB_NAME:-dropshipping_db}"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      REDIS_URL: "redis://redis:6379/0"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@dropshippingfinder.com}
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}"
     volumes:
       - .:/app
     ports:
@@ -44,20 +72,32 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - apk-network
+    restart: unless-stopped
 
-  # Redis Cache (Optional)
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: apk-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - apk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   apk-network:
