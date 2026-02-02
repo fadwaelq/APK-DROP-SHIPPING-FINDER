@@ -80,21 +80,22 @@ class TrendAlertAdmin(admin.ModelAdmin):
 
 @admin.register(ScrapingJob)
 class ScrapingJobAdmin(admin.ModelAdmin):
-    list_display = ['source', 'category', 'status', 'products_scraped', 'started_at', 'completed_at']
-    list_filter = ['source', 'status', 'created_at']
-    readonly_fields = ['created_at', 'started_at', 'completed_at']
+    list_display = ['url', 'user', 'status', 'started_at', 'ended_at', 'is_success']
+    list_filter = ['status', 'started_at']
+    readonly_fields = ['started_at', 'ended_at', 'duration', 'is_success']
+    search_fields = ['url', 'user__username']
     
     fieldsets = (
-        ('Job Information', {
-            'fields': ('source', 'category', 'status')
+        ('Scraping Information', {
+            'fields': ('url', 'user', 'product')
         }),
-        ('Statistics', {
-            'fields': ('products_scraped', 'products_created', 'products_updated')
-        }),
-        ('Error Information', {
-            'fields': ('error_message',)
+        ('Status', {
+            'fields': ('status', 'error_message')
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'started_at', 'completed_at')
+            'fields': ('started_at', 'ended_at', 'duration')
+        }),
+        ('Results', {
+            'fields': ('is_success',)
         }),
     )

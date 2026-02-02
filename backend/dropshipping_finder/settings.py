@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'core',
     'ai_engine',
     'tor_proxy',
+    'integrations',
 ]
 
 MIDDLEWARE = [
@@ -82,17 +83,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dropshipping_finder.wsgi.application'
 
 # Database
-# Use PostgreSQL for production (Docker)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'dropshipping_db'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres123'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+# Use SQLite for development (avoids encoding issues), PostgreSQL for production (Docker)
+if os.getenv('USE_POSTGRES', 'false').lower() == 'true':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'dropshipping_db'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres123'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
+else:
+    # SQLite for development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -174,6 +184,32 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Celery Beat Schedule (Scheduled Tasks)
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # Daily trending products scrape - runs at midnight
+    'scrape-trending-daily': {
+        'task': 'integrations.scrape_trending_daily',
+        'schedule': crontab(hour=0, minute=0),
+        'options': {'expires': 3600}  # Task expires in 1 hour if not executed
+    },
+    
+    # Update trending flags - runs every 4 hours
+    'update-trending-flags': {
+        'task': 'integrations.update_trending_flags',
+        'schedule': crontab(hour='*/4'),  # Every 4 hours
+        'options': {'expires': 900}  # Expires in 15 minutes
+    },
+    
+    # Cleanup old scraping jobs - runs weekly on Sunday at 3:00 AM
+    'cleanup-old-jobs': {
+        'task': 'integrations.cleanup_old_scraping_jobs',
+        'schedule': crontab(day_of_week=6, hour=3, minute=0),  # Sunday 03:00
+        'options': {'expires': 3600}
+    },
+}
 
 # Tor Configuration
 TOR_PROXY_HOST = os.getenv('TOR_PROXY_HOST', '127.0.0.1')
