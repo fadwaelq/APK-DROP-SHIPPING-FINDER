@@ -36,7 +36,7 @@ def create_test_products():
             'is_trending': True,
         },
         {
-            'title': 'Smart Watch Fitness Tracker',
+            'name': 'Smart Watch Fitness Tracker',
             'description': 'Waterproof smartwatch with heart rate monitor and GPS tracking',
             'price': Decimal('45.50'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=SmartWatch',
@@ -49,7 +49,7 @@ def create_test_products():
             'supplier_name': 'WatchPro Official',
         },
         {
-            'title': 'LED Strip Lights RGB 5M',
+            'name': 'LED Strip Lights RGB 5M',
             'description': 'Color changing LED lights with remote control and music sync',
             'price': Decimal('15.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=LED+Lights',
@@ -62,7 +62,7 @@ def create_test_products():
             'supplier_name': 'LightMaster Store',
         },
         {
-            'title': 'Phone Camera Lens Kit 3-in-1',
+            'name': 'Phone Camera Lens Kit 3-in-1',
             'description': 'Professional phone camera lenses: wide angle, macro, and fisheye',
             'price': Decimal('12.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Camera+Lens',
@@ -75,7 +75,7 @@ def create_test_products():
             'supplier_name': 'PhotoPro Shop',
         },
         {
-            'title': 'Portable Mini Projector HD',
+            'name': 'Portable Mini Projector HD',
             'description': 'Compact HD projector for home cinema, supports 1080p',
             'price': Decimal('89.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Projector',
@@ -88,7 +88,7 @@ def create_test_products():
             'supplier_name': 'CinemaHome Store',
         },
         {
-            'title': 'Wireless Phone Charger Fast Charging',
+            'name': 'Wireless Phone Charger Fast Charging',
             'description': '15W fast wireless charger compatible with all Qi devices',
             'price': Decimal('18.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Wireless+Charger',
@@ -101,7 +101,7 @@ def create_test_products():
             'supplier_name': 'ChargeTech Official',
         },
         {
-            'title': 'Bluetooth Speaker Waterproof',
+            'name': 'Bluetooth Speaker Waterproof',
             'description': 'Portable waterproof speaker with 12h battery and bass boost',
             'price': Decimal('25.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Speaker',
@@ -114,7 +114,7 @@ def create_test_products():
             'supplier_name': 'SoundWave Store',
         },
         {
-            'title': 'Gaming Mouse RGB Wireless',
+            'name': 'Gaming Mouse RGB Wireless',
             'description': 'Professional gaming mouse with 7 programmable buttons and RGB lighting',
             'price': Decimal('32.50'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Gaming+Mouse',
@@ -127,7 +127,7 @@ def create_test_products():
             'supplier_name': 'GamePro Official',
         },
         {
-            'title': 'Car Phone Holder Magnetic',
+            'name': 'Car Phone Holder Magnetic',
             'description': 'Strong magnetic car mount for dashboard or windshield',
             'price': Decimal('8.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Car+Holder',
@@ -140,7 +140,7 @@ def create_test_products():
             'supplier_name': 'AutoTech Store',
         },
         {
-            'title': 'Fitness Resistance Bands Set',
+            'name': 'Fitness Resistance Bands Set',
             'description': '5-piece resistance band set for home workout and yoga',
             'price': Decimal('14.99'),
             'image_url': 'https://via.placeholder.com/300x300.png?text=Resistance+Bands',
@@ -169,13 +169,12 @@ def create_test_products():
         
         if created:
             created_count += 1
-            print(f"✅ Created: {product.title}")
+            print(f"✅ Created: {product.name}")
         else:
             updated_count += 1
-            print(f"🔄 Updated: {product.title}")
+            print(f"🔄 Updated: {product.name}")
         
-        # Calculate AI score
-        product.calculate_ai_score()
+        # Save product (AI score calculation skipped)
         product.save()
     
     print("\n" + "=" * 60)
