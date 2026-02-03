@@ -32,24 +32,7 @@ services:
     env_file:
       - .env
     environment:
-      DEBUG: "True"      git add .
-      git commit -m "feat: configure docker-compose with environment variables and add email OTP system
-      
-      - Switch from SQLite to PostgreSQL database in Docker
-      - Add env_file support to docker-compose.yml for secure credential management
-      - Configure all services (backend, db, redis) with proper environment variables
-      - Add Redis cache container with healthcheck
-      - Implement Gmail SMTP email configuration for OTP delivery
-      - Update backend to use environment variables from .env file
-      - Add restart policies and healthchecks to all services
-      - Support both development (console) and production (SMTP) email backends
-      - Ensure sensitive data is never committed (credentials in .env)
-      
-      Services configured:
-      - PostgreSQL 15 database with persistent volumes
-      - Django REST backend with auto-restart
-      - Redis 7 cache layer with persistence
-      - Email OTP system for user registration verification"
+      DEBUG: "True"
       SECRET_KEY: "django-insecure-change-this-in-production"
       DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres123}@db:5432/${DB_NAME:-dropshipping_db}"
       DB_HOST: "db"
@@ -58,13 +41,6 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
-      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
-      EMAIL_PORT: ${EMAIL_PORT:-587}
-      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
-      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
-      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@dropshippingfinder.com}
-      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}"
     volumes:
       - .:/app
     ports:

@@ -186,31 +186,7 @@ class TrendAlert(models.Model):
         return f"{self.alert_type}: {self.title}"
 
 
-class ScrapingJob(models.Model):
-    """Track scraping jobs for data collection"""
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('running', 'Running'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-    ]
-    
-    source = models.CharField(max_length=20)
-    category = models.CharField(max_length=50, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    products_scraped = models.IntegerField(default=0)
-    products_created = models.IntegerField(default=0)
-    products_updated = models.IntegerField(default=0)
-    error_message = models.TextField(blank=True)
-    started_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.source} - {self.status}"
+
 
 
 class EmailOTP(models.Model):
@@ -238,3 +214,49 @@ class EmailOTP(models.Model):
     @property
     def is_active(self):
         return not self.is_expired and not self.is_verified
+
+
+class ScrapingJob(models.Model):
+    """
+    Track product scraping jobs
+    Records scraping history, status, and results
+    """
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
+    url = models.URLField(max_length=2000)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='scraping_jobs')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='scraping_jobs')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True, null=True)
+    
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-started_at']
+        indexes = [
+            models.Index(fields=['status', '-started_at']),
+            models.Index(fields=['user', '-started_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.url[:50]} - {self.status}"
+    
+    @property
+    def duration(self):
+        """Get scraping duration in seconds"""
+        if self.ended_at and self.started_at:
+            return (self.ended_at - self.started_at).total_seconds()
+        return None
+    
+    @property
+    def is_success(self):
+        """Check if scraping was successful"""
+        return self.status == 'completed' and self.product is not None
+

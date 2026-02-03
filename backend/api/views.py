@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate
 from django.db.models import Q, Count
 from django_filters.rest_framework import DjangoFilterBackend
 from core.scrapers.aliexpress_import import import_product_from_aliexpress
-
+import logging
 
 from core.models import (
     UserProfile, Product, Favorite, ProductView,
@@ -28,7 +28,8 @@ from core.email_service import (
 )
 # Temporarily commented out for initial setup
 from ai_engine.scoring import ProductScorer, TrendAnalyzer
-
+# Configure logger
+logger = logging.getLogger(__name__)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -299,6 +300,218 @@ class ProductViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
+    # ============================================
+    # PUPPETEER-BASED SCRAPING ENDPOINTS
+    # ============================================
+    
+    @action(detail=False, methods=['post'], url_path="scrape-puppeteer")
+    def scrape_with_puppeteer(self, request):
+        """
+        Import product using Puppeteer (async)
+        Handles JavaScript-rendered content including dynamic prices
+        
+        Endpoint: POST /api/products/scrape-puppeteer/
+        Body: {"url": "https://www.aliexpress.com/item/..."}
+        Response: 202 Accepted with task_id
+        """
+        from integrations.tasks import scrape_product_with_puppeteer
+        
+        url = request.data.get('url')
+        
+        if not url:
+            return Response(
+                {'error': 'URL is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate URL
+        if not url.startswith('https://www.aliexpress.com'):
+            return Response(
+                {'error': 'Only AliExpress URLs supported. URL must start with https://www.aliexpress.com'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Queue async task
+        task = scrape_product_with_puppeteer.delay(url, request.user.id if request.user.is_authenticated else None)
+        
+        return Response({
+            'status': 'queued',
+            'task_id': task.id,
+            'message': 'Product scraping started. Check status with task_id',
+            'status_url': f'/api/products/scrape-status/{task.id}/',
+        }, status=status.HTTP_202_ACCEPTED)
+    
+    @action(detail=False, methods=['get'], url_path="scrape-status/(?P<task_id>[^/.]+)")
+    def scrape_status(self, request, task_id):
+        """
+        Check scraping task status
+        
+        Endpoint: GET /api/products/scrape-status/{task_id}/
+        Response: Task status and result
+        """
+        from celery.result import AsyncResult
+        
+        task_result = AsyncResult(task_id)
+        
+        response_data = {
+            'task_id': task_id,
+            'status': task_result.status,
+        }
+        
+        if task_result.state == 'SUCCESS':
+            response_data['result'] = task_result.result
+        elif task_result.state == 'FAILURE':
+            response_data['error'] = str(task_result.info)
+        elif task_result.state == 'PENDING':
+            response_data['message'] = 'Task is pending'
+        elif task_result.state == 'RETRY':
+            response_data['message'] = 'Task is retrying'
+        
+        return Response(response_data)
+    
+    @action(detail=False, methods=['post'], url_path="scrape-batch")
+    def scrape_batch(self, request):
+        """
+        Scrape multiple products using Puppeteer (async batch)
+        
+        Endpoint: POST /api/products/scrape-batch/
+        Body: {"urls": ["https://...", "https://..."]}
+        Response: 202 Accepted with batch_id
+        """
+        from integrations.tasks import scrape_batch_products
+        
+        urls = request.data.get('urls', [])
+        
+        if not urls or not isinstance(urls, list):
+            return Response(
+                {'error': 'urls must be a list of URLs'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if len(urls) > 50:
+            return Response(
+                {'error': 'Maximum 50 URLs per batch'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate all URLs
+        for url in urls:
+            if not isinstance(url, str) or not url.startswith('https://www.aliexpress.com'):
+                return Response(
+                    {'error': f'Invalid URL: {url}. Must be AliExpress URLs'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Queue batch task
+        task = scrape_batch_products.delay(urls, request.user.id if request.user.is_authenticated else None)
+        
+        return Response({
+            'status': 'queued',
+            'task_id': task.id,
+            'total_urls': len(urls),
+            'message': f'Batch scraping started for {len(urls)} products',
+            'status_url': f'/api/products/scrape-status/{task.id}/',
+        }, status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=False, methods=['post'], url_path="scrape-simple")
+    def scrape_simple(self, request):
+        """
+        Simple synchronous scraping endpoint (no Celery required)
+        Good for development/testing on Windows
+        
+        Endpoint: POST /api/products/scrape-simple/
+        Body: {"url": "https://www.aliexpress.com/item/..."}
+        Response: 200 OK with scraped data immediately
+        
+        Note: This is synchronous - request will wait for scraping to complete
+        """
+        url = request.data.get('url')
+        
+        if not url:
+            return Response(
+                {'error': 'URL is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate URL
+        if not url.startswith('https://www.aliexpress.com'):
+            return Response(
+                {'error': 'Only AliExpress URLs supported. URL must start with https://www.aliexpress.com'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Use the existing import function (synchronous, no Celery)
+            data = import_product_from_aliexpress(url)
+            
+            if not data:
+                return Response(
+                    {'error': 'Scraping failed - could not extract product data'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Handle price extraction
+            try:
+                price = float(data.get("price", 0))
+                if price == 0:
+                    price = None
+            except (ValueError, TypeError):
+                price = None
+            
+            # Use default price if not found
+            if price is None or price == 0:
+                category_defaults = {
+                    "tech": 25.0,
+                    "electronics": 30.0,
+                    "clothing": 15.0,
+                    "home": 20.0,
+                    "beauty": 12.0,
+                }
+                price = category_defaults.get(data.get("category", "tech").lower(), 20.0)
+                price_source = "estimated"
+            else:
+                price_source = "scraped"
+            
+            # Calculate profit
+            cost = float(data.get("cost", price * 0.3)) if price > 0 else 0
+            profit = price - cost
+            
+            # Create or update product
+            product, created = Product.objects.update_or_create(
+                source_url=url,
+                defaults={
+                    'name': data.get("title", "Unknown Product"),
+                    'description': data.get("description", "Imported from AliExpress"),
+                    'price': price,
+                    'cost': cost,
+                    'profit': profit,
+                    'source': 'aliexpress',
+                    'source_id': data.get("source_id", url.split('/')[-1]),
+                    'category': data.get("category", "tech"),
+                    'image_url': data.get("image", data.get("images", [])[0] if data.get("images") else ""),
+                    'images': data.get("images", []),
+                    'supplier_name': data.get("supplier", "Unknown"),
+                    'supplier_rating': float(data.get("rating", 0)),
+                    'supplier_review_count': int(data.get("review_count", 0)),
+                    'trend_percentage': float(data.get("trend_percentage", 0)),
+                }
+            )
+            
+            response_data = ProductSerializer(product).data
+            response_data['price_source'] = price_source
+            
+            if price_source == "estimated":
+                response_data["warning"] = f"Price was estimated (${price:.2f}). Please verify on AliExpress."
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            import traceback
+            logger.error(f"Scraping error: {str(e)}\n{traceback.format_exc()}")
+            return Response(
+                {'error': f'Scraping failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
