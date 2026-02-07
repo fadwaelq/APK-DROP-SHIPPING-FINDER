@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'api',
     'core',
     'ai_engine',
-    'tor_proxy',
     'integrations',
 ]
 
