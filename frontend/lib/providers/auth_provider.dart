@@ -62,45 +62,54 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> login(String email, String password, {bool rememberMe = false}) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  
+Future<Map<String, dynamic>> login(String email, String password, {bool rememberMe = false}) async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
 
-    try {
-      final response = await _apiService.login(email, password, rememberMe: rememberMe);
+  try {
+    final response = await _apiService.login(email, password, rememberMe: rememberMe);
 
-      if (response['success']) {
-        final data = response['data'];
-        final tokens = data['tokens'];
-        _token = tokens['access'];
-        _user = User.fromJson(data['user']);
+    if (response['success']) {
+      final token = response['token'];
+      final refresh = response['refresh'];
+      final userData = response['user'];
 
-        await _secureStorage.saveAuthToken(_token!);
-        await _secureStorage.saveRefreshToken(tokens['refresh']);
-        await _secureStorage.saveUserData(jsonEncode(data['user']));
-        _apiService.setAuthToken(_token!);
-
-        _isLoading = false;
-        Future.microtask(() => notifyListeners());
-        return {'success': true};
-      } else {
-        _error = response['message'] ?? response['message_code'] ?? 'Login failed';
-        _isLoading = false;
-        notifyListeners();
-        return {
-          'success': false,
-          'message': _error,
-          'message_code': response['message_code'],
-        };
+      if (token == null) {
+        throw Exception('Token manquant dans la réponse API');
       }
-    } catch (e) {
-      _error = 'Network error: ${e.toString()}';
+
+      _token = token;
+      _user = User.fromJson(userData);
+
+      // Sauvegarde sécurisée
+      await _secureStorage.saveAuthToken(_token!);
+      await _secureStorage.saveRefreshToken(refresh);
+      await _secureStorage.saveUserData(jsonEncode(userData));
+
+      _apiService.setAuthToken(_token!);
+
       _isLoading = false;
       notifyListeners();
-      return {'success': false, 'message': _error};
+      return {'success': true};
+    } else {
+      _error = response['message'] ?? response['message_code'] ?? 'Login failed';
+      _isLoading = false;
+      notifyListeners();
+      return {
+        'success': false,
+        'message': _error,
+        'message_code': response['message_code'],
+      };
     }
+  } catch (e) {
+    _error = 'Network error: ${e.toString()}';
+    _isLoading = false;
+    notifyListeners();
+    return {'success': false, 'message': _error};
   }
+}
 
   /// Google Sign-In
   Future<Map<String, dynamic>> loginWithGoogle() async {
