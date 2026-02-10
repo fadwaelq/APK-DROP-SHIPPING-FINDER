@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_verification_code_field/flutter_verification_code_field.dart';
@@ -100,7 +102,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(height: AppTheme.spacingXL),
+            const SizedBox(height: AppTheme.spacingXL),
 
             // Icon
             Container(
@@ -110,14 +112,14 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                 color: AppTheme.primaryOrange.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.email_outlined,
                 size: 50,
                 color: AppTheme.primaryOrange,
               ),
             ),
 
-            SizedBox(height: AppTheme.spacingXL),
+            const SizedBox(height: AppTheme.spacingXL),
 
             // Title
             Text(
@@ -128,18 +130,18 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
               ),
             ),
 
-            SizedBox(height: AppTheme.spacingM),
+            const SizedBox(height: AppTheme.spacingM),
 
             // Description
             Text(
-              'Un code de vérification à 4 chiffres a été envoyé à',
+              'Un code de vérification à 6 chiffres a été envoyé à',
               textAlign: TextAlign.center,
               style: AppTheme.bodyLarge.copyWith(
                 color: AppTheme.textSecondary,
               ),
             ),
 
-            SizedBox(height: AppTheme.spacingS),
+            const SizedBox(height: AppTheme.spacingS),
 
             Text(
               widget.email,
@@ -150,22 +152,22 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
               ),
             ),
 
-            SizedBox(height: AppTheme.spacingXL),
+            const SizedBox(height: AppTheme.spacingXL),
 
             // OTP Input
             VerificationCodeField(
-              length: 4,
+              length: 6,
               onFilled: (value) {
                 setState(() {
                   _otpValue = value;
                 });
               },
               size: const Size(40, 60),
-              spaceBetween: 26,
+              spaceBetween: 15,
               matchingPattern: RegExp(r'^\d+$'),
             ),
 
-            SizedBox(height: AppTheme.spacingL),
+            const SizedBox(height: AppTheme.spacingL),
 
             // Verify Button
             ElevatedButton(
@@ -184,7 +186,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                 shadowColor: Colors.transparent,
               ),
               child: _isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
@@ -200,7 +202,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                     ),
             ),
 
-            SizedBox(height: AppTheme.spacingL),
+            const SizedBox(height: AppTheme.spacingL),
 
             // Resend OTP
             Row(
@@ -220,7 +222,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: _isResending
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 16,
                           width: 16,
                           child: CircularProgressIndicator(
@@ -239,7 +241,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
               ],
             ),
 
-            SizedBox(height: AppTheme.spacingM),
+            const SizedBox(height: AppTheme.spacingM),
 
             // Info Box
             Container(
@@ -253,12 +255,12 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: AppTheme.infoBlue,
                     size: 20,
                   ),
-                  SizedBox(width: AppTheme.spacingS),
+                  const SizedBox(width: AppTheme.spacingS),
                   Expanded(
                     child: Text(
                       'Le code expire après 10 minutes',
@@ -271,7 +273,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
               ),
             ),
 
-            SizedBox(height: AppTheme.spacingXXL),
+            const SizedBox(height: AppTheme.spacingXXL),
           ],
         ),
       ),

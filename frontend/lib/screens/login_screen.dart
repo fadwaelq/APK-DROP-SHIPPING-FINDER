@@ -245,7 +245,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                      //  Navigator.of(context).push(
+                      //       MaterialPageRoute(
+                      //           builder: (_) =>  ForgotPasswordScreen()),
+                      //     );
+                      },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
