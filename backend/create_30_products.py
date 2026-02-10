@@ -1,7 +1,6 @@
 import os
 import sys
 import django
-from decimal import Decimal
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dropshipping_finder.settings')
@@ -10,377 +9,82 @@ django.setup()
 
 from core.models import Product
 
-def create_30_products():
-    """Create 30 diverse sample products"""
+# Valid product images from Unsplash
+IMAGE_URLS = {
+    'Wireless USB-C Headphones': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
+    'Fast Charging 65W Power Adapter': 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500&h=500&fit=crop',
+    'Portable SSD 1TB External Drive': 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500&h=500&fit=crop',
+    '4K USB Camera for Video Conference': 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop',
+    'Mechanical Gaming Keyboard RGB': 'https://images.unsplash.com/photo-1587829191301-7ce2f3dbe3cb?w=500&h=500&fit=crop',
+    'Wireless Mouse 2.4GHz Precision': 'https://images.unsplash.com/photo-1527814050087-3793815479db?w=500&h=500&fit=crop',
+    'USB Hub 7-Port 3.0 with Power': 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500&h=500&fit=crop',
+    'Laptop Cooling Pad with Fans': 'https://images.unsplash.com/photo-1588872657840-e78f119e0c71?w=500&h=500&fit=crop',
+    'Phone Stand Adjustable Aluminum': 'https://images.unsplash.com/photo-1605559424843-9e4c3effc877?w=500&h=500&fit=crop',
+    'Tablet Stylus Pen Precision 4096': 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=500&h=500&fit=crop',
+    
+    # Home
+    'LED Smart Bulb WiFi RGB': 'https://images.unsplash.com/photo-1565636192335-14f8d8d5b95f?w=500&h=500&fit=crop',
+    'Smart Door Lock WiFi Keyless': 'https://images.unsplash.com/photo-1557522954816-8cdf29e7b9f8?w=500&h=500&fit=crop',
+    'Robot Vacuum Cleaner Smart': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop',
+    'Air Humidifier Ultrasonic 2L': 'https://images.unsplash.com/photo-1589293476549-5b0267db2c09?w=500&h=500&fit=crop',
+    'Smart Thermostat WiFi Control': 'https://images.unsplash.com/photo-1545259741-2ea3ebdc61fa?w=500&h=500&fit=crop',
+    'Electric Kettle Temperature Control': 'https://images.unsplash.com/photo-1591290621749-b4b9ebf1c620?w=500&h=500&fit=crop',
+    'Wireless Doorbell Smart Camera': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop',
+    'Bedside Lamp with USB Charging': 'https://images.unsplash.com/photo-1565636192335-14f8d8d5b95f?w=500&h=500&fit=crop',
+    
+    # Fashion
+    'Polarized Sunglasses UV Protection': 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&h=500&fit=crop',
+    'Canvas Backpack Travel School': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&h=500&fit=crop',
+    'Leather Wallet RFID Protection': 'https://images.unsplash.com/photo-1504224155058-0a13dfeadb3e?w=500&h=500&fit=crop',
+    'Stainless Steel Watch Unisex': 'https://images.unsplash.com/photo-1523170335684-f042f1995e39?w=500&h=500&fit=crop',
+    'Baseball Cap Adjustable Cotton': 'https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=500&h=500&fit=crop',
+    'Phone Case Leather Slim Fit': 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop',
+    'Bluetooth Speaker Portable Mini': 'https://images.unsplash.com/photo-1589003077984-894e133814c9?w=500&h=500&fit=crop',
+    
+    # Sport
+    'Yoga Mat Extra Thick Non-Slip': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=500&h=500&fit=crop',
+    'Resistance Bands Set 5 Levels': 'https://images.unsplash.com/photo-1517836357463-d25ddfcbf042?w=500&h=500&fit=crop',
+    'Dumbbells Adjustable Weight Set': 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&h=500&fit=crop',
+    'Jump Rope Speed Training Bearing': 'https://images.unsplash.com/photo-1517836357463-d25ddfcbf042?w=500&h=500&fit=crop',
+    'Foam Roller Muscle Recovery': 'https://images.unsplash.com/photo-1570829460005-c840387bb1ca?w=500&h=500&fit=crop',
+}
+
+def update_product_images():
+    """Update all products with valid Unsplash image URLs"""
     
     print("\n" + "="*60)
-    print("🎯 CREATING 30 PRODUCTS...")
+    print("🖼️  UPDATING PRODUCT IMAGES...")
     print("="*60 + "\n")
     
-    products_data = [
-        # Electronics - Tech (10 products)
-        {
-            'name': 'Wireless USB-C Headphones',
-            'description': 'Premium wireless headphones with active noise cancellation and 30-hour battery life',
-            'price': 89.99,
-            'cost': 25.00,
-            'category': 'tech',
-            'supplier_rating': 4.8,
-            'supplier_review_count': 1250,
-            'is_trending': True,
-        },
-        {
-            'name': 'Fast Charging 65W Power Adapter',
-            'description': 'Universal fast charger compatible with all devices, compact design',
-            'price': 29.99,
-            'cost': 8.50,
-            'category': 'tech',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 2890,
-            'is_trending': True,
-        },
-        {
-            'name': 'Portable SSD 1TB External Drive',
-            'description': '1TB portable SSD with USB 3.1, extremely durable and fast',
-            'price': 119.99,
-            'cost': 45.00,
-            'category': 'tech',
-            'supplier_rating': 4.7,
-            'supplier_review_count': 1560,
-            'is_trending': True,
-        },
-        {
-            'name': '4K USB Camera for Video Conference',
-            'description': 'Professional 4K webcam with auto-focus and noise reduction',
-            'price': 74.99,
-            'cost': 20.00,
-            'category': 'tech',
-            'supplier_rating': 4.5,
-            'supplier_review_count': 890,
-            'is_trending': False,
-        },
-        {
-            'name': 'Mechanical Gaming Keyboard RGB',
-            'description': 'Professional mechanical keyboard with RGB lights and macro keys',
-            'price': 99.99,
-            'cost': 28.00,
-            'category': 'tech',
-            'supplier_rating': 4.9,
-            'supplier_review_count': 2100,
-            'is_trending': True,
-        },
-        {
-            'name': 'Wireless Mouse 2.4GHz Precision',
-            'description': 'Ergonomic wireless mouse with precision tracking, 18-month battery',
-            'price': 19.99,
-            'cost': 5.00,
-            'category': 'tech',
-            'supplier_rating': 4.4,
-            'supplier_review_count': 3400,
-            'is_trending': False,
-        },
-        {
-            'name': 'USB Hub 7-Port 3.0 with Power',
-            'description': 'High-speed USB hub with individual switches and power adapter',
-            'price': 34.99,
-            'cost': 9.50,
-            'category': 'tech',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 1200,
-            'is_trending': False,
-        },
-        {
-            'name': 'Laptop Cooling Pad with Fans',
-            'description': 'Electric cooling pad with dual fans to keep laptop cool',
-            'price': 24.99,
-            'cost': 7.00,
-            'category': 'tech',
-            'supplier_rating': 4.3,
-            'supplier_review_count': 950,
-            'is_trending': False,
-        },
-        {
-            'name': 'Phone Stand Adjustable Aluminum',
-            'description': 'Heavy-duty aluminum phone stand for desk, adjustable height',
-            'price': 15.99,
-            'cost': 3.50,
-            'category': 'tech',
-            'supplier_rating': 4.7,
-            'supplier_review_count': 2560,
-            'is_trending': False,
-        },
-        {
-            'name': 'Tablet Stylus Pen Precision 4096',
-            'description': 'Professional stylus pen with 4096 pressure levels',
-            'price': 44.99,
-            'cost': 12.00,
-            'category': 'tech',
-            'supplier_rating': 4.5,
-            'supplier_review_count': 680,
-            'is_trending': False,
-        },
-
-        # Home & Garden (8 products)
-        {
-            'name': 'LED Smart Bulb WiFi RGB',
-            'description': 'Smart LED bulb with WiFi control, 16 million colors, voice control',
-            'price': 14.99,
-            'cost': 3.50,
-            'category': 'home',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 4200,
-            'is_trending': True,
-        },
-        {
-            'name': 'Smart Door Lock WiFi Keyless',
-            'description': 'Smart door lock with fingerprint and app control',
-            'price': 89.99,
-            'cost': 28.00,
-            'category': 'home',
-            'supplier_rating': 4.4,
-            'supplier_review_count': 1340,
-            'is_trending': True,
-        },
-        {
-            'name': 'Robot Vacuum Cleaner Smart',
-            'description': 'Autonomous vacuum with smart mapping and app control',
-            'price': 199.99,
-            'cost': 65.00,
-            'category': 'home',
-            'supplier_rating': 4.7,
-            'supplier_review_count': 2800,
-            'is_trending': True,
-        },
-        {
-            'name': 'Air Humidifier Ultrasonic 2L',
-            'description': 'Quiet ultrasonic humidifier with aromatherapy function',
-            'price': 29.99,
-            'cost': 8.00,
-            'category': 'home',
-            'supplier_rating': 4.5,
-            'supplier_review_count': 1560,
-            'is_trending': False,
-        },
-        {
-            'name': 'Smart Thermostat WiFi Control',
-            'description': 'WiFi thermostat with learning technology and remote control',
-            'price': 79.99,
-            'cost': 22.00,
-            'category': 'home',
-            'supplier_rating': 4.8,
-            'supplier_review_count': 3100,
-            'is_trending': True,
-        },
-        {
-            'name': 'Electric Kettle Temperature Control',
-            'description': 'Smart electric kettle with temperature control and timer',
-            'price': 34.99,
-            'cost': 9.00,
-            'category': 'home',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 2200,
-            'is_trending': False,
-        },
-        {
-            'name': 'Wireless Doorbell Smart Camera',
-            'description': 'WiFi video doorbell with night vision and motion detection',
-            'price': 59.99,
-            'cost': 16.00,
-            'category': 'home',
-            'supplier_rating': 4.7,
-            'supplier_review_count': 1890,
-            'is_trending': True,
-        },
-        {
-            'name': 'Bedside Lamp with USB Charging',
-            'description': 'Modern LED bedside lamp with integrated USB charging port',
-            'price': 24.99,
-            'cost': 6.00,
-            'category': 'home',
-            'supplier_rating': 4.4,
-            'supplier_review_count': 890,
-            'is_trending': False,
-        },
-
-        # Fashion & Accessories (7 products)
-        {
-            'name': 'Polarized Sunglasses UV Protection',
-            'description': 'Premium polarized sunglasses with UV400 protection',
-            'price': 39.99,
-            'cost': 10.00,
-            'category': 'fashion',
-            'supplier_rating': 4.5,
-            'supplier_review_count': 2100,
-            'is_trending': False,
-        },
-        {
-            'name': 'Canvas Backpack Travel School',
-            'description': 'Durable canvas backpack with laptop compartment',
-            'price': 44.99,
-            'cost': 12.00,
-            'category': 'fashion',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 3200,
-            'is_trending': False,
-        },
-        {
-            'name': 'Leather Wallet RFID Protection',
-            'description': 'Slim leather wallet with RFID blocking technology',
-            'price': 24.99,
-            'cost': 6.50,
-            'category': 'fashion',
-            'supplier_rating': 4.7,
-            'supplier_review_count': 1450,
-            'is_trending': False,
-        },
-        {
-            'name': 'Stainless Steel Watch Unisex',
-            'description': 'Classic stainless steel watch with water resistance',
-            'price': 49.99,
-            'cost': 14.00,
-            'category': 'fashion',
-            'supplier_rating': 4.8,
-            'supplier_review_count': 2800,
-            'is_trending': True,
-        },
-        {
-            'name': 'Baseball Cap Adjustable Cotton',
-            'description': 'Comfortable adjustable cotton baseball cap',
-            'price': 12.99,
-            'cost': 2.50,
-            'category': 'fashion',
-            'supplier_rating': 4.3,
-            'supplier_review_count': 890,
-            'is_trending': False,
-        },
-        {
-            'name': 'Phone Case Leather Slim Fit',
-            'description': 'Slim leather phone case with precise cutouts',
-            'price': 19.99,
-            'cost': 4.00,
-            'category': 'fashion',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 4100,
-            'is_trending': False,
-        },
-        {
-            'name': 'Bluetooth Speaker Portable Mini',
-            'description': 'Portable mini Bluetooth speaker with deep bass',
-            'price': 34.99,
-            'cost': 9.00,
-            'category': 'fashion',
-            'supplier_rating': 4.5,
-            'supplier_review_count': 2340,
-            'is_trending': False,
-        },
-
-        # Sports & Fitness (5 products)
-        {
-            'name': 'Yoga Mat Extra Thick Non-Slip',
-            'description': 'Premium thick yoga mat with non-slip surface',
-            'price': 29.99,
-            'cost': 8.00,
-            'category': 'sport',
-            'supplier_rating': 4.7,
-            'supplier_review_count': 2100,
-            'is_trending': False,
-        },
-        {
-            'name': 'Resistance Bands Set 5 Levels',
-            'description': '5-pack resistance bands for full body workout',
-            'price': 19.99,
-            'cost': 4.50,
-            'category': 'sport',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 3400,
-            'is_trending': True,
-        },
-        {
-            'name': 'Dumbbells Adjustable Weight Set',
-            'description': 'Adjustable dumbbell set from 2.5kg to 10kg',
-            'price': 89.99,
-            'cost': 28.00,
-            'category': 'sport',
-            'supplier_rating': 4.8,
-            'supplier_review_count': 1890,
-            'is_trending': True,
-        },
-        {
-            'name': 'Jump Rope Speed Training Bearing',
-            'description': 'Professional jump rope with bearing handles',
-            'price': 14.99,
-            'cost': 3.00,
-            'category': 'sport',
-            'supplier_rating': 4.5,
-            'supplier_review_count': 1200,
-            'is_trending': False,
-        },
-        {
-            'name': 'Foam Roller Muscle Recovery',
-            'description': 'High-density foam roller for muscle massage',
-            'price': 24.99,
-            'cost': 6.50,
-            'category': 'sport',
-            'supplier_rating': 4.6,
-            'supplier_review_count': 2300,
-            'is_trending': False,
-        },
-    ]
+    updated_count = 0
+    not_found_count = 0
     
-    created_count = 0
-    skipped_count = 0
-    
-    for data in products_data:
-        try:
-            # Check if product already exists
-            if Product.objects.filter(name=data['name']).exists():
-                skipped_count += 1
-                print(f"   ⏭️  Skipped: {data['name']} (already exists)")
-                continue
-            
-            # Create product
-            product = Product.objects.create(
-                name=data['name'],
-                description=data['description'],
-                price=Decimal(str(data['price'])),
-                cost=Decimal(str(data['cost'])),
-                profit=Decimal(str(data['price'] - data['cost'])),
-                category=data['category'],
-                source='aliexpress',
-                source_url=f"https://www.aliexpress.com/item/{created_count}/",
-                source_id=f"test_{created_count}",
-                image_url=f"https://ae01.alicdn.com/kf/test_{created_count}.jpg",
-                supplier_name='Premium Supplier',
-                supplier_rating=Decimal(str(data['supplier_rating'])),
-                supplier_review_count=data['supplier_review_count'],
-                trend_percentage=Decimal('22.5'),
-                is_active=True,
-                is_trending=data['is_trending'],
-                score=int(data['supplier_rating'] * 20),
-            )
-            
-            created_count += 1
-            print(f"   ✅ Created: {product.name} (${product.price})")
-            
-        except Exception as e:
-            print(f"   ❌ Error: {data['name']} - {str(e)}")
-            continue
+    for product in Product.objects.all():
+        # Find image mapping
+        image_url = None
+        for keyword, url in IMAGE_URLS.items():
+            if keyword.lower() in product.name.lower() or product.name.lower() in keyword.lower():
+                image_url = url
+                break
+        
+        if image_url:
+            product.image_url = image_url
+            product.save()
+            updated_count += 1
+            print(f"   ✅ Updated: {product.name}")
+        else:
+            not_found_count += 1
+            print(f"   ⚠️  No image mapping: {product.name}")
     
     # Print summary
     print("\n" + "="*60)
-    print("✨ PRODUCT CREATION COMPLETE!")
+    print("✨ IMAGE UPDATE COMPLETE!")
     print("="*60)
     print(f"\n📊 STATISTICS:")
-    print(f"   ✅ Created: {created_count}")
-    print(f"   ⏭️  Skipped: {skipped_count}")
-    print(f"   📦 Total products in DB: {Product.objects.count()}")
-    print(f"   🔥 Trending products: {Product.objects.filter(is_trending=True).count()}")
-    print(f"   💼 By category:")
-    print(f"      - Tech: {Product.objects.filter(category='tech').count()}")
-    print(f"      - Home: {Product.objects.filter(category='home').count()}")
-    print(f"      - Fashion: {Product.objects.filter(category='fashion').count()}")
-    print(f"      - Sport: {Product.objects.filter(category='sport').count()}")
+    print(f"   ✅ Updated: {updated_count}")
+    print(f"   ⚠️  Not found: {not_found_count}")
+    print(f"   📦 Total products: {Product.objects.count()}")
     print("="*60 + "\n")
 
 if __name__ == '__main__':
-    create_30_products()
+    update_product_images()
