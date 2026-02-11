@@ -202,44 +202,37 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getTrendingProducts() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/products/trending/'),
-        headers: _headers,
-      );
+Future<Map<String, dynamic>> getTrendingProducts() async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/products/?is_trending=true'),
+      headers: _headers,
+    );
 
-      // Add this debug logging
-      print(
-          '📦 Trending products raw response: ${response.body.substring(0, 200)}...');
-      print('📦 Response status code: ${response.statusCode}');
+    print('📦 Status: ${response.statusCode}');
+    print('📦 Body: ${response.body}');
 
-      final result = _handleResponse(response);
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
 
-      // Debug the structure
-      if (result['success'] == true && result['data'] != null) {
-        print('📦 First product structure:');
-        final products = result['data'] as List;
-        if (products.isNotEmpty) {
-          final firstProduct = products[0];
-          print('First product keys: ${firstProduct.keys}');
-          print('First product type: ${firstProduct.runtimeType}');
+      final products = decoded['results'] ?? [];
 
-          // Check specific fields
-          if (firstProduct is Map) {
-            firstProduct.forEach((key, value) {
-              print('$key: ${value.runtimeType} - $value');
-            });
-          }
-        }
-      }
-
-      return result;
-    } catch (e) {
-      print('❌ Error in getTrendingProducts: $e');
-      return {'success': false, 'message': e.toString()};
+      return {
+        'success': true,
+        'data': products,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': 'Server error ${response.statusCode}',
+      };
     }
+  } catch (e) {
+    print('❌ Error in getTrendingProducts: $e');
+    return {'success': false, 'message': e.toString()};
   }
+}
+
 
   Future<Map<String, dynamic>> searchProducts(String query) async {
     try {
