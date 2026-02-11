@@ -62,6 +62,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  
   Future<Map<String, dynamic>> login(String email, String password, {bool rememberMe = false}) async {
     _isLoading = true;
     _error = null;
@@ -71,18 +72,26 @@ class AuthProvider with ChangeNotifier {
       final response = await _apiService.login(email, password, rememberMe: rememberMe);
 
       if (response['success']) {
-        final data = response['data'];
-        final tokens = data['tokens'];
-        _token = tokens['access'];
-        _user = User.fromJson(data['user']);
+        final token = response['token'];
+        final refresh = response['refresh'];
+        final userData = response['user'];
 
+        if (token == null) {
+          throw Exception('Token manquant dans la réponse API');
+        }
+
+        _token = token;
+        _user = User.fromJson(userData);
+
+        
         await _secureStorage.saveAuthToken(_token!);
-        await _secureStorage.saveRefreshToken(tokens['refresh']);
-        await _secureStorage.saveUserData(jsonEncode(data['user']));
+        await _secureStorage.saveRefreshToken(refresh);
+        await _secureStorage.saveUserData(jsonEncode(userData));
+
         _apiService.setAuthToken(_token!);
 
         _isLoading = false;
-        Future.microtask(() => notifyListeners());
+        notifyListeners();
         return {'success': true};
       } else {
         _error = response['message'] ?? response['message_code'] ?? 'Login failed';
@@ -170,25 +179,54 @@ class AuthProvider with ChangeNotifier {
     try {
       final response = await _apiService.register(fullName, email, password);
 
-      if (response['success']) {
+      if(response['success'] == true){
+        final user = response['user'];
+
+        if(user == null){
+          throw Exception('User data missing in registration response');
+        }
+
         _isLoading = false;
         notifyListeners();
         return {
           'success': true,
-          'message_code': response['message_code'],
-          'user': response['data']['user'],
+          'user': user,
+          'email':response['email'],
+          'otp_expires_in': response['otp_expires_in'],
+          'next_step': response['next_step'],
+          'message': response['message'],
+          
         };
-      } else {
-        _error = response['message'] ?? response['message_code'] ?? 'Registration failed';
+      }else{
+        _error = response['message']?? 'Registration failed';
         _isLoading = false;
         notifyListeners();
         return {
           'success': false,
           'message': _error,
-          'message_code': response['message_code'],
           'errors': response['errors'],
         };
       }
+
+      // if (response['success']) {
+      //   _isLoading = false;
+      //   notifyListeners();
+      //   return {
+      //     'success': true,
+      //     'message_code': response['message_code'],
+      //     'user': response['data']['user'],
+      //   };
+      // } else {
+      //   _error = response['message'] ?? response['message_code'] ?? 'Registration failed';
+      //   _isLoading = false;
+      //   notifyListeners();
+      //   return {
+      //     'success': false,
+      //     'message': _error,
+      //     'message_code': response['message_code'],
+      //     'errors': response['errors'],
+      //   };
+      // }
     } catch (e) {
       _error = 'Network error: ${e.toString()}';
       _isLoading = false;
@@ -204,18 +242,26 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final response = await _apiService.verifyOTP(email, otp);
+      final token = response['token'];
+      final refresh = response['refresh'];
+      final userData = response['user'];
+
+      if(token == null && userData == null){
+         throw Exception('Token or user data missing in OTP verification response');
+      }
+      _token = token;
+      _user = User.fromJson(userData);
+
+      await _secureStorage.saveAuthToken(_token!);
+      await _secureStorage.saveRefreshToken(refresh);
+      await _secureStorage.saveUserData(jsonEncode(userData));
+      _apiService.setAuthToken(_token!);
+
       _isLoading = false;
       notifyListeners();
+      return response;
 
-      if (response['success']) {
-        return {'success': true, 'message_code': response['message_code']};
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? response['message_code'],
-          'message_code': response['message_code'],
-        };
-      }
+      
     } catch (e) {
       _error = 'Network error: ${e.toString()}';
       _isLoading = false;

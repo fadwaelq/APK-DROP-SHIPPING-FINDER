@@ -41,25 +41,35 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> register(
-      String fullName, String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register/'),
-        headers: _headers,
-        body: jsonEncode({
-          'full_name': fullName,
-          'email': email,
-          'password': password,
-          'password_confirm': password,
-        }),
-      );
+ Future<Map<String, dynamic>> register(
+    String fullName, String email, String password) async {
+  try {
+    final payload = {
+      'fullname': fullName,
+      'email': email,
+      'password': password,
+      'password_confirm': password,
+    };
 
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
+    print('📤 REGISTER PAYLOAD: $payload');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/register/'),
+      headers: {
+        'Content-Type': 'application/json', // 🔥 IMPORTANT
+      },
+      body: jsonEncode(payload),
+    );
+
+    print('📥 REGISTER STATUS: ${response.statusCode}');
+    print('📥 REGISTER BODY: ${response.body}');
+
+    return _handleResponse(response);
+  } catch (e) {
+    return {'success': false, 'message': e.toString()};
   }
+}
+
 
   Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
     try {
@@ -68,7 +78,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode({
           'email': email,
-          'otp': otp,
+          'otp_code': otp,
         }),
       );
 

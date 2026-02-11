@@ -1,3 +1,5 @@
+// ignore_for_file: sized_box_for_whitespace, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -162,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
 
-                  SizedBox(height: AppTheme.spacingS),
+                  const SizedBox(height: AppTheme.spacingS),
 
                   // Title
                   Text(
@@ -174,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
 
-                  SizedBox(height: AppTheme.spacingXS),
+                  const SizedBox(height: AppTheme.spacingXS),
 
                   // Subtitle
                   Text(
@@ -185,13 +187,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
 
-                  SizedBox(height: AppTheme.spacingXL),
+                  const SizedBox(height: AppTheme.spacingXL),
 
                   // Email Field
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Email',
                       hintText: 'vous@example.com',
                     ),
@@ -206,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
 
-                  SizedBox(height: AppTheme.spacingL),
+                  const SizedBox(height: AppTheme.spacingL),
 
                   // Password Field
                   TextFormField(
@@ -237,14 +239,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
 
-                  SizedBox(height: AppTheme.spacingS),
+                  const SizedBox(height: AppTheme.spacingS),
 
                   // Forgot Password
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        // TODO: Implement forgot password
+                      //  Navigator.of(context).push(
+                      //       MaterialPageRoute(
+                      //           builder: (_) =>  ForgotPasswordScreen()),
+                      //     );
                       },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -260,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  SizedBox(height: AppTheme.spacingL),
+                  const SizedBox(height: AppTheme.spacingL),
 
                   // Login Button
                   SizedBox(
@@ -273,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         disabledBackgroundColor: AppTheme.mediumGray,
                         disabledForegroundColor: AppTheme.textTertiary,
                         padding:
-                            EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+                            const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                               AppTheme.borderRadiusMedium),
@@ -282,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         shadowColor: Colors.transparent,
                       ),
                       child: _isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
@@ -300,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  SizedBox(height: AppTheme.spacingL),
+                  const SizedBox(height: AppTheme.spacingL),
 
                   // Register Link
                   Wrap(
@@ -336,7 +341,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
 
-                  SizedBox(
+                  const SizedBox(
                     height: AppTheme.spacingXL,
                   ),
 
@@ -368,13 +373,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
 
-                  SizedBox(height: AppTheme.spacingXL),
+                  const SizedBox(height: AppTheme.spacingXL),
 
                   // Google Sign-In Button
                   OutlinedButton.icon(
                     onPressed: _isGoogleLoading ? null : _loginWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+                      padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
                       side: BorderSide(
                         color: AppTheme.textSecondary.withOpacity(0.3),
                         width: 1,
@@ -384,7 +389,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     icon: _isGoogleLoading
-                        ? SizedBox(
+                        ? const SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
@@ -407,7 +412,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  SizedBox(height: AppTheme.spacingXL),
+                  const SizedBox(height: AppTheme.spacingXL),
 
                   // Terms and Privacy
                   Text(
