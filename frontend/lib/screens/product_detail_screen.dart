@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/product.dart';
 import '../providers/product_provider.dart';
 import '../utils/theme.dart';
@@ -55,21 +56,71 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
 
-      actions: const [
+      actions:  [
         Padding(
-          padding: EdgeInsets.only(right: 8),
-          child: CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.favorite_border, color: Colors.black87),
+  padding: const EdgeInsets.only(right: 8),
+  child: Consumer<ProductProvider>(
+    builder: (context, provider, _) {
+
+      final allProducts = [
+        ...provider.products,
+        ...provider.trendingProducts,
+      ];
+
+      final updatedProduct = allProducts.firstWhere(
+        (p) => p.id == product.id,
+        orElse: () => product,
+      );
+
+      return CircleAvatar(
+        backgroundColor: Colors.white,
+        child: IconButton(
+          icon: Icon(
+            updatedProduct.isFavorite
+                ? Icons.favorite
+                : Icons.favorite_border,
+            color: updatedProduct.isFavorite
+                ? Colors.red
+                : Colors.black87,
           ),
+          onPressed: () {
+            provider.toggleFavorite(product.id);
+          },
         ),
+      );
+    },
+  ),
+),
+
+        
+        // Padding(
+        //   padding: EdgeInsets.only(right: 16),
+        //   child: CircleAvatar(
+        //     backgroundColor: Colors.white,
+        //     child: Icon(Icons.share, color: Colors.black87),
+        //   ),
+        // ),
         Padding(
-          padding: EdgeInsets.only(right: 16),
-          child: CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.share, color: Colors.black87),
-          ),
-        ),
+  padding: const EdgeInsets.only(right: 16),
+  child: GestureDetector(
+    onTap: () async {
+      // final productUrl = product.url ?? '';
+      const productUrl ='https://tr.aliexpress.com/item/1005007677215347.html?gps-id=pcJustForYou&scm=1007.13562.416251.0&scm_id=1007.13562.416251.0&scm-url=1007.13562.416251.0&pvid=c9ae965f-39bf-4550-9e64-fa1c80e9e7cf&_t=gps-id:pcJustForYou,scm-url:1007.13562.416251.0,pvid:c9ae965f-39bf-4550-9e64-fa1c80e9e7cf,tpp_buckets:668%232846%238108%231977&pdp_ext_f=%7B%22order%22%3A%222%22%2C%22eval%22%3A%221%22%2C%22sceneId%22%3A%223562%22%2C%22fromPage%22%3A%22recommend%22%7D&pdp_npi=6%40dis%21TRY%211531.72%211531.72%21%21%2128.21%2128.21%21%40212a70c017708929247433134e8def%2112000041770866302%21rec%21TR%21%21ABX%211%210%21n_tag%3A-29910%3Bd%3Af04b6b5a%3Bm03_new_user%3A-29895&utparam-url=scene%3ApcJustForYou%7Cquery_from%3A%7Cx_object_id%3A1005007677215347%7C_p_origin_prod%3A';
+      final productTitle = product.name ?? '';
+      final productPrice = product.price ?? '';
+
+      await Share.share(
+        '$productTitle\n\nPrix: $productPrice\n\n$productUrl',
+        subject: productTitle,
+      );
+    },
+    child: const CircleAvatar(
+      backgroundColor: Colors.white,
+      child: Icon(Icons.share, color: Colors.black87),
+    ),
+  ),
+),
+
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
@@ -161,7 +212,7 @@ class ProductDetailScreen extends StatelessWidget {
                   color: Colors.purple.shade50,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
+                child:const Text(
                   'Audio & Tech',
                   style: TextStyle(
                     color: Colors.deepPurple,
@@ -195,7 +246,7 @@ class ProductDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Casque Sans-fil Premium',
             style: TextStyle(
               fontSize: 26,
@@ -241,7 +292,7 @@ class ProductDetailScreen extends StatelessWidget {
                           TextStyle(color: Colors.grey.shade600, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    const Text(
                       '29,99€',
                       style:
                           TextStyle(fontSize: 28, fontWeight: FontWeight.bold),

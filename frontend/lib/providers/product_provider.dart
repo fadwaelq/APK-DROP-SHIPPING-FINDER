@@ -95,6 +95,16 @@ class ProductProvider with ChangeNotifier {
       }
     }
   }
+    void _resetAllFavoriteFlags() {
+    _products = _products
+        .map((p) => p.copyWith(isFavorite: false))
+        .toList();
+
+    _trendingProducts = _trendingProducts
+        .map((p) => p.copyWith(isFavorite: false))
+        .toList();
+  }
+
 
   List<Product> get filteredProducts {
     // Use trending products if main products list is empty
@@ -255,57 +265,60 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadFavorites() async {
-    _isLoading = true;
-    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
-    });
+Future<void> loadFavorites() async {
+  _isLoading = true;
 
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    notifyListeners();
+  });
+
+  try {
+    // 1️⃣ Charger d'abord depuis le storage local
+    await _loadFavoritesFromStorage();
+    _updateFavoriteStatus();
+
+    // 2️⃣ Synchroniser avec l'API si connecté
     try {
-      // Load from local storage first
-      await _loadFavoritesFromStorage();
-      
-      // Try to sync with API if user is logged in
-      try {
-        final response = await _apiService.getFavorites();
-        
-        if (response['success'] && response['favorites'] != null) {
-          final favoritesData = response['favorites'];
-          
-          // Check if favorites is a List
-          if (favoritesData is List) {
-            final apiFavorites = favoritesData
-                .map((json) => Product.fromJson(json))
-                .toList();
-            
-            // Merge with local favorites (local takes priority)
-            final localIds = _favorites.map((f) => f.id).toSet();
-            for (var apiFav in apiFavorites) {
-              if (!localIds.contains(apiFav.id)) {
-                _favorites.add(apiFav);
-              }
-            }
-            
-            // Save merged favorites
-            await _saveFavoritesToStorage();
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️  API favorites sync skipped: ${e.toString()}');
-        // Continue with local favorites - this is normal if user is not logged in
+      final response = await _apiService.getFavorites();
+
+      debugPrint('📦 FAVORITES API RESPONSE: $response');
+
+      if (response != null && response['results'] is List) {
+        final List results = response['results'];
+
+        // ⚠️ IMPORTANT : le produit est dans item['product']
+        final apiFavorites = results
+            .where((item) => item['product'] != null)
+            .map((item) => Product.fromJson(item['product']))
+            .toList();
+
+        // Remplacer complètement les favoris par ceux de l'API
+        _favorites = apiFavorites;
+
+        // Sauvegarder localement
+        await _saveFavoritesToStorage();
+
+        // Mettre à jour les flags isFavorite dans les produits
+        _updateFavoriteStatus();
+
+        debugPrint('✅ API favorites loaded: ${_favorites.length}');
       }
     } catch (e) {
-      _error = 'Failed to load favorites: ${e.toString()}';
-      debugPrint('Error loading favorites: $e');
+      debugPrint('⚠️ API favorites sync skipped: ${e.toString()}');
+      // Pas grave si l'API échoue
     }
-
-    _isLoading = false;
-    // Use addPostFrameCallback to avoid calling notifyListeners during build phase
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
-    });
+  } catch (e) {
+    _error = 'Failed to load favorites: ${e.toString()}';
+    debugPrint('❌ Error loading favorites: $e');
   }
+
+  _isLoading = false;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    notifyListeners();
+  });
+}
+
 
   Future<void> toggleFavorite(String productId) async {
     try {
@@ -442,10 +455,12 @@ class ProductProvider with ChangeNotifier {
     debugPrint('👤 User changed to: $userId');
     
     if (userId == null) {
-      // User logged out - clear favorites
-      _favorites = [];
-      debugPrint('🧹 Cleared favorites (user logged out)');
-    } else {
+  // User logged out
+  _favorites = [];
+  _resetAllFavoriteFlags(); // <-- AJOUT IMPORTANT
+  debugPrint('🧹 Cleared favorites (user logged out)');
+}
+else {
       // User logged in - load their favorites from storage AND API
       debugPrint('📂 Loading favorites for user $userId...');
       await loadFavorites(); // This will load from storage AND sync with API

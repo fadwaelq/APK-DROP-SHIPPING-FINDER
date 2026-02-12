@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -24,21 +26,21 @@ class SubscriptionScreen extends StatelessWidget {
                       plan: SubscriptionPlan.starter,
                       isRecommended: false,
                     ),
-                    SizedBox(height: AppTheme.spacingM),
+                    const SizedBox(height: AppTheme.spacingM),
                     _buildPlanCard(
                       context,
                       plan: SubscriptionPlan.pro,
                       isRecommended: true,
                     ),
-                    SizedBox(height: AppTheme.spacingM),
+                    const SizedBox(height: AppTheme.spacingM),
                     _buildPlanCard(
                       context,
                       plan: SubscriptionPlan.premium,
                       isRecommended: false,
                     ),
-                    SizedBox(height: AppTheme.spacingL),
+                    const SizedBox(height: AppTheme.spacingL),
                     _buildMoneyBackGuarantee(),
-                    SizedBox(height: AppTheme.spacingXXL),
+                    const SizedBox(height: AppTheme.spacingXXL),
                   ],
                 ),
               ),
@@ -52,10 +54,10 @@ class SubscriptionScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(AppTheme.spacingL),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(AppTheme.spacingL),
+      decoration: const BoxDecoration(
         gradient: AppTheme.orangeGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
@@ -81,9 +83,9 @@ class SubscriptionScreen extends StatelessWidget {
               const SizedBox(width: 48),
             ],
           ),
-          SizedBox(height: AppTheme.spacingL),
+          const SizedBox(height: AppTheme.spacingL),
           Container(
-            padding: EdgeInsets.all(AppTheme.spacingM),
+            padding: const EdgeInsets.all(AppTheme.spacingM),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(50),
@@ -94,7 +96,7 @@ class SubscriptionScreen extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: AppTheme.spacingM),
           Text(
             'Boostez votre business',
             style: AppTheme.displaySmall.copyWith(
@@ -102,7 +104,7 @@ class SubscriptionScreen extends StatelessWidget {
               fontSize: 24,
             ),
           ),
-          SizedBox(height: AppTheme.spacingXS),
+          const SizedBox(height: AppTheme.spacingXS),
           Text(
             'Choisissez le plan qui correspond à vos objectifs',
             style: AppTheme.bodyLarge.copyWith(
@@ -131,7 +133,7 @@ class SubscriptionScreen extends StatelessWidget {
     switch (plan) {
       case SubscriptionPlan.starter:
         name = 'Starter';
-        price = '99';
+        price = '10';
         features = [
           '100 recherches par mois',
           'Analyse de base',
@@ -144,7 +146,7 @@ class SubscriptionScreen extends StatelessWidget {
         break;
       case SubscriptionPlan.pro:
         name = 'Pro';
-        price = '249';
+        price = '24';
         features = [
           'Recherches illimitées',
           'Analyse avancée',
@@ -159,7 +161,7 @@ class SubscriptionScreen extends StatelessWidget {
         break;
       case SubscriptionPlan.premium:
         name = 'Premium';
-        price = '499';
+        price = '49';
         features = [
           'Tout du plan Pro',
           'Analyse prédictive',
@@ -197,9 +199,9 @@ class SubscriptionScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingS),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.warningYellow,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(AppTheme.borderRadiusLarge),
                   topRight: Radius.circular(AppTheme.borderRadiusLarge),
                 ),
@@ -214,7 +216,7 @@ class SubscriptionScreen extends StatelessWidget {
               ),
             ),
           Padding(
-            padding: EdgeInsets.all(AppTheme.spacingL),
+            padding: const EdgeInsets.all(AppTheme.spacingL),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -222,7 +224,7 @@ class SubscriptionScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: EdgeInsets.all(AppTheme.spacingS),
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
                       decoration: BoxDecoration(
                         color: accentColor,
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
@@ -233,7 +235,7 @@ class SubscriptionScreen extends StatelessWidget {
                         size: 20,
                       ),
                     ),
-                    SizedBox(width: AppTheme.spacingS),
+                    const SizedBox(width: AppTheme.spacingS),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -244,7 +246,7 @@ class SubscriptionScreen extends StatelessWidget {
                             color: AppTheme.textPrimary,
                           ),
                         ),
-                        SizedBox(height: AppTheme.spacingXS),
+                        const SizedBox(height: AppTheme.spacingXS),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -261,7 +263,7 @@ class SubscriptionScreen extends StatelessWidget {
                                 left: 2,
                               ),
                               child: Text(
-                                'DH/mois',
+                                '€/mois',
                                 style: AppTheme.labelMedium.copyWith(
                                   color: AppTheme.textSecondary,
                                 ),
@@ -273,7 +275,7 @@ class SubscriptionScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: AppTheme.spacingL),
+                const SizedBox(height: AppTheme.spacingL),
                 ...features.map((feature) => Padding(
                       padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
                       child: Row(
@@ -283,7 +285,7 @@ class SubscriptionScreen extends StatelessWidget {
                             color: accentColor,
                             size: 20,
                           ),
-                          SizedBox(width: AppTheme.spacingS),
+                          const SizedBox(width: AppTheme.spacingS),
                           Expanded(
                             child: Text(
                               feature,
@@ -295,7 +297,7 @@ class SubscriptionScreen extends StatelessWidget {
                         ],
                       ),
                     )),
-                SizedBox(height: AppTheme.spacingM),
+                const SizedBox(height: AppTheme.spacingM),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -328,7 +330,7 @@ class SubscriptionScreen extends StatelessWidget {
 
   Widget _buildMoneyBackGuarantee() {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacingL),
+      padding: const EdgeInsets.all(AppTheme.spacingL),
       decoration: BoxDecoration(
         color: AppTheme.infoBlue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
@@ -338,12 +340,12 @@ class SubscriptionScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.verified_user,
             color: AppTheme.infoBlue,
             size: 32,
           ),
-          SizedBox(width: AppTheme.spacingM),
+          const SizedBox(width: AppTheme.spacingM),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,7 +357,7 @@ class SubscriptionScreen extends StatelessWidget {
                     color: AppTheme.textPrimary,
                   ),
                 ),
-                SizedBox(height: AppTheme.spacingXS),
+                const SizedBox(height: AppTheme.spacingXS),
                 Text(
                   'Annulez à tout moment, sans frais cachés',
                   style: AppTheme.bodySmall.copyWith(
@@ -381,7 +383,7 @@ class SubscriptionScreen extends StatelessWidget {
           style: AppTheme.headlineSmall,
         ),
         content: Text(
-          'Vous allez souscrire au plan ${plan.displayName} pour ${plan.price} DH/mois.',
+          'Vous allez souscrire au plan ${plan.displayName} pour ${plan.price} €/mois.',
           style: AppTheme.bodyMedium,
         ),
         actions: [
