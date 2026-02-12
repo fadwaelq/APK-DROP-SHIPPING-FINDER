@@ -37,6 +37,7 @@ class ProductDetailScreen extends StatelessWidget {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
+    print("IMAGE URL: ${product.imageUrl}");
     return SliverAppBar(
       expandedHeight: 340,
       pinned: true,
@@ -45,19 +46,25 @@ class ProductDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: CircleAvatar(
           backgroundColor: Colors.white,
-          child: Icon(Icons.arrow_back, color: Colors.black87),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         ),
       ),
-      actions: [
+
+      actions: const [
         Padding(
-          padding: const EdgeInsets.only(right: 8),
+          padding: EdgeInsets.only(right: 8),
           child: CircleAvatar(
             backgroundColor: Colors.white,
             child: Icon(Icons.favorite_border, color: Colors.black87),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(right: 16),
+          padding: EdgeInsets.only(right: 16),
           child: CircleAvatar(
             backgroundColor: Colors.white,
             child: Icon(Icons.share, color: Colors.black87),
@@ -69,6 +76,10 @@ class ProductDetailScreen extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             // Replace with your real product image url
+           // Juste avant Image.network
+            
+
+
             Image.network(
               product.imageUrl.isNotEmpty
                   ? product.imageUrl
@@ -77,6 +88,7 @@ class ProductDetailScreen extends StatelessWidget {
               errorBuilder: (_, __, ___) =>
                   const Icon(Icons.headphones, size: 120, color: Colors.grey),
             ),
+          
             // Bottom gradient
             Positioned(
               bottom: 0,
@@ -125,7 +137,7 @@ class ProductDetailScreen extends StatelessWidget {
         color: color,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
@@ -541,7 +553,7 @@ class ProductDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
               color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
         ],
