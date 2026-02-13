@@ -4,15 +4,20 @@ class Product {
   final String description;
   final double price;
   final double profit;
+  final double cost;
   final String imageUrl;
+  final List<String> images;
   final int score;
   final double trendPercentage;
+  final bool isTrending;
   final String category;
   final List<String> availableColors;
   final ProductSource source;
+  final String sourceUrl;
   final Supplier supplier;
   final PerformanceMetrics performanceMetrics;
-  final DateTime addedDate;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
   final bool isFavorite;
 
   Product({
@@ -21,60 +26,78 @@ class Product {
     required this.description,
     required this.price,
     required this.profit,
+    required this.cost,
     required this.imageUrl,
+    required this.images,
     required this.score,
     required this.trendPercentage,
+    required this.isTrending,
     required this.category,
     this.availableColors = const [],
     required this.source,
+    required this.sourceUrl,
     required this.supplier,
     required this.performanceMetrics,
-    required this.addedDate,
+    required this.createdAt,
+    this.updatedAt,
     this.isFavorite = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-  // Convert id to string if it's an int
-  final idValue = json['id'];
-  final id = idValue != null ? idValue.toString() : '';
-  
-  // Extract category name from nested object or use fallback
-  String categoryName = '';
-  if (json['category'] != null) {
-    if (json['category'] is Map) {
-      // Use French name if available, otherwise English name
-      categoryName = json['category']['name_fr'] ?? 
-                    json['category']['name'] ?? 
-                    '';
-    } else if (json['category'] is String) {
-      categoryName = json['category'];
+    final id = json['id']?.toString() ?? '';
+
+    // Supplier fallback intelligent
+    Supplier supplier;
+    if (json['supplier'] != null) {
+      supplier = Supplier.fromJson(json['supplier']);
+    } else {
+      supplier = Supplier(
+        name: json['supplier_name'] ?? '',
+        rating: _parseDouble(json['supplier_rating']),
+        reviewCount: json['supplier_review_count'] ?? 0,
+      );
     }
+
+    // Performance fallback si performance_metrics absent
+    PerformanceMetrics metrics;
+    if (json['performance_metrics'] != null) {
+      metrics = PerformanceMetrics.fromJson(json['performance_metrics']);
+    } else {
+      metrics = PerformanceMetrics(
+        demandLevel: json['demand_level'] ?? 0,
+        popularity: json['popularity'] ?? 0,
+        competition: json['competition'] ?? 0,
+        profitability: json['profitability'] ?? 0,
+      );
+    }
+
+    return Product(
+      id: id,
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      price: _parseDouble(json['price']),
+      profit: _parseDouble(json['profit']),
+      cost: _parseDouble(json['cost']),
+      imageUrl: json['image_url'] ?? '',
+      images: List<String>.from(json['images'] ?? []),
+      score: json['score'] ?? 0,
+      trendPercentage: _parseDouble(json['trend_percentage']),
+      isTrending: json['is_trending'] ?? false,
+      category: json['category'] ?? '',
+      availableColors: List<String>.from(json['available_colors'] ?? []),
+      source: ProductSource.fromString(json['source'] ?? 'aliexpress'),
+      sourceUrl: json['source_url'] ?? '',
+      supplier: supplier,
+      performanceMetrics: metrics,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
+      isFavorite: json['is_favorite'] ?? false,
+    );
   }
-  
-  return Product(
-    id: id,
-    name: json['name'] ?? json['name_fr'] ?? '',
-    description: json['description'] ?? '',
-    price: _parseDouble(json['price']),
-    profit: _parseDouble(json['profit_amount'] ?? json['profit']), // Use profit_amount from API
-    imageUrl: json['main_image'] ?? json['image_url'] ?? '',
-    score: json['score'] ?? 0,
-    trendPercentage: _parseDouble(json['trend_percentage']),
-    category: categoryName,
-    availableColors: List<String>.from(json['available_colors'] ?? []),
-    source: ProductSource.fromString(json['source'] ?? 'aliexpress'),
-    supplier: json['supplier'] != null 
-        ? Supplier.fromJson(json['supplier'])
-        : Supplier.empty(),
-    performanceMetrics: json['performance_metrics'] != null
-        ? PerformanceMetrics.fromJson(json['performance_metrics'])
-        : PerformanceMetrics.empty(),
-    addedDate: json['added_date'] != null || json['created_at'] != null
-        ? DateTime.parse(json['added_date'] ?? json['created_at'])
-        : DateTime.now(),
-    isFavorite: json['is_favorite'] ?? false,
-  );
-}
 
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
@@ -85,31 +108,29 @@ class Product {
   }
 
   Map<String, dynamic> toJson() {
-  return {
-    'id': id,
-    'name': name,
-    'name_fr': name, // Add French name if you need it
-    'description': description,
-    'price': price.toString(),
-    'profit_margin': profit.toString(), // Map profit to profit_margin for API
-    'profit_amount': profit.toString(),
-    'main_image': imageUrl,
-    'image_url': imageUrl, // Keep both for compatibility
-    'score': score,
-    'trend_percentage': trendPercentage.toString(),
-    'category': {
-      'name': category,
-      'name_fr': category,
-    },
-    'available_colors': availableColors,
-    'source': source.name,
-    'supplier': supplier.toJson(),
-    'performance_metrics': performanceMetrics.toJson(),
-    'added_date': addedDate.toIso8601String(),
-    'created_at': addedDate.toIso8601String(), // Add created_at for API compatibility
-    'is_favorite': isFavorite,
-  };
-}
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'price': price.toString(),
+      'profit': profit.toString(),
+      'cost': cost.toString(),
+      'image_url': imageUrl,
+      'images': images,
+      'score': score,
+      'trend_percentage': trendPercentage.toString(),
+      'is_trending': isTrending,
+      'category': category,
+      'available_colors': availableColors,
+      'source': source.name,
+      'source_url': sourceUrl,
+      'supplier': supplier.toJson(),
+      'performance_metrics': performanceMetrics.toJson(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'is_favorite': isFavorite,
+    };
+  }
 
   Product copyWith({
     String? id,
@@ -117,15 +138,20 @@ class Product {
     String? description,
     double? price,
     double? profit,
+    double? cost,
     String? imageUrl,
+    List<String>? images,
     int? score,
     double? trendPercentage,
+    bool? isTrending,
     String? category,
     List<String>? availableColors,
     ProductSource? source,
+    String? sourceUrl,
     Supplier? supplier,
     PerformanceMetrics? performanceMetrics,
-    DateTime? addedDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     bool? isFavorite,
   }) {
     return Product(
@@ -134,21 +160,26 @@ class Product {
       description: description ?? this.description,
       price: price ?? this.price,
       profit: profit ?? this.profit,
+      cost: cost ?? this.cost,
       imageUrl: imageUrl ?? this.imageUrl,
+      images: images ?? this.images,
       score: score ?? this.score,
       trendPercentage: trendPercentage ?? this.trendPercentage,
+      isTrending: isTrending ?? this.isTrending,
       category: category ?? this.category,
       availableColors: availableColors ?? this.availableColors,
       source: source ?? this.source,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
       supplier: supplier ?? this.supplier,
       performanceMetrics: performanceMetrics ?? this.performanceMetrics,
-      addedDate: addedDate ?? this.addedDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
   String get daysAgoText {
-    final difference = DateTime.now().difference(addedDate);
+    final difference = DateTime.now().difference(createdAt);
     if (difference.inDays == 0) return "Aujourd'hui";
     if (difference.inDays == 1) return "Il y a 1 jour";
     return "Il y a ${difference.inDays} jours";
@@ -201,7 +232,7 @@ class Supplier {
       reviewCount: json['review_count'] ?? 0,
     );
   }
-  
+
   factory Supplier.empty() {
     return Supplier(
       name: 'Unknown',
@@ -240,15 +271,6 @@ class PerformanceMetrics {
       profitability: json['profitability'] ?? 0,
     );
   }
-  
-  factory PerformanceMetrics.empty() {
-    return PerformanceMetrics(
-      demandLevel: 0,
-      popularity: 0,
-      competition: 0,
-      profitability: 0,
-    );
-  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -280,8 +302,7 @@ class ProductCategory {
         toys,
         health,
       ];
-  
-  // Mapping French display names to backend category keys
+
   static String toBackendKey(String displayName) {
     switch (displayName) {
       case 'Tech':

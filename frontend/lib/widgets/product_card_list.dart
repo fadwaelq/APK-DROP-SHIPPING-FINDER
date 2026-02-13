@@ -155,53 +155,73 @@ class ProductCardList extends StatelessWidget {
                       ],
                     ),
                     // const SizedBox(height: AppTheme.spacingS),
-                    Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Prix',
-                              style: AppTheme.labelMedium.copyWith(
-                                fontSize: 10,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${product.price.toStringAsFixed(2)}€',
-                              style: AppTheme.titleMedium.copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        // SizedBox(width: AppTheme.spacingL),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Profit',
-                              style: AppTheme.labelMedium.copyWith(
-                                fontSize: 10,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${product.profit.toStringAsFixed(2)}€',
-                              style: AppTheme.titleMedium.copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.successGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  Row(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Prix',
+              style: AppTheme.labelMedium.copyWith(
+                fontSize: 10,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 2),
+
+            // Ligne ancien + nouveau prix
+            Row(
+              children: [
+                Text(
+                  '${product.price.toStringAsFixed(2)}€',
+                  style: AppTheme.titleMedium.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondary,
+                    decoration: TextDecoration.lineThrough,
+                    decorationThickness: 2,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${(product.price - product.profit).toStringAsFixed(2)}€',
+                  style: AppTheme.titleMedium.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.successGreen,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+    const SizedBox(width: 24),
+
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Profit',
+          style: AppTheme.labelMedium.copyWith(
+            fontSize: 10,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${product.profit.toStringAsFixed(2)}€',
+          style: AppTheme.titleMedium.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.successGreen,
+          ),
+        ),
+      ],
+    ),
+  ],
+                  ),
+
                     // const SizedBox(height: AppTheme.spacingS),
                     Row(
                       children: [
@@ -270,11 +290,20 @@ class ProductCardList extends StatelessWidget {
   }
 
   void _navigateToDetail(BuildContext context) {
-    Navigator.push(
+     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProductDetailScreen(product: product),
       ),
     );
+//    Navigator.push(
+//   context,
+//   MaterialPageRoute(
+//     builder: (_) => ProductDetailScreen(
+//       productId: product.id,
+//     ),
+//   ),
+// );
+
   }
 }

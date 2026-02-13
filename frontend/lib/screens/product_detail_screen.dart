@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -27,7 +29,7 @@ class ProductDetailScreen extends StatelessWidget {
                 _buildPerformanceAnalysis(),
                 _buildMarketInsights(),
                 _buildSupplierSection(),
-                SizedBox(height: 100), // space for bottom sheet
+                const SizedBox(height: 100), // space for bottom sheet
               ],
             ),
           ),
@@ -104,10 +106,9 @@ class ProductDetailScreen extends StatelessWidget {
   padding: const EdgeInsets.only(right: 16),
   child: GestureDetector(
     onTap: () async {
-      // final productUrl = product.url ?? '';
-      const productUrl ='https://tr.aliexpress.com/item/1005007677215347.html?gps-id=pcJustForYou&scm=1007.13562.416251.0&scm_id=1007.13562.416251.0&scm-url=1007.13562.416251.0&pvid=c9ae965f-39bf-4550-9e64-fa1c80e9e7cf&_t=gps-id:pcJustForYou,scm-url:1007.13562.416251.0,pvid:c9ae965f-39bf-4550-9e64-fa1c80e9e7cf,tpp_buckets:668%232846%238108%231977&pdp_ext_f=%7B%22order%22%3A%222%22%2C%22eval%22%3A%221%22%2C%22sceneId%22%3A%223562%22%2C%22fromPage%22%3A%22recommend%22%7D&pdp_npi=6%40dis%21TRY%211531.72%211531.72%21%21%2128.21%2128.21%21%40212a70c017708929247433134e8def%2112000041770866302%21rec%21TR%21%21ABX%211%210%21n_tag%3A-29910%3Bd%3Af04b6b5a%3Bm03_new_user%3A-29895&utparam-url=scene%3ApcJustForYou%7Cquery_from%3A%7Cx_object_id%3A1005007677215347%7C_p_origin_prod%3A';
-      final productTitle = product.name ?? '';
-      final productPrice = product.price ?? '';
+      final productUrl = product.sourceUrl;
+      final productTitle = product.name ;
+      final productPrice = product.price ;
 
       await Share.share(
         '$productTitle\n\nPrix: $productPrice\n\n$productUrl',
@@ -212,9 +213,9 @@ class ProductDetailScreen extends StatelessWidget {
                   color: Colors.purple.shade50,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child:const Text(
-                  'Audio & Tech',
-                  style: TextStyle(
+                child: Text(
+                  product.category,
+                  style: const TextStyle(
                     color: Colors.deepPurple,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -233,7 +234,7 @@ class ProductDetailScreen extends StatelessWidget {
                     const Icon(Icons.star, color: Colors.green, size: 18),
                     const SizedBox(width: 4),
                     Text(
-                      '95',
+                      product.score.toString(),
                       style: TextStyle(
                         color: Colors.green.shade800,
                         fontWeight: FontWeight.bold,
@@ -246,9 +247,9 @@ class ProductDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Casque Sans-fil Premium',
-            style: TextStyle(
+           Text(
+            product.name,
+            style:const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               height: 1.1,
@@ -256,8 +257,7 @@ class ProductDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Casque audio Bluetooth haute qualité avec réduction de bruit active, '
-            'autonomie de 30h et design ergonomique pour un confort optimal.',
+            product.description,
             style: TextStyle(
               fontSize: 15,
               color: Colors.grey.shade700,
@@ -292,8 +292,8 @@ class ProductDetailScreen extends StatelessWidget {
                           TextStyle(color: Colors.grey.shade600, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '29,99€',
+                    Text(
+                      '${product.price.toStringAsFixed(2)}€',
                       style:
                           TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
@@ -317,7 +317,7 @@ class ProductDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '15,50€',
+                      '${product.profit.toStringAsFixed(2)}€',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -578,7 +578,7 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Text(
+                   const Text(
                       '14,49 €',
                       style: TextStyle(
                         color: Colors.black,
@@ -602,9 +602,9 @@ class ProductDetailScreen extends StatelessWidget {
   Widget _buildBottomSheet(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
               color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
         ],
@@ -618,7 +618,7 @@ class ProductDetailScreen extends StatelessWidget {
               onPressed: () {},
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(style: BorderStyle.none),
+                side: const BorderSide(style: BorderStyle.none),
               ),
             ),
           ),
@@ -627,7 +627,7 @@ class ProductDetailScreen extends StatelessWidget {
             flex: 2,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.open_in_new),
-              label: const Text('Voir sur AliExpress'),
+             label: Text('Voir sur ${product.source.displayName}'),
               onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryOrange,
