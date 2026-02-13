@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:dropshipping_finder/screens/finalize_subscription.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -397,18 +398,25 @@ class SubscriptionScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryOrange,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(
-              'Confirmer',
-              style: AppTheme.labelMedium.copyWith(
-                color: Colors.white,
-              ),
-            ),
-          ),
+  onPressed: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>  const PremiumCheckoutScreen(),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: AppTheme.secondaryOrange,
+    foregroundColor: Colors.white,
+  ),
+  child: Text(
+    'Confirmer',
+    style: AppTheme.labelMedium.copyWith(
+      color: Colors.white,
+    ),
+  ),
+),
+
         ],
       ),
     );
