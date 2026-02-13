@@ -6,14 +6,26 @@ import 'package:flutter_verification_code_field/flutter_verification_code_field.
 import '../providers/auth_provider.dart';
 import '../utils/theme.dart';
 
+enum OtpPurpose {
+  register,
+  forgotPassword,
+}
+
+
 class VerifyOTPScreen extends StatefulWidget {
   final String email;
+  final OtpPurpose purpose;
 
-  const VerifyOTPScreen({super.key, required this.email});
+  const VerifyOTPScreen({
+    super.key,
+    required this.email,
+    required this.purpose,
+  });
 
   @override
   State<VerifyOTPScreen> createState() => _VerifyOTPScreenState();
 }
+
 
 class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
   bool _isLoading = false;
@@ -24,66 +36,96 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
   void dispose() {
     super.dispose();
   }
+Future<void> _verifyOTP() async {
+  if (_otpValue.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Veuillez entrer le code OTP')),
+    );
+    return;
+  }
 
-  Future<void> _verifyOTP() async {
-    if (_otpValue.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez entrer le code OTP')),
+  setState(() => _isLoading = true);
+
+  try {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    Map<String, dynamic> result;
+
+    // 🔥 Choisir l'API selon le contexte
+    if (widget.purpose == OtpPurpose.register) {
+      result = await authProvider.verifyOTP(widget.email, _otpValue);
+    } else {
+      result = await authProvider.verifyOTP(
+        widget.email,
+        _otpValue,
       );
-      return;
     }
 
-    setState(() => _isLoading = true);
+    if (!mounted) return;
 
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final result = await authProvider.verifyOTP(widget.email, _otpValue);
+    if (result['success']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Code vérifié avec succès !')),
+      );
 
-      if (!mounted) return;
-
-      if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email vérifié avec succès !')),
-        );
+      // 🔥 Redirection selon le contexte
+      if (widget.purpose == OtpPurpose.register) {
         Navigator.of(context).pushReplacementNamed('/login');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(result['message'] ?? 'Erreur de vérification')),
-        );
+        Navigator.of(context).pushReplacementNamed('/reset-password');
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erreur de vérification'),
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
+}
+
 
   Future<void> _resendOTP() async {
-    setState(() => _isResending = true);
+  setState(() => _isResending = true);
 
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final result = await authProvider.resendOTP(widget.email);
+  try {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      if (!mounted) return;
+    Map<String, dynamic> result;
 
-      if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Un nouveau code a été envoyé à votre email')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Erreur d\'envoi')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isResending = false);
-      }
+    // 🔥 Choisir l'API selon le contexte
+    if (widget.purpose == OtpPurpose.register) {
+      result = await authProvider.resendOTP(widget.email);
+    } else {
+      result = await authProvider.requestPasswordReset(widget.email);
+    }
+
+    if (!mounted) return;
+
+    if (result['success']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Un nouveau code a été envoyé à votre email'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erreur d\'envoi'),
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isResending = false);
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
