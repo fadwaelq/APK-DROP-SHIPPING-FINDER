@@ -119,11 +119,11 @@ enum SubscriptionPlan {
       case SubscriptionPlan.free:
         return '0';
       case SubscriptionPlan.starter:
-        return '99';
+        return '10';
       case SubscriptionPlan.pro:
-        return '249';
+        return '24';
       case SubscriptionPlan.premium:
-        return '499';
+        return '49';
     }
   }
 

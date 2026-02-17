@@ -1,5 +1,8 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/product.dart';
 import '../providers/product_provider.dart';
 import '../utils/theme.dart';
@@ -26,7 +29,7 @@ class ProductDetailScreen extends StatelessWidget {
                 _buildPerformanceAnalysis(),
                 _buildMarketInsights(),
                 _buildSupplierSection(),
-                SizedBox(height: 100), // space for bottom sheet
+                const SizedBox(height: 100), // space for bottom sheet
               ],
             ),
           ),
@@ -55,21 +58,70 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
 
-      actions: const [
+      actions:  [
         Padding(
-          padding: EdgeInsets.only(right: 8),
-          child: CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.favorite_border, color: Colors.black87),
+  padding: const EdgeInsets.only(right: 8),
+  child: Consumer<ProductProvider>(
+    builder: (context, provider, _) {
+
+      final allProducts = [
+        ...provider.products,
+        ...provider.trendingProducts,
+      ];
+
+      final updatedProduct = allProducts.firstWhere(
+        (p) => p.id == product.id,
+        orElse: () => product,
+      );
+
+      return CircleAvatar(
+        backgroundColor: Colors.white,
+        child: IconButton(
+          icon: Icon(
+            updatedProduct.isFavorite
+                ? Icons.favorite
+                : Icons.favorite_border,
+            color: updatedProduct.isFavorite
+                ? Colors.red
+                : Colors.black87,
           ),
+          onPressed: () {
+            provider.toggleFavorite(product.id);
+          },
         ),
+      );
+    },
+  ),
+),
+
+        
+        // Padding(
+        //   padding: EdgeInsets.only(right: 16),
+        //   child: CircleAvatar(
+        //     backgroundColor: Colors.white,
+        //     child: Icon(Icons.share, color: Colors.black87),
+        //   ),
+        // ),
         Padding(
-          padding: EdgeInsets.only(right: 16),
-          child: CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.share, color: Colors.black87),
-          ),
-        ),
+  padding: const EdgeInsets.only(right: 16),
+  child: GestureDetector(
+    onTap: () async {
+      final productUrl = product.sourceUrl;
+      final productTitle = product.name ;
+      final productPrice = product.price ;
+
+      await Share.share(
+        '$productTitle\n\nPrix: $productPrice\n\n$productUrl',
+        subject: productTitle,
+      );
+    },
+    child: const CircleAvatar(
+      backgroundColor: Colors.white,
+      child: Icon(Icons.share, color: Colors.black87),
+    ),
+  ),
+),
+
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
@@ -162,8 +214,8 @@ class ProductDetailScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Audio & Tech',
-                  style: TextStyle(
+                  product.category,
+                  style: const TextStyle(
                     color: Colors.deepPurple,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -182,7 +234,7 @@ class ProductDetailScreen extends StatelessWidget {
                     const Icon(Icons.star, color: Colors.green, size: 18),
                     const SizedBox(width: 4),
                     Text(
-                      '95',
+                      product.score.toString(),
                       style: TextStyle(
                         color: Colors.green.shade800,
                         fontWeight: FontWeight.bold,
@@ -195,9 +247,9 @@ class ProductDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            'Casque Sans-fil Premium',
-            style: TextStyle(
+           Text(
+            product.name,
+            style:const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               height: 1.1,
@@ -205,8 +257,7 @@ class ProductDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Casque audio Bluetooth haute qualité avec réduction de bruit active, '
-            'autonomie de 30h et design ergonomique pour un confort optimal.',
+            product.description,
             style: TextStyle(
               fontSize: 15,
               color: Colors.grey.shade700,
@@ -242,7 +293,7 @@ class ProductDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '29,99€',
+                      '${product.price.toStringAsFixed(2)}€',
                       style:
                           TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
@@ -266,7 +317,7 @@ class ProductDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '15,50€',
+                      '${product.profit.toStringAsFixed(2)}€',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -527,7 +578,7 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Text(
+                   const Text(
                       '14,49 €',
                       style: TextStyle(
                         color: Colors.black,
@@ -551,9 +602,9 @@ class ProductDetailScreen extends StatelessWidget {
   Widget _buildBottomSheet(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
               color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
         ],
@@ -567,7 +618,7 @@ class ProductDetailScreen extends StatelessWidget {
               onPressed: () {},
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(style: BorderStyle.none),
+                side: const BorderSide(style: BorderStyle.none),
               ),
             ),
           ),
@@ -576,7 +627,7 @@ class ProductDetailScreen extends StatelessWidget {
             flex: 2,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.open_in_new),
-              label: const Text('Voir sur AliExpress'),
+             label: Text('Voir sur ${product.source.displayName}'),
               onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryOrange,
