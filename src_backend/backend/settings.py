@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'products', # Application principale pour les produits
     'scraper', # Application pour le moteur de scraping
     'accounts', # Application pour la gestion des utilisateurs et de l'authentification
+    'django_filters', # Pour gérer les filtres dans les vues
 ]
 
 MIDDLEWARE = [
