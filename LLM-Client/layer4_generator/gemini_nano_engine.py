@@ -23,6 +23,7 @@ import re
 from models import GeneratorInput, GeneratorOutput
 from template_engine import TemplateEngine
 from constants import (
+    DEFAULT_TONE,
     GEMINI_TITLE_PROMPT, GEMINI_DESCRIPTION_PROMPT,
     TONE_BY_MARKET,
 )
@@ -46,7 +47,7 @@ class PromptBuilder:
             if inp.target_audience
             else inp.category.replace("_", " ") + " enthusiasts"
         )
-        tone = TONE_BY_MARKET.get(inp.market_type, "friendly, casual")
+        tone = TONE_BY_MARKET.get(inp.market_type, DEFAULT_TONE)
 
         return GEMINI_TITLE_PROMPT.format(
             product_name     = inp.product_name,
@@ -68,7 +69,7 @@ class PromptBuilder:
         This keeps the structure correct while improving naturalness.
         """
         features_str = ", ".join(inp.key_features) if inp.key_features else inp.usp
-        tone         = TONE_BY_MARKET.get(inp.market_type, "friendly, casual")
+        tone         = TONE_BY_MARKET.get(inp.market_type, DEFAULT_TONE)
 
         return GEMINI_DESCRIPTION_PROMPT.format(
             template_output  = template_output,
@@ -215,7 +216,7 @@ class GeminiNanoEngine:
         self._simulator       = GeminiNanoSimulator() if use_simulator else None
 
     def generate(self, inp: GeneratorInput) -> GeneratorOutput:
-        tone = TONE_BY_MARKET.get(inp.market_type, "friendly, casual")
+        tone = TONE_BY_MARKET.get(inp.market_type, DEFAULT_TONE)
 
         # Step 1 — Generate base content from templates
         template_result = self._template_engine.generate(inp)

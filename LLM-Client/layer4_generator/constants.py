@@ -224,6 +224,9 @@ Return the improved description only. No explanation.
 # TONE BY MARKET TYPE
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Default tone used when market_type is not recognized
+DEFAULT_TONE = "friendly, casual"
+
 TONE_BY_MARKET = {
     "mass":    "friendly, casual, broad appeal",
     "niche":   "specific, knowledgeable, speaks to enthusiasts",
