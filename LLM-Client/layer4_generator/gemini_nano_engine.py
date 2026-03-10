@@ -20,12 +20,14 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 import re
+from typing import Tuple
 from models import GeneratorInput, GeneratorOutput
 from template_engine import TemplateEngine
 from constants import (
     DEFAULT_TONE,
     GEMINI_TITLE_PROMPT, GEMINI_DESCRIPTION_PROMPT,
     TONE_BY_MARKET,
+    SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE,
 )
 
 
@@ -49,6 +51,9 @@ class PromptBuilder:
         )
         tone = TONE_BY_MARKET.get(inp.market_type, DEFAULT_TONE)
 
+        language     = getattr(inp, "target_language", DEFAULT_LANGUAGE)
+        language_name = SUPPORTED_LANGUAGES.get(language, "English")
+
         return GEMINI_TITLE_PROMPT.format(
             product_name     = inp.product_name,
             usp              = inp.usp,
@@ -56,6 +61,7 @@ class PromptBuilder:
             audience         = audience,
             problem          = inp.problem_solved or "common problems",
             tone             = tone,
+            language_name    = language_name,
         ).strip()
 
     @staticmethod
@@ -71,6 +77,9 @@ class PromptBuilder:
         features_str = ", ".join(inp.key_features) if inp.key_features else inp.usp
         tone         = TONE_BY_MARKET.get(inp.market_type, DEFAULT_TONE)
 
+        language      = getattr(inp, "target_language", DEFAULT_LANGUAGE)
+        language_name = SUPPORTED_LANGUAGES.get(language, "English")
+
         return GEMINI_DESCRIPTION_PROMPT.format(
             template_output  = template_output,
             product_name     = inp.product_name,
@@ -79,6 +88,7 @@ class PromptBuilder:
             features         = features_str,
             problem          = inp.problem_solved or "common problems",
             tone             = tone,
+            language_name    = language_name,
         ).strip()
 
 
@@ -93,7 +103,7 @@ class OutputValidator:
     """
 
     @staticmethod
-    def validate_title(title: str, inp: GeneratorInput) -> tuple[bool, str]:
+    def validate_title(title: str, inp: GeneratorInput) -> Tuple[bool, str]:
         """
         Returns (is_valid, reason).
         """
@@ -122,7 +132,7 @@ class OutputValidator:
         return True, "OK"
 
     @staticmethod
-    def validate_description(description: str) -> tuple[bool, str]:
+    def validate_description(description: str) -> Tuple[bool, str]:
         """
         Returns (is_valid, reason).
         """
@@ -268,6 +278,7 @@ class GeminiNanoEngine:
             generation_mode     = mode,
             marketing_angle     = inp.marketing_angle,
             tone                = tone,
+            target_language     = getattr(inp, "target_language", DEFAULT_LANGUAGE),
         )
 
     def get_prompts(self, inp: GeneratorInput) -> dict:

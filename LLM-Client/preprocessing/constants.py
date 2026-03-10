@@ -5,7 +5,28 @@
 
 import re
 
-# ── Text Limits ───────────────────────────────────────────────────────────────
+# ── Supported Languages ──────────────────────────────────────────────────────
+SUPPORTED_LANGUAGES = {
+    "en": "English",
+    "fr": "French",
+    "es": "Spanish",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ar": "Arabic",
+    "zh": "Chinese",
+}
+
+DEFAULT_LANGUAGE = "en"
+
+# ── Arabic-Indic Numeral Map — Eastern Arabic digits → ASCII ─────────────────
+ARABIC_INDIC_NUMERALS = {
+    "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4",
+    "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9",
+    "٫": ".", "٬": ",",
+}
+
+# ── Text Limits ────────────────────────────────────────────────────────────────
 TEXT_MIN_WORDS       = 10     # below this → text is too short to be useful
 TEXT_MAX_WORDS       = 400    # above this → truncate, keep opening paragraphs
 TEXT_MIN_CHARS       = 30     # absolute minimum character count
@@ -61,10 +82,36 @@ NOISE_PHRASES = [
     "flash sale",
     "coupon",
     "discount code",
+    # French
+    "livraison gratuite",
+    "retour gratuit",
+    "garantie vendeur",
+    "ajouter au panier",
+    # Spanish
+    "envio gratis",
+    "envío gratis",
+    "garantia del vendedor",
+    # German
+    "kostenloser versand",
+    "gratis versand",
+    "geld zuruck garantie",
+    # Italian
+    "spedizione gratuita",
+    "reso gratuito",
+    # Portuguese
+    "frete gratis",
+    "frete grátis",
+    "garantia do vendedor",
+    # Arabic
+    "شحن مجاني",
+    "ضمان البائع",
+    # Chinese
+    "免费送货",
+    "卖家保障",
 ]
 
 # ── Currency Symbols — for price parsing ─────────────────────────────────────
-CURRENCY_SYMBOLS = ["$", "€", "£", "¥", "₹", "USD", "EUR", "GBP"]
+CURRENCY_SYMBOLS = ["$", "€", "£", "¥", "₹", "﷼", "USD", "EUR", "GBP", "CNY", "BRL", "AED", "SAR"]
 
 # ── Fallback Values — used when a field cannot be extracted ──────────────────
 FALLBACK = {

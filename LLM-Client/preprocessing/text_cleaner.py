@@ -6,11 +6,12 @@
 
 import re
 import unicodedata
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from constants import (
     HTML_ENTITIES, TRUNCATION_PATTERNS, NOISE_PHRASES,
     TEXT_MIN_WORDS, TEXT_MAX_WORDS, TEXT_MIN_CHARS,
+    ARABIC_INDIC_NUMERALS, SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE,
 )
 
 
@@ -65,30 +66,128 @@ def remove_special_chars(text: str) -> str:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STEP 2b — Arabic Numeral Normalization
+# ─────────────────────────────────────────────────────────────────────────────
+
+def normalize_arabic_numerals(text: str) -> str:
+    """
+    Convert Eastern Arabic-Indic numerals to ASCII digits.
+    Example: ٤٫٥٠ → 4.50
+    Required for Arabic price and rating parsing.
+    """
+    for arabic, ascii_char in ARABIC_INDIC_NUMERALS.items():
+        text = text.replace(arabic, ascii_char)
+    return text
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LANGUAGE DETECTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+def detect_language(text: str) -> str:
+    """
+    Lightweight language detection based on character set analysis.
+    Returns a language code from SUPPORTED_LANGUAGES.
+
+    Strategy:
+        - Arabic Unicode range  → "ar"
+        - CJK Unicode range     → "zh"
+        - Latin + French chars  → "fr" hint (refined by keyword check)
+        - Latin + Spanish chars → "es" hint
+        - Default               → "en"
+
+    Note: This is a fast heuristic, not a full language model.
+    For production, replace with langdetect or fastText if accuracy is critical.
+    """
+    if not text:
+        return DEFAULT_LANGUAGE
+
+    # Count characters by script
+    arabic_count = sum(1 for c in text if "؀" <= c <= "ۿ")
+    cjk_count    = sum(1 for c in text if "一" <= c <= "鿿")
+    total        = max(len(text), 1)
+
+    if arabic_count / total > 0.15:
+        return "ar"
+    if cjk_count / total > 0.15:
+        return "zh"
+
+    # Latin-script language hints from common function words
+    text_lower = text.lower()
+    fr_signals = ["le ", "la ", "les ", "de ", "du ", "des ", "un ", "une ", "est ", "avec "]
+    es_signals = ["el ", "la ", "los ", "las ", "de ", "del ", "con ", "para ", "por ", "es "]
+    de_signals = ["der ", "die ", "das ", "ein ", "eine ", "und ", "mit ", "von ", "ist "]
+    it_signals = ["il ", "la ", "le ", "di ", "del ", "con ", "per ", "che ", "una "]
+    pt_signals = ["o ", "a ", "os ", "as ", "de ", "do ", "da ", "com ", "para ", "por "]
+
+    def _score(signals: List[str]) -> int:
+        return sum(1 for s in signals if s in text_lower)
+
+    scores: Dict[str, int] = {
+        "fr": _score(fr_signals),
+        "es": _score(es_signals),
+        "de": _score(de_signals),
+        "it": _score(it_signals),
+        "pt": _score(pt_signals),
+    }
+
+    best_lang  = max(scores, key=lambda k: scores[k])
+    best_score = scores[best_lang]
+
+    # Only assign non-English if the signal is strong enough
+    if best_score >= 3:
+        return best_lang
+
+    return DEFAULT_LANGUAGE
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # STEP 3 — Handle Mixed Language
 # ─────────────────────────────────────────────────────────────────────────────
 
-def extract_english_segments(text: str) -> str:
+def extract_dominant_language_segments(text: str, language: str = DEFAULT_LANGUAGE) -> str:
     """
-    AliExpress descriptions often contain Chinese mixed with English.
-    Keep only segments that are predominantly ASCII (English).
-    A segment is kept if >70% of its characters are ASCII.
+    Keep only segments matching the detected language.
+
+    For Arabic/Chinese — keeps segments with >15% target-script characters.
+    For Latin languages — keeps segments with >70% ASCII characters.
+    Replaces the old English-only extract_english_segments().
     """
     segments = re.split(r'[\n\r。！？；]', text)
-    english_segments = []
+    kept_segments = []
 
     for segment in segments:
         segment = segment.strip()
         if not segment:
             continue
 
-        ascii_count = sum(1 for c in segment if ord(c) < 128)
-        ascii_ratio = ascii_count / len(segment)
+        total = len(segment)
+        if total == 0:
+            continue
 
-        if ascii_ratio > 0.70:
-            english_segments.append(segment)
+        if language == "ar":
+            # Keep segments with meaningful Arabic content
+            arabic_count = sum(1 for ch in segment if "\u0600" <= ch <= "\u06FF")
+            if arabic_count / total > 0.15:
+                kept_segments.append(segment)
+        elif language == "zh":
+            # Keep segments with meaningful CJK content
+            cjk_count = sum(1 for ch in segment if "\u4E00" <= ch <= "\u9FFF")
+            if cjk_count / total > 0.15:
+                kept_segments.append(segment)
+        else:
+            # Latin-script languages: keep predominantly ASCII segments
+            ascii_count = sum(1 for ch in segment if ord(ch) < 128)
+            if ascii_count / total > 0.60:
+                kept_segments.append(segment)
 
-    return ' '.join(english_segments)
+    return ' '.join(kept_segments)
+
+
+# Keep old name as alias for backward compatibility
+def extract_english_segments(text: str) -> str:
+    """Backward-compatible alias for extract_dominant_language_segments."""
+    return extract_dominant_language_segments(text, "en")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -176,21 +275,30 @@ def validate_text(text: str) -> Tuple[bool, str]:
 # MAIN CLEANER — PUBLIC API
 # ─────────────────────────────────────────────────────────────────────────────
 
-def clean_description(raw_text: Optional[str]) -> Tuple[str, List[str]]:
+def clean_description(
+    raw_text: Optional[str],
+    language: Optional[str] = None,
+) -> Tuple[str, List[str]]:
     """
-    Full text cleaning pipeline.
+    Full text cleaning pipeline — multilingual aware.
     Returns (clean_text, warnings_list).
+
+    Args:
+        raw_text: raw DOM description string
+        language: ISO 639-1 code (en/fr/es/de/it/pt/ar/zh).
+                  If None, language is auto-detected.
 
     Steps:
         1. Strip HTML tags and decode entities
-        2. Remove emojis, URLs, special chars
-        3. Extract English segments (handle mixed Chinese/English)
-        4. Remove truncation artifacts and noise phrases
-        5. Normalize whitespace
-        6. Truncate to max words
-        7. Validate result
+        2. Normalize Arabic-Indic numerals (for Arabic text)
+        3. Remove emojis, URLs, special chars
+        4. Extract segments matching detected language
+        5. Remove truncation artifacts and noise phrases
+        6. Normalize whitespace
+        7. Truncate to max words
+        8. Validate result
     """
-    warnings = []
+    warnings: List[str] = []
 
     if not raw_text:
         return "", ["No description provided"]
@@ -201,32 +309,40 @@ def clean_description(raw_text: Optional[str]) -> Tuple[str, List[str]]:
     text = strip_html_tags(text)
     text = decode_html_entities(text)
 
-    # Step 2
+    # Step 2 — Arabic numeral normalization (safe to run on all languages)
+    text = normalize_arabic_numerals(text)
+
+    # Detect language if not provided
+    detected_lang = language if language in SUPPORTED_LANGUAGES else detect_language(text)
+    if detected_lang != DEFAULT_LANGUAGE:
+        warnings.append(f"Language detected: {SUPPORTED_LANGUAGES.get(detected_lang, detected_lang)}")
+
+    # Step 3
     text = remove_emojis(text)
     text = remove_urls(text)
     text = remove_special_chars(text)
 
-    # Step 3
+    # Step 4 — language-aware segment extraction
     original_len = len(text.split())
-    text = extract_english_segments(text)
+    text = extract_dominant_language_segments(text, detected_lang)
     new_len = len(text.split())
     if new_len < original_len * 0.5:
-        warnings.append(f"Heavy non-English content removed ({original_len} → {new_len} words)")
+        warnings.append(f"Mixed-language content filtered ({original_len} -> {new_len} words)")
 
-    # Step 4
+    # Step 5
     text = remove_truncation_artifacts(text)
     text = remove_noise_phrases(text)
 
-    # Step 5
+    # Step 6
     text = normalize_whitespace(text)
 
-    # Step 6
+    # Step 7
     word_count = len(text.split())
     if word_count > TEXT_MAX_WORDS:
         text = truncate_to_max_words(text)
         warnings.append(f"Text truncated from {word_count} to {TEXT_MAX_WORDS} words")
 
-    # Step 7
+    # Step 8
     is_valid, reason = validate_text(text)
     if not is_valid:
         warnings.append(f"Text invalid after cleaning: {reason}")

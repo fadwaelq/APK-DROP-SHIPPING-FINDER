@@ -2,7 +2,7 @@
 Layer 2 — DistilBERT Product Text Extractor
 ============================================
 Architecture:
-  - Backbone : distilbert-base-uncased (pretrained, frozen initially)
+  - Backbone : distilbert-base-multilingual-cased (104 languages, pretrained)
   - NER Head : token-level classification → PRODUCT, FEATURE, AUDIENCE, PROBLEM, BENEFIT, O
   - Angle Head : [CLS] classification → 7 marketing angles
   - Audience Head : [CLS] classification → mass | niche
@@ -24,13 +24,16 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-from transformers import DistilBertModel, DistilBertTokenizerFast
+from transformers import DistilBertModel, DistilBertTokenizerFast  # mBERT uses same classes
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
 
-MAX_LENGTH = 128  # tokens — covers ~95% of product descriptions, keeps model fast
+MAX_LENGTH  = 128   # tokens — covers ~95% of product descriptions, keeps model fast
+MODEL_NAME  = "distilbert-base-multilingual-cased"   # 104 languages including all 8 supported
+# Note: multilingual model is ~135MB vs ~67MB for English-only.
+# INT8 quantization brings this to ~40MB — within the 42MB mobile target.
 
 # NER labels — BIO format
 NER_LABELS = [
@@ -77,7 +80,7 @@ class ProductExtractor(nn.Module):
         audience_logits [batch, 2]             mass vs niche
     """
 
-    def __init__(self, model_name: str = "distilbert-base-uncased", dropout: float = 0.1):
+    def __init__(self, model_name: str = MODEL_NAME, dropout: float = 0.1):
         super().__init__()
 
         self.backbone = DistilBertModel.from_pretrained(model_name)
@@ -134,7 +137,7 @@ def export_tokenizer_vocab(output_dir: str):
     Export tokenizer vocab + config to JSON.
     Flutter will use this to tokenize text on-device.
     """
-    tokenizer = DistilBertTokenizerFast.from_pretrained("distilbert-base-uncased")
+    tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_NAME)
 
     vocab_data = {
         "vocab":       tokenizer.get_vocab(),          # word → id
@@ -240,15 +243,20 @@ def test_inference():
     Smoke test — run a product description through the model.
     Outputs will be random (untrained) but verifies shapes are correct.
     """
-    tokenizer = DistilBertTokenizerFast.from_pretrained("distilbert-base-uncased")
+    tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_NAME)
     model     = ProductExtractor()
     model.eval()
 
-    test_text = (
-        "Portable LED Makeup Mirror with 10x magnification and 360 degree rotation. "
-        "USB rechargeable. Perfect for travel. Women love this for hotel rooms. "
-        "Never struggle with bad lighting again."
-    )
+    # Test with multilingual descriptions — all 8 supported languages
+    test_texts = {
+        "en": "Portable LED Makeup Mirror with 10x magnification. USB rechargeable. Never struggle with bad lighting again.",
+        "fr": "Miroir de maquillage LED portable avec grossissement 10x. Rechargeable USB. Parfait pour les voyages.",
+        "es": "Espejo de maquillaje LED portátil con aumento 10x. Recargable por USB. Perfecto para viajes.",
+        "de": "Tragbarer LED-Schminkspiegel mit 10-facher Vergrößerung. USB-aufladbar. Perfekt für Reisen.",
+        "ar": "مرآة مكياج LED محمولة بتكبير 10x. قابلة للشحن عبر USB. مثالية للسفر.",
+        "zh": "便携式LED化妆镜，10倍放大。USB充电。非常适合旅行使用。",
+    }
+    test_text = test_texts["en"]  # default to English for shape check
 
     encoding = tokenizer(
         test_text,

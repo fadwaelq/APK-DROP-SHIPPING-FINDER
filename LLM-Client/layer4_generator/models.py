@@ -5,7 +5,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from dataclasses import dataclass, asdict
-from typing import List
+from typing import List, Optional
 import json
 
 
@@ -22,12 +22,13 @@ class GeneratorInput:
     product_name:     str
     usp:              str
     main_promise:     str
-    marketing_angle:  str         # one of 7 angles
+    marketing_angle:  str              # one of 7 angles
     key_features:     List[str]
     category:         str
-    market_type:      str         # mass | niche | premium
+    market_type:      str              # mass | niche | premium
     problem_solved:   str
     target_audience:  List[str]
+    target_language:  str = "en"       # ISO 639-1: en/fr/es/de/it/pt/ar/zh
 
     @classmethod
     def from_layer3_output(cls, layer3_dict: dict) -> "GeneratorInput":
@@ -41,6 +42,7 @@ class GeneratorInput:
             market_type     = layer3_dict.get("market_type",     "mass"),
             problem_solved  = layer3_dict.get("problem_solved",  ""),
             target_audience = layer3_dict.get("target_audience", []),
+            target_language = layer3_dict.get("target_language", "en"),
         )
 
 
@@ -62,6 +64,7 @@ class GeneratorOutput:
     generation_mode:     str   # "template" | "gemini_nano"
     marketing_angle:     str
     tone:                str
+    target_language:     str = "en"   # language of the generated content
 
     def to_dict(self) -> dict:
         return asdict(self)

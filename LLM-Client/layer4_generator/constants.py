@@ -177,52 +177,63 @@ CTA_TEMPLATES = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 GEMINI_TITLE_PROMPT = """
-You are a dropshipping product copywriter. 
-Generate ONE compelling product title for the following product.
+You are a dropshipping product copywriter. Write a single product title.
 
-Product: {product_name}
-USP: {usp}
-Marketing angle: {marketing_angle}
-Target audience: {audience}
-Problem solved: {problem}
+Product:        {product_name}
+USP:            {usp}
+Angle:          {marketing_angle}
+Target Audience:{audience}
+Problem Solved: {problem}
+Tone:           {tone}
+Output Language:{language_name}
 
 Rules:
 - Maximum 80 characters
-- No emojis
-- No ALL CAPS
-- Must include the USP
-- Tone: {tone}
-
-Return the title only. No explanation.
+- No hashtags, no emojis
+- Must reference the product or USP
+- Write ONLY in {language_name} — no English if language is not English
+- Output the title only — no explanation, no quotes
 """
 
 GEMINI_DESCRIPTION_PROMPT = """
-You are a dropshipping product copywriter.
-Improve the following product description to make it more compelling and natural.
+You are a dropshipping product copywriter. Improve the following product description.
 
-Original description:
+Template to improve:
 {template_output}
 
-Product details:
-- Product: {product_name}
-- USP: {usp}  
-- Marketing angle: {marketing_angle}
-- Key features: {features}
-- Problem solved: {problem}
+Product:        {product_name}
+USP:            {usp}
+Angle:          {marketing_angle}
+Key Features:   {features}
+Problem Solved: {problem}
+Tone:           {tone}
+Output Language:{language_name}
 
 Rules:
 - Keep the same structure (hook, problem, solution, features, CTA)
-- Maximum 200 words
-- Natural, conversational tone
-- No generic filler phrases like "high quality" or "best in class"
-- Tone: {tone}
-
-Return the improved description only. No explanation.
+- 80 to 150 words
+- No markdown formatting
+- Write ONLY in {language_name} — no English if language is not English
+- Output the description only — no explanation
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TONE BY MARKET TYPE
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ── Supported Languages ──────────────────────────────────────────────────────
+SUPPORTED_LANGUAGES = {
+    "en": "English",
+    "fr": "French",
+    "es": "Spanish",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ar": "Arabic",
+    "zh": "Chinese",
+}
+
+DEFAULT_LANGUAGE = "en"
 
 # Default tone used when market_type is not recognized
 DEFAULT_TONE = "friendly, casual"

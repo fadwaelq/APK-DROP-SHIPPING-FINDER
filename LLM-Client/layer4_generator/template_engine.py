@@ -13,6 +13,7 @@ from constants import (
     TITLE_TEMPLATES, DESCRIPTION_TEMPLATES,
     HOOK_TEMPLATES, CTA_TEMPLATES,
     TONE_BY_MARKET, DEFAULT_TITLE_TEMPLATE_INDEX,
+    DEFAULT_TONE, DEFAULT_LANGUAGE,
 )
 
 
@@ -134,7 +135,7 @@ class TemplateEngine:
     def generate(self, inp: GeneratorInput) -> GeneratorOutput:
         title       = generate_title(inp)
         description = generate_description(inp)
-        tone        = TONE_BY_MARKET.get(inp.market_type, "friendly, casual")
+        tone        = TONE_BY_MARKET.get(inp.market_type, DEFAULT_TONE)
 
         return GeneratorOutput(
             product_title       = title,
@@ -142,4 +143,5 @@ class TemplateEngine:
             generation_mode     = "template",
             marketing_angle     = inp.marketing_angle,
             tone                = tone,
+            target_language     = getattr(inp, "target_language", DEFAULT_LANGUAGE),
         )

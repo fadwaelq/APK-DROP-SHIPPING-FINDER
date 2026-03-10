@@ -46,21 +46,30 @@ class ContentGenerator:
         self._template_engine  = TemplateEngine()
         self._gemini_engine    = GeminiNanoEngine(use_simulator=use_simulator)
 
-    def generate(self, layer3_output: Union[dict, GeneratorInput]) -> GeneratorOutput:
+    def generate(
+        self,
+        layer3_output: Union[dict, GeneratorInput],
+        target_language: str = "en",
+    ) -> GeneratorOutput:
         """
         Main entry point — call with Layer 3 output dict.
 
         Args:
-            layer3_output: dict from Layer 3 ScoringOutput.to_dict()
-                           OR a GeneratorInput instance directly
+            layer3_output:   dict from Layer 3 ScoringOutput.to_dict()
+                             OR a GeneratorInput instance directly
+            target_language: ISO 639-1 code for output language.
+                             en/fr/es/de/it/pt/ar/zh
 
         Returns:
             GeneratorOutput with product_title and product_description
+            in the requested language
         """
         if isinstance(layer3_output, dict):
+            layer3_output["target_language"] = target_language
             inp = GeneratorInput.from_layer3_output(layer3_output)
         else:
             inp = layer3_output
+            inp.target_language = target_language
 
         if self._gemini_available:
             return self._gemini_engine.generate(inp)
