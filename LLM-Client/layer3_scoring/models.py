@@ -55,18 +55,30 @@ class Layer2Output:
                             # curiosity | convenience | identity | value
     audience_size:    str   # mass | niche
 
+    # Review sentiment — populated by ReviewAnalyzer if reviews available
+    review_sentiment_score: float     = 0.5
+    review_sentiment_label: str       = "No Reviews"
+    customer_praise:        List[str] = field(default_factory=list)
+    customer_complaints:    List[str] = field(default_factory=list)
+    review_count:           int       = 0
+
     @classmethod
     def from_dict(cls, d: dict) -> "Layer2Output":
         return cls(
-            product_name    = d.get("product_name",    ""),
-            key_features    = d.get("key_features",    []),
-            target_audience = d.get("target_audience", []),
-            problem_solved  = d.get("problem_solved",  ""),
-            main_benefit    = d.get("main_benefit",    ""),
-            usp             = d.get("usp",             ""),
-            main_promise    = d.get("main_promise",    ""),
-            marketing_angle = d.get("marketing_angle", "convenience"),
-            audience_size   = d.get("audience_size",   "mass"),
+            product_name           = d.get("product_name",           ""),
+            key_features           = d.get("key_features",           []),
+            target_audience        = d.get("target_audience",        []),
+            problem_solved         = d.get("problem_solved",         ""),
+            main_benefit           = d.get("main_benefit",           ""),
+            usp                    = d.get("usp",                    ""),
+            main_promise           = d.get("main_promise",           ""),
+            marketing_angle        = d.get("marketing_angle",        "convenience"),
+            audience_size          = d.get("audience_size",          "mass"),
+            review_sentiment_score = float(d.get("review_sentiment_score", 0.5)),
+            review_sentiment_label = d.get("review_sentiment_label", "No Reviews"),
+            customer_praise        = d.get("customer_praise",        []),
+            customer_complaints    = d.get("customer_complaints",    []),
+            review_count           = int(d.get("review_count",       0)),
         )
 
 
@@ -161,6 +173,19 @@ class ScoringOutput:
     category:           str
     market_type:        str
 
+    # Seasonality
+    seasonality_score:  float = 0.5
+    seasonality_label:  str   = "Average ☁️"
+    seasonality_advice: str   = ""
+    peak_months:        List[int] = field(default_factory=list)
+
+    # Review sentiment pass-through
+    review_sentiment_score: float     = 0.5
+    review_sentiment_label: str       = "No Reviews"
+    customer_praise:        List[str] = field(default_factory=list)
+    customer_complaints:    List[str] = field(default_factory=list)
+    review_count:           int       = 0
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -173,5 +198,7 @@ class ScoringOutput:
             f"{self.product_name} | "
             f"Viral: {self.viral_score}/10 ({self.viral_label}) | "
             f"Competition: {self.competition_risk} | "
-            f"Margin: {self.margin_potential} ({self.margin.gross_margin_pct})"
+            f"Margin: {self.margin_potential} ({self.margin.gross_margin_pct}) | "
+            f"Season: {self.seasonality_label} | "
+            f"Reviews: {self.review_sentiment_label}"
         )

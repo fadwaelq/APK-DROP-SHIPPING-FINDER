@@ -37,7 +37,9 @@ from constants import (
     VIRAL_WEIGHTS, COMPETITION_THRESHOLDS, MARGIN_THRESHOLDS,
     PRICE_MULTIPLIERS, ROAS_TARGETS, DEFAULT_CATEGORY_SATURATION,
     ANGLE_VIRALITY_BONUS, VIRAL_SCORE_LABELS,
+    SEASONALITY_VIRAL_IMPACT, SENTIMENT_VIRAL_IMPACT,
 )
+from seasonality import SeasonalityScorer
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -76,12 +78,19 @@ def _compute_viral_score(
     layer1: Layer1Output,
     layer2: Layer2Output,
     trend_score: float,
+    seasonality_score: float = 0.5,
+    review_sentiment_score: float = 0.5,
 ) -> float:
     """
-    Weighted formula combining Layer 1 + Layer 2 signals.
+    Weighted formula combining Layer 1 + Layer 2 + seasonality + review signals.
 
     Inputs are all normalized to 0.0–1.0 before weighting.
     Final score is scaled to 0.0–10.0.
+
+    Seasonality and sentiment apply a small multiplier adjustment:
+        - Seasonality: (score - 0.5) * SEASONALITY_VIRAL_IMPACT
+        - Sentiment:   (score - 0.5) * SENTIMENT_VIRAL_IMPACT
+    Both are intentionally modest — they adjust, not dominate.
     """
     has_clear_usp   = 1.0 if layer2.usp else 0.0
     problem_clarity = 1.0 if layer2.problem_solved else 0.0
@@ -97,6 +106,14 @@ def _compute_viral_score(
     # Apply marketing angle bonus
     angle_bonus = ANGLE_VIRALITY_BONUS.get(layer2.marketing_angle, 0.0)
     raw_score   = _clamp(raw_score + angle_bonus)
+
+    # Apply seasonality adjustment — peak season boosts, off season reduces
+    season_adjustment   = (seasonality_score - 0.5) * SEASONALITY_VIRAL_IMPACT
+    raw_score           = _clamp(raw_score + season_adjustment)
+
+    # Apply review sentiment adjustment — positive reviews boost slightly
+    sentiment_adjustment = (review_sentiment_score - 0.5) * SENTIMENT_VIRAL_IMPACT
+    raw_score            = _clamp(raw_score + sentiment_adjustment)
 
     # Scale to 0–10, round to 1 decimal
     return round(raw_score * 10, 1)
@@ -209,21 +226,26 @@ class ScoringEngine:
     def _score_impl(self, inp: ScoringInput) -> ScoringOutput:
         """Core scoring logic — override this in v2 XGBoost subclass."""
 
-        # 1. Viral Score
+        # 1. Seasonality
+        seasonality_result = SeasonalityScorer().score(inp.layer1.category)
+
+        # 2. Viral Score — includes seasonality + review sentiment adjustments
         viral_score = _compute_viral_score(
             inp.layer1,
             inp.layer2,
             inp.trend_score,
+            seasonality_score      = seasonality_result.score,
+            review_sentiment_score = inp.layer2.review_sentiment_score,
         )
         viral_label = _get_viral_label(viral_score)
 
-        # 2. Competition Risk
+        # 3. Competition Risk
         competition_risk, _ = _compute_competition_risk(
             category    = inp.layer1.category,
             market_type = inp.layer1.market_type,
         )
 
-        # 3. Margin
+        # 4. Margin
         margin = _compute_margin(inp.user_input, inp.layer1.market_type)
 
         return ScoringOutput(
@@ -233,6 +255,19 @@ class ScoringEngine:
             competition_risk = competition_risk,
             margin_potential = margin.margin_label,
             margin           = margin,
+
+            # Seasonality
+            seasonality_score  = seasonality_result.score,
+            seasonality_label  = seasonality_result.label,
+            seasonality_advice = seasonality_result.advice,
+            peak_months        = seasonality_result.peak_months,
+
+            # Review sentiment pass-through
+            review_sentiment_score = inp.layer2.review_sentiment_score,
+            review_sentiment_label = inp.layer2.review_sentiment_label,
+            customer_praise        = inp.layer2.customer_praise,
+            customer_complaints    = inp.layer2.customer_complaints,
+            review_count           = inp.layer2.review_count,
 
             # Pass-through for Layer 4
             product_name     = inp.layer2.product_name,
@@ -305,12 +340,26 @@ class XGBoostScoringEngine(ScoringEngine):
         )
         margin = _compute_margin(inp.user_input, inp.layer1.market_type)
 
+        seasonality_result = SeasonalityScorer().score(inp.layer1.category)
+
         return ScoringOutput(
             viral_score      = predicted_viral,
             viral_label      = _get_viral_label(predicted_viral),
             competition_risk = competition_risk,
             margin_potential = margin.margin_label,
             margin           = margin,
+
+            seasonality_score  = seasonality_result.score,
+            seasonality_label  = seasonality_result.label,
+            seasonality_advice = seasonality_result.advice,
+            peak_months        = seasonality_result.peak_months,
+
+            review_sentiment_score = inp.layer2.review_sentiment_score,
+            review_sentiment_label = inp.layer2.review_sentiment_label,
+            customer_praise        = inp.layer2.customer_praise,
+            customer_complaints    = inp.layer2.customer_complaints,
+            review_count           = inp.layer2.review_count,
+
             product_name     = inp.layer2.product_name,
             usp              = inp.layer2.usp,
             main_promise     = inp.layer2.main_promise,

@@ -145,12 +145,31 @@ def mock_layer2(description: str) -> dict:
         "value":            "Get " + usp + " worth every penny",
     }
 
+    # Simulate review sentiment based on description tone
+    has_positive = any(w in dl for w in ["love", "perfect", "great", "amazing", "excellent"])
+    has_negative = any(w in dl for w in ["broke", "cheap", "waste", "terrible", "bad"])
+    if has_positive and not has_negative:
+        rev_score, rev_label = 0.80, "Very Positive ⭐⭐⭐"
+        praise, complaints   = ["great quality", "works as described"], []
+    elif has_negative and not has_positive:
+        rev_score, rev_label = 0.25, "Negative ❌"
+        praise, complaints   = [], ["quality issues reported"]
+    else:
+        rev_score, rev_label = 0.60, "Positive ✅"
+        praise, complaints   = ["decent quality"], []
+
     return {
         "product_name": product_name, "key_features": features,
         "target_audience": audience, "problem_solved": problem,
         "main_benefit": usp, "usp": usp,
         "main_promise": promises.get(angle, usp),
         "marketing_angle": angle, "audience_size": audience_size,
+        # Review sentiment
+        "review_sentiment_score": rev_score,
+        "review_sentiment_label": rev_label,
+        "customer_praise":        praise,
+        "customer_complaints":    complaints,
+        "review_count":           4,
     }
 
 
@@ -281,6 +300,10 @@ def run_tests(verbose: bool = False):
             print(f"    competition  : {l3['competition_risk']}")
             print(f"    margin       : {l3['margin_potential']} ({m['gross_margin_pct']})")
             print(f"    sell price   : ${m['recommended_price']}")
+            print(f"    seasonality  : {l3['seasonality_label']} ({l3['seasonality_score']})")
+            print(f"    reviews      : {l3['review_sentiment_label']} ({l3.get('review_count',0)} reviews)")
+            if l3.get('customer_complaints'):
+                print(f"    complaints   : {', '.join(l3['customer_complaints'][:2])}")
             print(f"    profit/unit  : ${m['profit_per_unit']}")
             print(f"    ROAS target  : {m['roas_target']}x")
 
@@ -298,14 +321,20 @@ def run_tests(verbose: bool = False):
             checks = [
                 (l1["category"] in ["gadget","beauty","home_kitchen",
                   "fashion_accessories","pet_kids","fitness_outdoor"], "L1 category valid"),
-                (0.0 <= l1["wow_score"] <= 1.0,       "L1 wow in range [0,1]"),
-                (bool(l2["usp"]),                      "L2 USP extracted"),
-                (bool(l2["marketing_angle"]),          "L2 angle classified"),
-                (0.0 <= l3["viral_score"] <= 10.0,     "L3 viral score in range"),
+                (0.0 <= l1["wow_score"] <= 1.0,          "L1 wow in range [0,1]"),
+                (bool(l2["usp"]),                         "L2 USP extracted"),
+                (bool(l2["marketing_angle"]),             "L2 angle classified"),
+                ("review_sentiment_score" in l2,          "L2 review sentiment present"),
+                (0.0 <= l2["review_sentiment_score"] <= 1.0, "L2 review sentiment in range [0,1]"),
+                (0.0 <= l3["viral_score"] <= 10.0,        "L3 viral score in range"),
                 (l3["competition_risk"] in ["Low","Medium","High"], "L3 risk valid"),
-                (m["gross_margin"] > 0,                "L3 margin positive"),
-                (len(l4["product_title"]) > 0,         "L4 title generated"),
-                (len(l4["product_description"]) > 0,   "L4 description generated"),
+                (m["gross_margin"] > 0,                   "L3 margin positive"),
+                ("seasonality_score" in l3,               "L3 seasonality present"),
+                (0.0 <= l3["seasonality_score"] <= 1.0,   "L3 seasonality score in range [0,1]"),
+                (bool(l3["seasonality_advice"]),          "L3 seasonality advice generated"),
+                ("review_sentiment_score" in l3,          "L3 review sentiment passed through"),
+                (len(l4["product_title"]) > 0,            "L4 title generated"),
+                (len(l4["product_description"]) > 0,      "L4 description generated"),
             ]
 
             print(f"\n  [CHECKS]")
@@ -336,8 +365,131 @@ def run_tests(verbose: bool = False):
     print(eq)
 
 
+def run_batch_test():
+    """
+    Integration test for BatchPipeline.
+    Verifies batch scoring, ranking, title fallback, and error isolation.
+    """
+    sys.path.insert(0, os.path.dirname(__file__))
+    from batch_pipeline import BatchPipeline, BatchResult
+
+    eq = "=" * 65
+    print(f"\n{eq}")
+    print("  BATCH PIPELINE INTEGRATION TEST")
+    print(eq)
+
+    payload = {
+        "source_url": "https://aliexpress.com/category/massagers",
+        "page_type":  "category",
+        "products": [
+            {   # full description — full Layer 2
+                "product_title": "Portable LED Makeup Mirror 10x Magnification",
+                "image_url":     "//ae01.alicdn.com/kf/led_mirror.jpg",
+                "price":         "US $4.50",
+                "shipping":      "Free shipping",
+                "order_count":   "10,000+ sold",
+                "rating":        "4.7 out of 5",
+                "description":   "Portable LED Makeup Mirror with 10x magnification. USB rechargeable. Perfect for travel. Never struggle with bad lighting again.",
+            },
+            {   # title only — title fallback active
+                "product_title": "Smart Electric Neck Massager Wireless Pulse Pain Relief",
+                "image_url":     "//ae01.alicdn.com/kf/massager.jpg",
+                "price":         "US $12.50",
+                "shipping":      "Free shipping",
+                "order_count":   "8,500+ sold",
+                "rating":        "4.6 out of 5",
+                "description":   "",
+            },
+            {   # missing price — supplier_price defaults to 5.0
+                "product_title": "Resistance Band Set Anti-Snap 5 Levels",
+                "image_url":     "//ae01.alicdn.com/kf/bands.jpg",
+                "price":         "",
+                "shipping":      "Free shipping",
+                "order_count":   "3,200+ sold",
+                "rating":        "4.3 out of 5",
+                "description":   "",
+            },
+            {   # bad data — should be processed without crashing batch
+                "product_title": "Unknown Product",
+                "image_url":     "",
+                "price":         "",
+                "shipping":      "",
+                "order_count":   "",
+                "rating":        "",
+                "description":   "",
+            },
+            {   # French title — multilingual
+                "product_title": "Masseur Cervical Intelligent Sans Fil Soulagement Douleur",
+                "image_url":     "//ae01.alicdn.com/kf/masseur_fr.jpg",
+                "price":         "12,50 EUR",
+                "shipping":      "Livraison gratuite",
+                "order_count":   "5 000+ vendus",
+                "rating":        "4.5 sur 5",
+                "description":   "",
+            },
+        ]
+    }
+
+    passed = True
+    result = BatchPipeline().run(payload)
+
+    checks = [
+        (result.total_input == 5,                                 "Batch: all 5 products processed"),
+        (result.error_count == 0,                                 "Batch: zero pipeline errors"),
+        (len(result.winners) + len(result.worth_watching) > 0,   "Batch: at least 1 ranked result"),
+        (result.processing_ms > 0,                               "Batch: processing time recorded"),
+        (result.source_url == payload["source_url"],             "Batch: source_url preserved"),
+
+        # Ranking checks
+        (all(p.viral_score >= 7.0 for p in result.winners),      "Ranking: all winners >= 7.0 viral"),
+        (all(p.viral_score >= 4.5 for p in result.worth_watching),"Ranking: watchlist >= 4.5 viral"),
+        (all(p.rank > 0 for p in result.winners),                "Ranking: winners have rank > 0"),
+
+        # Title fallback check
+        (any(p.description_source == "title_fallback"
+             for p in result.winners + result.worth_watching + result.skipped),
+                                                                  "Fallback: title_fallback used when description empty"),
+        (any(p.description_source == "full_description"
+             for p in result.winners + result.worth_watching + result.skipped),
+                                                                  "Fallback: full_description used when available"),
+
+        # Scores in valid range
+        (all(0.0 <= p.viral_score <= 10.0
+             for p in result.winners + result.worth_watching + result.skipped),
+                                                                  "Scores: all viral_score in [0, 10]"),
+        (all(p.competition_risk in ["Low","Medium","High"]
+             for p in result.winners + result.worth_watching + result.skipped),
+                                                                  "Scores: competition_risk valid values"),
+        (all(p.seasonality_label != ""
+             for p in result.winners + result.worth_watching + result.skipped),
+                                                                  "Scores: seasonality_label present"),
+    ]
+
+    print(f"\n  [CHECKS]")
+    for ok, name in checks:
+        mark = "PASS" if ok else "FAIL"
+        print(f"    [{mark}] {name}")
+        if not ok:
+            passed = False
+
+    print(f"\n  Winners        : {len(result.winners)}")
+    print(f"  Worth Watching : {len(result.worth_watching)}")
+    print(f"  Skipped        : {result.skipped_count}")
+    print(f"  Errors         : {result.error_count}")
+    print(f"  Time           : {result.processing_ms}ms")
+
+    result_str = "PASS" if passed else "FAIL"
+    print(f"\n  >>> {result_str}")
+    print(eq)
+    return passed
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Show full descriptions")
+    parser.add_argument("--batch",   action="store_true", help="Run batch pipeline test")
     args = parser.parse_args()
-    run_tests(verbose=args.verbose)
+    if args.batch:
+        run_batch_test()
+    else:
+        run_tests(verbose=args.verbose)

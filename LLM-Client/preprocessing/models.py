@@ -4,7 +4,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from dataclasses import dataclass, field, asdict
-from typing import Optional, List
+from typing import Optional, List, Tuple
 import json
 
 
@@ -84,7 +84,28 @@ class CleanProductData:
 
     @property
     def has_description(self) -> bool:
-        return len(self.description.split()) >= 10
+        return len(self.description.split()) >= 3
+
+    @property
+    def description_source(self) -> str:
+        """Where the text input for Layer 2 came from."""
+        if len(self.description.split()) >= 10:
+            return "full_description"
+        if self.product_title:
+            return "title_fallback"
+        return "none"
+
+    def text_for_layer2(self) -> str:
+        """
+        Returns the best available text for Layer 2.
+        Falls back to product_title if description is empty or too short.
+        This handles listing-level web mining where only title is available.
+        """
+        if len(self.description.split()) >= 5:
+            return self.description
+        if self.product_title:
+            return self.product_title
+        return ""
 
     @property
     def is_complete(self) -> bool:
@@ -100,8 +121,15 @@ class CleanProductData:
         return {"image_url": self.image_url}
 
     def to_layer2_input(self) -> dict:
-        """Format for Layer 2 inference."""
-        return {"text": self.description}
+        """
+        Format for Layer 2 inference.
+        Uses text_for_layer2() which falls back to product_title
+        when description is empty (listing-level web mining mode).
+        """
+        return {
+            "text":              self.text_for_layer2(),
+            "description_source": self.description_source,
+        }
 
     def to_layer3_input(self, layer1_output: dict, layer2_output: dict) -> dict:
         """Format for Layer 3 scoring engine."""
