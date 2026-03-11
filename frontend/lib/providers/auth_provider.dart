@@ -10,7 +10,7 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   String? _token;
   bool _isLoading = false;
-  bool _isCheckingInitialAuth = true; // Flag to indicate initial auth check is pending
+  bool _isCheckingInitialAuth = true;
   String? _error;
 
   User? get user => _user;
@@ -28,12 +28,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _initializeAuth() async {
-    // _isCheckingInitialAuth is already true by default
-    // Use Future.delayed to ensure UI can catch the loading state
     await Future.delayed(Duration.zero);
     notifyListeners();
-    
-    // Load stored auth (this will set _isCheckingInitialAuth to false when done)
     await _loadStoredAuth();
   }
 
@@ -55,9 +51,8 @@ class AuthProvider with ChangeNotifier {
       debugPrint('Error loading stored auth: $e');
       await logout();
     } finally {
-      // Set loading to false and notify listeners when done
       _isLoading = false;
-      _isCheckingInitialAuth = false; // Mark initial auth check as complete
+      _isCheckingInitialAuth = false;
       notifyListeners();
     }
   }
@@ -71,22 +66,27 @@ class AuthProvider with ChangeNotifier {
     try {
       final response = await _apiService.login(email, password, rememberMe: rememberMe);
 
-      if (response['success']) {
-        final token = response['token'];
-        final refresh = response['refresh'];
-        final userData = response['user'];
+      if (response['success'] == true) {
+        // ✅ CORRECTION ICI : Gestion intelligente des clés (access_token au lieu de token)
+        final token = response['access_token'] ?? response['access'] ?? response['token'];
+        final refresh = response['refresh_token'] ?? response['refresh'];
+        final userData = response['user'] ?? (response['data'] != null ? response['data']['user'] : null);
 
         if (token == null) {
-          throw Exception('Token manquant dans la réponse API');
+          throw Exception('Token manquant dans la réponse API. Réponse: $response');
         }
 
         _token = token;
-        _user = User.fromJson(userData);
-
         
+        if (userData != null) {
+          _user = User.fromJson(userData);
+          await _secureStorage.saveUserData(jsonEncode(userData));
+        }
+
         await _secureStorage.saveAuthToken(_token!);
-        await _secureStorage.saveRefreshToken(refresh);
-        await _secureStorage.saveUserData(jsonEncode(userData));
+        if (refresh != null) {
+          await _secureStorage.saveRefreshToken(refresh);
+        }
 
         _apiService.setAuthToken(_token!);
 
@@ -118,7 +118,6 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Step 1: Sign in with Google
       final googleResult = await _googleAuth.signIn();
       
       if (!googleResult['success']) {
@@ -131,20 +130,17 @@ class AuthProvider with ChangeNotifier {
         };
       }
 
-      // Step 2: Send access token and id token to backend
       final response = await _apiService.loginWithGoogle(
         googleResult['access_token'],
         idToken: googleResult['id_token'],
       );
 
       if (response['success']) {
-        // Backend returns: {success: true, message_code: "success_login", data: {user: {...}, tokens: {...}}}
         final data = response['data'];
         final tokens = data['tokens'];
         _token = tokens['access'];
         _user = User.fromJson(data['user']);
 
-        // Store credentials
         await _secureStorage.saveAuthToken(_token!);
         await _secureStorage.saveRefreshToken(tokens['refresh']);
         await _secureStorage.saveUserData(jsonEncode(data['user']));
@@ -180,22 +176,19 @@ class AuthProvider with ChangeNotifier {
       final response = await _apiService.register(fullName, email, password);
 
       if(response['success'] == true){
+        // ✅ CORRECTION ICI : On ne plante plus si l'utilisateur n'est pas renvoyé immédiatement
         final user = response['user'];
-
-        if(user == null){
-          throw Exception('User data missing in registration response');
-        }
 
         _isLoading = false;
         notifyListeners();
         return {
           'success': true,
           'user': user,
-          'email':response['email'],
+          'email': response['email'],
+          'access_token': response['access_token'] ?? response['token'],
           'otp_expires_in': response['otp_expires_in'],
           'next_step': response['next_step'],
-          'message': response['message'],
-          
+          'message': response['message'] ?? response['confirmation'],
         };
       }else{
         _error = response['message']?? 'Registration failed';
@@ -207,26 +200,6 @@ class AuthProvider with ChangeNotifier {
           'errors': response['errors'],
         };
       }
-
-      // if (response['success']) {
-      //   _isLoading = false;
-      //   notifyListeners();
-      //   return {
-      //     'success': true,
-      //     'message_code': response['message_code'],
-      //     'user': response['data']['user'],
-      //   };
-      // } else {
-      //   _error = response['message'] ?? response['message_code'] ?? 'Registration failed';
-      //   _isLoading = false;
-      //   notifyListeners();
-      //   return {
-      //     'success': false,
-      //     'message': _error,
-      //     'message_code': response['message_code'],
-      //     'errors': response['errors'],
-      //   };
-      // }
     } catch (e) {
       _error = 'Network error: ${e.toString()}';
       _isLoading = false;
@@ -242,20 +215,29 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final response = await _apiService.verifyOTP(email, otp);
-      final token = response['token'];
-      final refresh = response['refresh'];
+      
+      // ✅ Sécurisation de la vérification OTP aussi
+      final token = response['access_token'] ?? response['access'] ?? response['token'];
+      final refresh = response['refresh_token'] ?? response['refresh'];
       final userData = response['user'];
 
       if(token == null && userData == null){
          throw Exception('Token or user data missing in OTP verification response');
       }
-      _token = token;
-      _user = User.fromJson(userData);
+      
+      if (token != null) _token = token;
+      if (userData != null) _user = User.fromJson(userData);
 
-      await _secureStorage.saveAuthToken(_token!);
-      await _secureStorage.saveRefreshToken(refresh);
-      await _secureStorage.saveUserData(jsonEncode(userData));
-      _apiService.setAuthToken(_token!);
+      if (_token != null) {
+        await _secureStorage.saveAuthToken(_token!);
+        _apiService.setAuthToken(_token!);
+      }
+      if (refresh != null) {
+        await _secureStorage.saveRefreshToken(refresh);
+      }
+      if (userData != null) {
+        await _secureStorage.saveUserData(jsonEncode(userData));
+      }
 
       _isLoading = false;
       notifyListeners();
@@ -312,7 +294,6 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    // Sign out from Google if signed in
     if (await _googleAuth.isSignedIn()) {
       await _googleAuth.signOut();
     }

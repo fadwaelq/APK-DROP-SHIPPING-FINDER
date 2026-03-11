@@ -41,35 +41,34 @@ class ApiService {
     }
   }
 
- Future<Map<String, dynamic>> register(
-    String fullName, String email, String password) async {
-  try {
-    final payload = {
-      'fullname': fullName,
-      'email': email,
-      'password': password,
-      'password_confirm': password,
-    };
+  Future<Map<String, dynamic>> register(
+      String fullName, String email, String password) async {
+    try {
+      final payload = {
+        'full_name': fullName, // ✅ CORRECTION ICI : Le tiret du bas est bien présent
+        'email': email,
+        'password': password,
+        'password_confirm': password,
+      };
 
-    print('📤 REGISTER PAYLOAD: $payload');
+      print('📤 REGISTER PAYLOAD: $payload');
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/register/'),
-      headers: {
-        'Content-Type': 'application/json', // 🔥 IMPORTANT
-      },
-      body: jsonEncode(payload),
-    );
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register/'),
+        headers: {
+          'Content-Type': 'application/json', // 🔥 IMPORTANT
+        },
+        body: jsonEncode(payload),
+      );
 
-    print('📥 REGISTER STATUS: ${response.statusCode}');
-    print('📥 REGISTER BODY: ${response.body}');
+      print('📥 REGISTER STATUS: ${response.statusCode}');
+      print('📥 REGISTER BODY: ${response.body}');
 
-    return _handleResponse(response);
-  } catch (e) {
-    return {'success': false, 'message': e.toString()};
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
   }
-}
-
 
   Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
     try {
@@ -202,37 +201,43 @@ class ApiService {
     }
   }
 
-Future<Map<String, dynamic>> getTrendingProducts() async {
-  try {
-    final response = await http.get(
-      Uri.parse('$baseUrl/products/?is_trending=true'),
-      headers: _headers,
-    );
+  Future<Map<String, dynamic>> getTrendingProducts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/?is_trending=true'),
+        headers: _headers,
+      );
 
-    print('📦 Status: ${response.statusCode}');
-    print('📦 Body: ${response.body}');
+      print('📦 Status: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
 
-      final products = decoded['results'] ?? [];
+        List<dynamic> products = [];
 
-      return {
-        'success': true,
-        'data': products,
-      };
-    } else {
-      return {
-        'success': false,
-        'message': 'Server error ${response.statusCode}',
-      };
+        // ✅ CORRECTION ICI : Gère la réponse qu'elle soit une Liste ou un Dictionnaire
+        if (decoded is List) {
+          products = decoded;
+        } else if (decoded is Map && decoded.containsKey('results')) {
+          products = decoded['results'];
+        }
+
+        return {
+          'success': true,
+          'data': products,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Server error ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      print('❌ Error in getTrendingProducts: $e');
+      return {'success': false, 'message': e.toString()};
     }
-  } catch (e) {
-    print('❌ Error in getTrendingProducts: $e');
-    return {'success': false, 'message': e.toString()};
   }
-}
-
 
   Future<Map<String, dynamic>> searchProducts(String query) async {
     try {

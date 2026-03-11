@@ -54,7 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (mounted) {
         if (result['success'] == true) {
-          // Registration successful - user needs to verify OTP
+          // 1. Afficher le message de succès
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -70,19 +70,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           );
 
-          // Navigate to OTP verification screen
+          // 2. Naviguer vers l'écran OTP avec le paramètre manquant
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => VerifyOTPScreen(
                 email: _emailController.text.trim(),
+                purpose: OtpPurpose.register, // <-- LA CORRECTION FINALE EST ICI (Utilisation de l'Enum)
               ),
             ),
           );
         } else {
-          // Handle registration errors
+          // Gestion des erreurs d'inscription
           String errorMessage = 'Erreur d\'inscription';
 
-          // Check if there are specific field errors
           if (result['errors'] != null && result['errors'] is Map) {
             final errors = result['errors'] as Map<String, dynamic>;
             final errorMessages = <String>[];
@@ -179,9 +179,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Username field
                 TextFormField(
                   controller: _usernameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Nom d\'utilisateur',
-                    prefixIcon: const Icon(Icons.person_outline),
+                    prefixIcon: Icon(Icons.person_outline),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -199,9 +199,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -284,7 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     shadowColor: Colors.transparent,
                   ),
                   child: _isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
