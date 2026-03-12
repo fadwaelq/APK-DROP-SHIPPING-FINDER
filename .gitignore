@@ -177,3 +177,4 @@ celerybeat.pid
 
 # Tor
 tor-data/
+backend/env_DROP/

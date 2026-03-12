@@ -1,8 +1,10 @@
 from django.urls import path
-from . import views
+from .views.jobs import LiveSearchAPIView, BulkLiveSearchAPIView
 
 urlpatterns = [
-    path('scrape-product/', views.ScrapeProductView.as_view(), name='scrape-product'),
-    path('bulk-scrape/', views.BulkScrapeView.as_view(), name='bulk-scrape'),
-
+    # POST /api/scraper/search/ -> Cherche un produit sans le sauvegarder
+    path('search/', LiveSearchAPIView.as_view(), name='live-search'),
+    
+    # POST /api/scraper/bulk-search/ -> Cherche plusieurs produits
+    path('bulk-search/', BulkLiveSearchAPIView.as_view(), name='bulk-live-search'),
 ]
