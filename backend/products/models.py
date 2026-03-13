@@ -55,3 +55,17 @@ class ProductWatchlist(models.Model):
 
     class Meta:
         unique_together = ('user', 'product')
+    
+
+class AdCampaign(models.Model):
+    PLATFORM_CHOICES = [('tiktok', 'TikTok'), ('facebook', 'Facebook'), ('instagram', 'Instagram')]
+    
+    title = models.CharField(max_length=255)
+    product_link = models.URLField(blank=True, null=True)
+    video_url = models.URLField()
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
+    ad_creative_text = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.platform} - {self.title}"

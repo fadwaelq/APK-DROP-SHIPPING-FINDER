@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from products.models import Product
 
+
 class ProductSerializer(serializers.ModelSerializer):
     """
     Sérialiseur pour formater les produits en JSON.
@@ -25,3 +26,5 @@ class ProductSerializer(serializers.ModelSerializer):
             'ai_analysis_summary',
             'created_at'
         ]
+
+

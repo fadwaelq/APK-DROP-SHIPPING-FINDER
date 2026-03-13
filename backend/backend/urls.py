@@ -9,15 +9,22 @@ urlpatterns = [
     # --- DOCUMENTATION API (SWAGGER) ---
     # Téléchargement du schéma au format YAML/JSON
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    
     # L'interface Swagger UI
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
     # L'interface alternative Redoc (optionnel)
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-    # API endpoints
-    # Api authentication
+
+    # Analyse de la couverture de la documentation (optionnel)
+    path('api/analytics/', include('analytics.urls')),
+
+    # Api accounts
     path('api/accounts/', include('accounts.urls')), 
+
     # Inclure les URLs de l'application scraper
     path('api/scraper/', include('scraper.urls')),
+
     # Inclure les URLs de l'application products
     path('api/products/', include('products.urls')),
 ]

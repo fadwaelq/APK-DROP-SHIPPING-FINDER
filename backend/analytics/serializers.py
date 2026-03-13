@@ -1,0 +1,9 @@
+from rest_framework import serializers
+
+class ROICalculatorSerializer(serializers.Serializer):
+    selling_price = serializers.FloatField(help_text="Prix de vente final au Maroc (MAD)")
+    product_cost = serializers.FloatField(help_text="Coût d'achat (MAD)")
+    ads_cost_per_order = serializers.FloatField(help_text="CPA estimé (MAD)")
+    shipping_cost = serializers.FloatField(default=35.0, help_text="Frais de livraison AMANA/Colis (MAD)")
+    confirmation_rate = serializers.FloatField(default=0.8, help_text="Taux de confirmation (ex: 0.8 pour 80%)")
+    delivery_rate = serializers.FloatField(default=0.7, help_text="Taux de livraison réelle (ex: 0.7 pour 70%)")
