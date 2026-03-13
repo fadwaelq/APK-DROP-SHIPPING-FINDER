@@ -54,12 +54,18 @@ class ExtractionResult:
 # SPAN EXTRACTOR — groups consecutive BIO tags into text spans
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _flush_span(spans: Dict[str, List[str]], entity: str, tokens: List[str]) -> None:
+    """Append the accumulated token span to spans if non-empty."""
+    if entity and tokens:
+        spans[entity].append(" ".join(tokens))
+
+
 def extract_spans(tokens: List[str], labels: List[str]) -> Dict[str, List[str]]:
     """
     Input:
         tokens: ["Portable", "LED", "Makeup", "Mirror", "with", "10x", ...]
         labels: ["B-PRODUCT", "I-PRODUCT", "I-PRODUCT", "I-PRODUCT", "O", "B-FEATURE", ...]
-    
+
     Output:
         {
             "PRODUCT":  ["Portable LED Makeup Mirror"],
@@ -82,27 +88,17 @@ def extract_spans(tokens: List[str], labels: List[str]) -> Dict[str, List[str]]:
 
     for token, label in zip(tokens, labels):
         if label.startswith("B-"):
-            # Save previous span
-            if current_entity and current_tokens:
-                spans[current_entity].append(" ".join(current_tokens))
-            # Start new span
+            _flush_span(spans, current_entity, current_tokens)
             current_entity = label[2:]   # strip "B-"
             current_tokens = [token]
-
         elif label.startswith("I-") and current_entity == label[2:]:
             current_tokens.append(token)
-
         else:
-            # Save previous span when entity ends
-            if current_entity and current_tokens:
-                spans[current_entity].append(" ".join(current_tokens))
+            _flush_span(spans, current_entity, current_tokens)
             current_entity = None
             current_tokens = []
 
-    # Save last span
-    if current_entity and current_tokens:
-        spans[current_entity].append(" ".join(current_tokens))
-
+    _flush_span(spans, current_entity, current_tokens)
     return spans
 
 

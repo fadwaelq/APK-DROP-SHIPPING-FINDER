@@ -8,6 +8,9 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Optional
 import json
 
+# Sentinel used as default when no review data is available (SonarQube S1192)
+NO_REVIEWS_LABEL: str = "No Reviews"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LAYER 1 OUTPUT — Vision AI result
@@ -57,7 +60,7 @@ class Layer2Output:
 
     # Review sentiment — populated by ReviewAnalyzer if reviews available
     review_sentiment_score: float     = 0.5
-    review_sentiment_label: str       = "No Reviews"
+    review_sentiment_label: str       = NO_REVIEWS_LABEL
     customer_praise:        List[str] = field(default_factory=list)
     customer_complaints:    List[str] = field(default_factory=list)
     review_count:           int       = 0
@@ -75,7 +78,7 @@ class Layer2Output:
             marketing_angle        = d.get("marketing_angle",        "convenience"),
             audience_size          = d.get("audience_size",          "mass"),
             review_sentiment_score = float(d.get("review_sentiment_score", 0.5)),
-            review_sentiment_label = d.get("review_sentiment_label", "No Reviews"),
+            review_sentiment_label = d.get("review_sentiment_label", NO_REVIEWS_LABEL),
             customer_praise        = d.get("customer_praise",        []),
             customer_complaints    = d.get("customer_complaints",    []),
             review_count           = int(d.get("review_count",       0)),
@@ -181,7 +184,7 @@ class ScoringOutput:
 
     # Review sentiment pass-through
     review_sentiment_score: float     = 0.5
-    review_sentiment_label: str       = "No Reviews"
+    review_sentiment_label: str       = NO_REVIEWS_LABEL
     customer_praise:        List[str] = field(default_factory=list)
     customer_complaints:    List[str] = field(default_factory=list)
     review_count:           int       = 0

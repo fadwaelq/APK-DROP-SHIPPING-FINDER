@@ -12,7 +12,7 @@
 set -e   # stop on first failure
 
 QUICK=false
-if [ "$1" == "--quick" ]; then
+if [[ "$1" == "--quick" ]]; then
   QUICK=true
 fi
 
@@ -71,7 +71,7 @@ run_test "Integration — Single Product (4 tests, 15 checks each)" \
   "cd '$ROOT' && python integration_test.py"
 
 # Integration — Batch pipeline
-if [ "$QUICK" = false ]; then
+if [[ "$QUICK" = false ]]; then
   run_test "Integration — Batch Pipeline (13 checks)" \
     "cd '$ROOT' && python integration_test.py --batch"
 else
@@ -82,7 +82,7 @@ fi
 echo ""
 echo "════════════════════════════════════════════════════════"
 echo "  Results: $PASS passed, $FAIL failed"
-if [ $FAIL -eq 0 ]; then
+if [[ $FAIL -eq 0 ]]; then
   echo "  ✅ All tests passed — safe to commit"
 else
   echo "  ❌ $FAIL test(s) failed — fix before committing"

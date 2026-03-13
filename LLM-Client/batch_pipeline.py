@@ -277,12 +277,8 @@ def _mock_layer1(image_url: str) -> dict:
         "market_type":   ["mass","niche","premium"][seed % 3],
     }
 
-def _mock_layer2(text: str, description_source: str) -> dict:
-    """Simulate Layer 2 output from short title or full description."""
-    dl    = text.lower()
-    words = text.split()
-
-    # Feature extraction
+def _extract_features(text: str, dl: str) -> list:
+    """Extract numeric specs and keyword features from product text."""
     features = []
     for m in _re.finditer(r"\d+[x°%]?\s*\w+(?:\s+\w+)?", text):
         feat = m.group().strip()
@@ -291,34 +287,42 @@ def _mock_layer2(text: str, description_source: str) -> dict:
     for kw in ["wireless","portable","waterproof","usb","rechargeable","smart","electric","led","auto"]:
         if kw in dl and kw not in features:
             features.append(kw)
-    features = features[:4]
+    return features[:4]
 
-    usp = features[0] if features else (words[0] if words else "product")
 
+def _detect_angle(dl: str) -> str:
+    """Detect the dominant marketing angle from lowercased text."""
     if any(w in dl for w in ["pain","douleur","stop","fix","solve","relief"]):
-        angle = "problem_solution"
-    elif any(w in dl for w in ["transform","glow","upgrade","smart"]):
-        angle = "transformation"
-    elif any(w in dl for w in ["instant","easy","auto","wireless","portable"]):
-        angle = "convenience"
-    else:
-        angle = "value"
+        return "problem_solution"
+    if any(w in dl for w in ["transform","glow","upgrade","smart"]):
+        return "transformation"
+    if any(w in dl for w in ["instant","easy","auto","wireless","portable"]):
+        return "convenience"
+    return "value"
 
-    audience_size = "niche" if any(w in dl for w in ["pro","professional","athlete","serious"]) else "mass"
 
-    # Weaker confidence when title-only
+def _mock_layer2(text: str, description_source: str) -> dict:
+    """Simulate Layer 2 output from short title or full description."""
+    dl    = text.lower()
+    words = text.split()
+
+    features = _extract_features(text, dl)
+    usp      = features[0] if features else (words[0] if words else "product")
+    angle    = _detect_angle(dl)
+
+    audience_size   = "niche" if any(w in dl for w in ["pro","professional","athlete","serious"]) else "mass"
     confidence_note = "low_confidence_title_only" if description_source == "title_fallback" else "normal"
 
     return {
-        "product_name":          " ".join(words[:5]) if len(words) >= 5 else text,
-        "key_features":          features,
-        "target_audience":       [],
-        "problem_solved":        "",
-        "main_benefit":          usp,
-        "usp":                   usp,
-        "main_promise":          f"Get {usp}",
-        "marketing_angle":       angle,
-        "audience_size":         audience_size,
+        "product_name":           " ".join(words[:5]) if len(words) >= 5 else text,
+        "key_features":           features,
+        "target_audience":        [],
+        "problem_solved":         "",
+        "main_benefit":           usp,
+        "usp":                    usp,
+        "main_promise":           f"Get {usp}",
+        "marketing_angle":        angle,
+        "audience_size":          audience_size,
         "review_sentiment_score": 0.5,
         "review_sentiment_label": "No Reviews",
         "customer_praise":        [],

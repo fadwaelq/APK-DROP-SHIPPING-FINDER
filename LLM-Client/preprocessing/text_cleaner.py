@@ -145,6 +145,24 @@ def detect_language(text: str) -> str:
 # STEP 3 — Handle Mixed Language
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _segment_matches_language(segment: str, language: str) -> bool:
+    """
+    Return True if the segment contains enough characters for the target script.
+    Extracted to reduce cognitive complexity of extract_dominant_language_segments
+    (SonarQube S3776).
+    """
+    total = len(segment)
+    if language == "ar":
+        arabic_count = sum(1 for ch in segment if "\u0600" <= ch <= "\u06FF")
+        return arabic_count / total > 0.15
+    if language == "zh":
+        cjk_count = sum(1 for ch in segment if "\u4E00" <= ch <= "\u9FFF")
+        return cjk_count / total > 0.15
+    # Latin-script languages: keep predominantly ASCII segments
+    ascii_count = sum(1 for ch in segment if ord(ch) < 128)
+    return ascii_count / total > 0.60
+
+
 def extract_dominant_language_segments(text: str, language: str = DEFAULT_LANGUAGE) -> str:
     """
     Keep only segments matching the detected language.
@@ -154,33 +172,11 @@ def extract_dominant_language_segments(text: str, language: str = DEFAULT_LANGUA
     Replaces the old English-only extract_english_segments().
     """
     segments = re.split(r'[\n\r。！？；]', text)
-    kept_segments = []
-
-    for segment in segments:
-        segment = segment.strip()
-        if not segment:
-            continue
-
-        total = len(segment)
-        if total == 0:
-            continue
-
-        if language == "ar":
-            # Keep segments with meaningful Arabic content
-            arabic_count = sum(1 for ch in segment if "\u0600" <= ch <= "\u06FF")
-            if arabic_count / total > 0.15:
-                kept_segments.append(segment)
-        elif language == "zh":
-            # Keep segments with meaningful CJK content
-            cjk_count = sum(1 for ch in segment if "\u4E00" <= ch <= "\u9FFF")
-            if cjk_count / total > 0.15:
-                kept_segments.append(segment)
-        else:
-            # Latin-script languages: keep predominantly ASCII segments
-            ascii_count = sum(1 for ch in segment if ord(ch) < 128)
-            if ascii_count / total > 0.60:
-                kept_segments.append(segment)
-
+    kept_segments = [
+        seg.strip()
+        for seg in segments
+        if seg.strip() and _segment_matches_language(seg.strip(), language)
+    ]
     return ' '.join(kept_segments)
 
 

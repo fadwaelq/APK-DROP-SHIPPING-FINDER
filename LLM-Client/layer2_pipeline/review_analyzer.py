@@ -196,6 +196,18 @@ class ReviewAnalyzer:
         text = re.sub(r"\s+", " ", text)
         return text.strip().lower()
 
+    @staticmethod
+    def _score_word(clean_word: str, negated: bool) -> tuple:
+        """
+        Return (pos_delta, neg_delta) for a single word given its negation context.
+        Extracted to reduce cognitive complexity of _score_sentiment (SonarQube).
+        """
+        if clean_word in POSITIVE_SIGNALS:
+            return (0, 1) if negated else (1, 0)
+        if clean_word in NEGATIVE_SIGNALS:
+            return (0.5, 0) if negated else (0, 1)   # "not broken" → weakly positive
+        return (0, 0)
+
     def _score_sentiment(self, reviews: List[str]) -> float:
         """
         Compute sentiment score 0.0–1.0 using positive/negative word counts.
@@ -207,24 +219,11 @@ class ReviewAnalyzer:
         for review in reviews:
             words = review.split()
             for i, word in enumerate(words):
-                # Check for negation in previous 2 words
-                negated = any(
-                    words[j] in NEGATION_WORDS
-                    for j in range(max(0, i - 2), i)
-                )
-
+                negated    = any(words[j] in NEGATION_WORDS for j in range(max(0, i - 2), i))
                 clean_word = re.sub(r"[^a-z\u0600-\u06FF\u4E00-\u9FFF]", "", word)
-
-                if clean_word in POSITIVE_SIGNALS:
-                    if negated:
-                        total_neg += 1
-                    else:
-                        total_pos += 1
-                elif clean_word in NEGATIVE_SIGNALS:
-                    if negated:
-                        total_pos += 0.5   # "not broken" is weakly positive
-                    else:
-                        total_neg += 1
+                pos, neg   = self._score_word(clean_word, negated)
+                total_pos += pos
+                total_neg += neg
 
         total = total_pos + total_neg
         if total == 0:
