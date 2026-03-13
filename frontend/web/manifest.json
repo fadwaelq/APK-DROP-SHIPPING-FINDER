@@ -1,6 +1,6 @@
 {
-    "name": "dropshipping_finder",
-    "short_name": "dropshipping_finder",
+    "name": "dropshipping_app",
+    "short_name": "dropshipping_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

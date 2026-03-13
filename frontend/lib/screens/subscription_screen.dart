@@ -1,11 +1,6 @@
-// ignore_for_file: deprecated_member_use
-
-import 'package:dropshipping_finder/screens/finalize_subscription.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../models/user.dart';
-import '../utils/theme.dart';
+import '../theme/app_colors.dart';
+import 'checkout_screen.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
@@ -13,37 +8,86 @@ class SubscriptionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      backgroundColor: Colors.grey[50],
+      body: SingleChildScrollView(
         child: Column(
           children: [
             _buildHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: AppTheme.screenPadding,
-                child: Column(
-                  children: [
-                    _buildPlanCard(
-                      context,
-                      plan: SubscriptionPlan.starter,
-                      isRecommended: false,
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  _buildPlanCard(
+                    context,
+                    title: 'Starter',
+                    price: '99',
+                    icon: Icons.flash_on,
+                    iconColor: Colors.blue,
+                    features: [
+                      '100 recherches par mois',
+                      'Analyse de base',
+                      '5 favoris',
+                      'Support email',
+                      'Historique 7 jours',
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPlanCard(
+                    context,
+                    title: 'Pro',
+                    price: '249',
+                    icon: Icons.star_border,
+                    iconColor: Colors.orange,
+                    isPopular: true,
+                    features: [
+                      'Recherches illimitées',
+                      'Analyse avancée',
+                      'Favoris illimités',
+                      'Support prioritaire',
+                      'Historique 30 jours',
+                      'Export données',
+                      'Alertes tendances',
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPlanCard(
+                    context,
+                    title: 'Premium',
+                    price: '499',
+                    icon: Icons.workspace_premium_outlined,
+                    iconColor: Colors.orange,
+                    features: [
+                      'Tout du plan Pro',
+                      'Analyse concurrence',
+                      'API accès',
+                      'Support 24/7',
+                      'Historique illimité',
+                      'Formation exclusive',
+                      'Conseiller dédié',
+                      'Outils marketing',
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: AppTheme.spacingM),
-                    _buildPlanCard(
-                      context,
-                      plan: SubscriptionPlan.pro,
-                      isRecommended: true,
+                    child: Text(
+                      'Garantie satisfait ou remboursé 14 jours\nAnnulation possible à tout moment',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.blue[900],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(height: AppTheme.spacingM),
-                    _buildPlanCard(
-                      context,
-                      plan: SubscriptionPlan.premium,
-                      isRecommended: false,
-                    ),
-                    const SizedBox(height: AppTheme.spacingL),
-                    _buildMoneyBackGuarantee(),
-                    const SizedBox(height: AppTheme.spacingXXL),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ],
@@ -55,65 +99,66 @@ class SubscriptionScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.spacingL),
       decoration: const BoxDecoration(
-        gradient: AppTheme.orangeGradient,
+        color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-              Expanded(
-                child: Text(
-                  'Passer à Pro',
-                  style: AppTheme.headlineMedium.copyWith(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
-                  textAlign: TextAlign.center,
+          const SizedBox(height: 60),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
-              const SizedBox(width: 48),
-            ],
+                const Expanded(
+                  child: Text(
+                    'Passer à Pro',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 48),
+              ],
+            ),
           ),
-          const SizedBox(height: AppTheme.spacingL),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(50),
+              shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.trending_up,
-              size: 40,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.trending_up, color: Colors.white, size: 32),
           ),
-          const SizedBox(height: AppTheme.spacingM),
-          Text(
+          const SizedBox(height: 16),
+          const Text(
             'Boostez votre business',
-            style: AppTheme.displaySmall.copyWith(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppTheme.spacingXS),
-          Text(
+          const SizedBox(height: 8),
+          const Text(
             'Choisissez le plan qui correspond à vos objectifs',
-            style: AppTheme.bodyLarge.copyWith(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
             ),
-            textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -121,339 +166,128 @@ class SubscriptionScreen extends StatelessWidget {
 
   Widget _buildPlanCard(
     BuildContext context, {
-    required SubscriptionPlan plan,
-    required bool isRecommended,
+    required String title,
+    required String price,
+    required IconData icon,
+    required Color iconColor,
+    required List<String> features,
+    bool isPopular = false,
   }) {
-    // Define plan details
-    String name;
-    String price;
-    List<String> features;
-    Color accentColor;
-    IconData icon;
-
-    switch (plan) {
-      case SubscriptionPlan.starter:
-        name = 'Starter';
-        price = '10';
-        features = [
-          '100 recherches par mois',
-          'Analyse de base',
-          '5 favoris',
-          'Support email',
-          'Historique 7 jours',
-        ];
-        accentColor = const Color(0xFF5B8DEF);
-        icon = Icons.rocket_launch_outlined;
-        break;
-      case SubscriptionPlan.pro:
-        name = 'Pro';
-        price = '24';
-        features = [
-          'Recherches illimitées',
-          'Analyse avancée',
-          'Favoris illimités',
-          'Support prioritaire',
-          'Historique 30 jours',
-          'Export données',
-          'Alertes tendances',
-        ];
-        accentColor = AppTheme.secondaryOrange;
-        icon = Icons.workspace_premium;
-        break;
-      case SubscriptionPlan.premium:
-        name = 'Premium';
-        price = '49';
-        features = [
-          'Tout du plan Pro',
-          'Analyse prédictive',
-          'API accès',
-          'Support 24/7',
-          'Historique illimité',
-          'Formation exclusive',
-          'Conseiller dédié',
-          'Outils marketing',
-        ];
-        accentColor = const Color(0xFFFFA726);
-        icon = Icons.diamond;
-        break;
-      default:
-        name = 'Free';
-        price = '0';
-        features = [];
-        accentColor = AppTheme.mediumGray;
-        icon = Icons.star;
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        border: isRecommended
-            ? Border.all(color: AppTheme.secondaryOrange, width: 2)
-            : Border.all(color: AppTheme.borderColor, width: 1),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isRecommended)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingS),
-              decoration: const BoxDecoration(
-                color: AppTheme.warningYellow,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(AppTheme.borderRadiusLarge),
-                  topRight: Radius.circular(AppTheme.borderRadiusLarge),
-                ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: isPopular ? Border.all(color: Colors.orange, width: 2) : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Text(
-                'Le plus populaire',
-                style: AppTheme.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingL),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppTheme.spacingS),
-                      decoration: BoxDecoration(
-                        color: accentColor,
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: AppTheme.spacingS),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: AppTheme.headlineSmall.copyWith(
-                            fontSize: 18,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: AppTheme.spacingXS),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Icon(icon, color: iconColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      RichText(
+                        text: TextSpan(
                           children: [
-                            Text(
-                              price,
-                              style: AppTheme.displayMedium.copyWith(
-                                fontSize: 32,
-                                color: accentColor,
-                              ),
+                            TextSpan(
+                              text: price,
+                              style: const TextStyle(
+                                  color: Colors.orange, fontSize: 20, fontWeight: FontWeight.bold),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: 6,
-                                left: 2,
-                              ),
-                              child: Text(
-                                '€/mois',
-                                style: AppTheme.labelMedium.copyWith(
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
+                            TextSpan(
+                              text: ' DH/mois',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ...features.map((f) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        const SizedBox(width: 8),
+                        Text(f, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.spacingL),
-                ...features.map((feature) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: accentColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: AppTheme.spacingS),
-                          Expanded(
-                            child: Text(
-                              feature,
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
+                  )),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckoutScreen(
+                          planName: title,
+                          planPrice: price,
+                        ),
                       ),
-                    )),
-                const SizedBox(height: AppTheme.spacingM),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _handleSubscribe(context, plan),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accentColor,
-                      foregroundColor: Colors.white,
-                      padding: AppTheme.buttonPadding,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                      ),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                    ),
-                    child: Text(
-                      'Choisir $name',
-                      style: AppTheme.labelLarge.copyWith(
-                        fontSize: 16,
-                      ),
-                    ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
+                  child: Text('Choisir $title'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMoneyBackGuarantee() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spacingL),
-      decoration: BoxDecoration(
-        color: AppTheme.infoBlue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        border: Border.all(
-          color: AppTheme.infoBlue.withOpacity(0.3),
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.verified_user,
-            color: AppTheme.infoBlue,
-            size: 32,
-          ),
-          const SizedBox(width: AppTheme.spacingM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Garantie satisfait ou remboursé 14 jours',
-                  style: AppTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+        if (isPopular)
+          Positioned(
+            top: -12,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: AppTheme.spacingXS),
-                Text(
-                  'Annulez à tout moment, sans frais cachés',
-                  style: AppTheme.bodySmall.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
+                child: const Text(
+                  'Le plus populaire',
+                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleSubscribe(BuildContext context, SubscriptionPlan plan) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Confirmer l\'abonnement',
-          style: AppTheme.headlineSmall,
-        ),
-        content: Text(
-          'Vous allez souscrire au plan ${plan.displayName} pour ${plan.price} €/mois.',
-          style: AppTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Annuler',
-              style: AppTheme.labelMedium.copyWith(
-                color: AppTheme.textSecondary,
               ),
             ),
           ),
-          ElevatedButton(
-  onPressed: () {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) =>  const PremiumCheckoutScreen(),
-      ),
+      ],
     );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: AppTheme.secondaryOrange,
-    foregroundColor: Colors.white,
-  ),
-  child: Text(
-    'Confirmer',
-    style: AppTheme.labelMedium.copyWith(
-      color: Colors.white,
-    ),
-  ),
-),
-
-        ],
-      ),
-    );
-
-    if (confirm == true && context.mounted) {
-      final success = await userProvider.updateSubscription(plan);
-      
-      if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Abonnement mis à jour avec succès !',
-              style: AppTheme.bodyMedium.copyWith(color: Colors.white),
-            ),
-            backgroundColor: AppTheme.successGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-          ),
-        );
-        Navigator.pop(context);
-      } else if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              userProvider.error ?? 'Erreur lors de la mise à jour',
-              style: AppTheme.bodyMedium.copyWith(color: Colors.white),
-            ),
-            backgroundColor: AppTheme.errorRed,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-          ),
-        );
-      }
-    }
   }
 }
