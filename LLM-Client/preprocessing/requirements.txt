@@ -1,0 +1,3 @@
+# Preprocessing — Python dependencies
+# All stdlib — no external packages needed.
+# re, unicodedata, json, dataclasses are all built into Python 3.7+
