@@ -1,0 +1,8 @@
+# layer4_generator — Python dependencies
+# Template engine uses stdlib only — no pip packages required.
+# Gemini Nano runs on-device via Android AICore (no pip package).
+
+# Python >= 3.9 required (uses dataclasses, typing)
+
+# Optional: only needed for local Gemini Nano simulation testing
+# requests>=2.31.0

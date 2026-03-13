@@ -5,7 +5,7 @@ Run this when the data team delivers the labeled dataset.
 
 Usage:
     python train.py --data ./layer2_dataset_v1/labels/labels.jsonl
-                    --images ./layer2_dataset_v1/texts/
+                    --texts  ./layer2_dataset_v1/texts/
                     --output ./checkpoints/
                     --epochs 5
 

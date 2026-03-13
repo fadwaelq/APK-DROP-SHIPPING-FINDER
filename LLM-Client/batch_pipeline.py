@@ -76,6 +76,7 @@ class ProductResult:
     """
     rank:               int
     tier:               str         # winner | worth_watching | skip
+    product_id:         str
     product_title:      str
     image_url:          Optional[str]
     viral_score:        float
@@ -234,6 +235,7 @@ def rank_results(scored: List[dict]) -> tuple:
         result = ProductResult(
             rank               = rank if tier != "skip" else 0,
             tier               = tier,
+            product_id         = item.get("product_id", ""),
             product_title      = item.get("product_title", ""),
             image_url          = item.get("image_url"),
             viral_score        = viral,
@@ -430,6 +432,7 @@ print(json.dumps(result.to_dict()))
     # ── Merge into flat result dict ───────────────────────────────────────
     return {
         **l3,
+        "product_id":         clean.get("product_id", raw_dict.get("product_id", "")),
         "product_title":      clean.get("product_title", ""),
         "image_url":          clean.get("image_url"),
         "description_source": desc_source,
@@ -500,6 +503,7 @@ class BatchPipeline:
                 errors.append(ProductResult(
                     rank               = 0,
                     tier               = "error",
+                    product_id         = raw_dict.get("product_id", ""),
                     product_title      = title,
                     image_url          = raw_dict.get("image_url"),
                     viral_score        = 0.0,

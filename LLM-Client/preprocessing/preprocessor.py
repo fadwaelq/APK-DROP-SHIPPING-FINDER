@@ -117,9 +117,11 @@ class Preprocessor:
         if rating_status != "ok":
             warnings.append(f"Rating not found ({rating_status})")
 
-        # ── Product Title ─────────────────────────────────────────────────────
+        # ── Product Title + ID ────────────────────────────────────────────────
         if raw.product_title:
             result.product_title = raw.product_title.strip()
+        if raw.product_id:
+            result.product_id = raw.product_id.strip()
 
         # ── Finalize ──────────────────────────────────────────────────────────
         result.missing_fields = missing
@@ -140,4 +142,5 @@ class Preprocessor:
             "needs_manual":    data.missing_fields,
             "warnings":        data.warnings,
             "is_complete":     data.is_complete,
+            "product_id":      data.product_id,
         }

@@ -45,8 +45,12 @@ def parse_price(raw: Optional[str]) -> Tuple[Optional[float], str]:
     text = re.sub(r'(?i)(from|starting at|price:|approx\.?)', '', text)
     text = text.strip()
 
+    # Truncate before any regex to prevent ReDoS on adversarial input
+    text = text[:64]
+
     # Handle price ranges — take lower bound
-    range_match = re.search(r'(\d+[\.,]\d+)\s*[-–]\s*(\d+[\.,]\d+)', text)
+    # Digit groups are length-bounded to eliminate polynomial backtracking (SonarQube S5852)
+    range_match = re.search(r'(\d{1,6}[.,]\d{1,4})\s{0,4}[-\u2013]\s{0,4}(\d{1,6}[.,]\d{1,4})', text)
     if range_match:
         text   = range_match.group(1)
         status = "range_taken"
@@ -181,7 +185,9 @@ def parse_rating(raw: Optional[str]) -> Tuple[float, str]:
         return min(float(filled), 5.0), "stars_counted"
 
     # Percentage → 5-star scale
-    pct_match = re.search(r'(\d+(?:\.\d+)?)\s*%', text)
+    # Digit groups are length-bounded to prevent polynomial backtracking (SonarQube S5852)
+    text = text[:32]
+    pct_match = re.search(r'(\d{1,3}(?:\.\d{1,2})?)\s{0,4}%', text)
     if pct_match:
         pct    = float(pct_match.group(1))
         rating = round((pct / 100) * 5, 1)
@@ -231,8 +237,9 @@ def validate_image_url(url: Optional[str]) -> Tuple[Optional[str], str]:
     if url.startswith("//"):
         url = "https:" + url
 
-    # Must be a real URL
-    if not url.startswith(("http://", "https://")):
+    # Must be a real URL — http:// is rejected intentionally (SonarQube S5332).
+    # Only https:// is accepted; plain HTTP exposes image traffic to interception.
+    if not url.startswith("https://"):
         return None, "invalid_format"
 
     # Strip query params — they often contain tracking tokens that expire

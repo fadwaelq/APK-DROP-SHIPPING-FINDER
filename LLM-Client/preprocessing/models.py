@@ -26,6 +26,7 @@ class RawDOMData:
     order_count:   Optional[str] = None   # e.g. "10,000+ sold", "10k+ orders"
     rating:        Optional[str] = None   # e.g. "4.7", "4.7 out of 5", "4.7/5"
     product_title: Optional[str] = None   # raw product title from page
+    product_id:    Optional[str] = None   # platform product ID — e.g. "ALI_789456123"
 
     @classmethod
     def from_dict(cls, d: dict) -> "RawDOMData":
@@ -37,6 +38,7 @@ class RawDOMData:
             order_count   = d.get("order_count"),
             rating        = d.get("rating"),
             product_title = d.get("product_title"),
+            product_id    = d.get("product_id"),
         )
 
 
@@ -70,6 +72,7 @@ class CleanProductData:
 
     # Metadata
     product_title:  str             = ""
+    product_id:     str             = ""   # platform product ID — passed through from RawDOMData
     missing_fields: List[str]       = field(default_factory=list)
     warnings:       List[str]       = field(default_factory=list)
 
