@@ -1,10 +1,6 @@
-import 'package:dropshipping_finder/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_verification_code_field/flutter_verification_code_field.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../utils/theme.dart';
-import 'verify_otp_screen.dart';
+import '../theme/app_colors.dart';
+import 'change_password_success_screen.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -14,327 +10,146 @@ class ChangePasswordScreen extends StatefulWidget {
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  String _otpValue = "";
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Les mots de passe ne correspondent pas')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      final result = await authProvider.register(
-        _usernameController.text,
-        _emailController.text,
-        _passwordController.text,
-      );
-
-      if (mounted) {
-        if (result['success'] == true) {
-          // Registration successful - user needs to verify OTP
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Inscription réussie! Vérifiez votre email pour le code OTP.',
-                style: AppTheme.bodyMedium.copyWith(color: Colors.white),
-              ),
-              backgroundColor: AppTheme.successGreen,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              ),
-            ),
-          );
-
-          // Navigate to OTP verification screen
-         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => VerifyOTPScreen(
-              email: _emailController.text.trim(),
-              purpose: OtpPurpose.register, // 🔥 ICI
-            ),
-          ),
-        );
-
-        } else {
-          // Handle registration errors
-          String errorMessage = 'Erreur d\'inscription';
-
-          // Check if there are specific field errors
-          if (result['errors'] != null && result['errors'] is Map) {
-            final errors = result['errors'] as Map<String, dynamic>;
-            final errorMessages = <String>[];
-
-            errors.forEach((key, value) {
-              if (value is List && value.isNotEmpty) {
-                errorMessages.add(value.first.toString());
-              }
-            });
-
-            if (errorMessages.isNotEmpty) {
-              errorMessage = errorMessages.join('\n');
-            }
-          } else if (result['message'] != null) {
-            errorMessage = result['message'];
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                errorMessage,
-                style: AppTheme.bodyMedium.copyWith(color: Colors.white),
-              ),
-              backgroundColor: AppTheme.errorRed,
-              duration: const Duration(seconds: 4),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erreur: $e',
-              style: AppTheme.bodyMedium.copyWith(color: Colors.white),
-            ),
-            backgroundColor: AppTheme.errorRed,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-int _currentIndex = 3;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Changer le mot de passe',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
         ),
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppTheme.screenPadding,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-               const SizedBox(height: AppTheme.spacingXL),
-                const SizedBox(height: AppTheme.spacingXL),
-                // Username field
-              TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe actuel',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer un mot de passe';
-                    }
-                    if (value.length < 6) {
-                      return 'Le mot de passe doit contenir au moins 6 caractères';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppTheme.spacingM),
-                
-                // Email field
-                 TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Nouveau mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer un mot de passe';
-                    }
-                    if (value.length < 6) {
-                      return 'Le mot de passe doit contenir au moins 6 caractères';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppTheme.spacingXL),
-                
-                // Password field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Confirmer le nouveau mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer un mot de passe';
-                    }
-                    if (value.length < 6) {
-                      return 'Le mot de passe doit contenir au moins 6 caractères';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppTheme.spacingM),
-                
-                VerificationCodeField(
-              length: 4,
-              onFilled: (value) {
-                setState(() {
-                  _otpValue = value;
-                });
-              },
-              size: const Size(40, 60),
-              spaceBetween: 15,
-              matchingPattern: RegExp(r'^\d+$'),
-            ),
-                const SizedBox(height: AppTheme.spacingXL),
-                
-                // Register button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryOrange,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppTheme.mediumGray,
-                    disabledForegroundColor: AppTheme.textTertiary,
-                    padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                    ),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Enregistrer le Nouveau Mot de Passe',
-                          style: AppTheme.labelLarge.copyWith(
-                            fontSize: 16,
-                          ),
-                        ),
-                ),
-                // ignore: prefer_const_constructors
-             
-                
-                const SizedBox(height: AppTheme.spacingXXL),
-              ],
-            ),
+        title: const Text(
+          'changer le mot de passe',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-            _navigateToPage(index);
-          },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPasswordField(
+              label: 'Mot de passe Actuel',
+              controller: _currentPasswordController,
+            ),
+            const SizedBox(height: 24),
+            _buildPasswordField(
+              label: 'Nouveau Mot de passe',
+              controller: _newPasswordController,
+            ),
+            const SizedBox(height: 24),
+            _buildPasswordField(
+              label: 'Confirmer le Nouveau Mot de passe',
+              controller: _confirmPasswordController,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Le mot de passe doit contenir au moins 8 caractères.',
+              style: TextStyle(
+                color: Colors.orange,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) => _buildPinBox()),
+            ),
+            const SizedBox(height: 48),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChangePasswordSuccessScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Enregistrer le Nouveau Mot de passe',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+            ),
+          ],
         ),
-);
-   
+      ),
+    );
   }
-  
- void _navigateToPage(int index) {
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(context, '/search');
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/favorites');
-        break;
-      case 3:
-        // Already on profile
-        break;
-    }
+
+  Widget _buildPasswordField({required String label, required TextEditingController controller}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: true,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              hintText: '•••••',
+              hintStyle: TextStyle(color: Colors.grey, fontSize: 18),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPinBox() {
+    return Container(
+      width: 45,
+      height: 45,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+    );
   }
 }
