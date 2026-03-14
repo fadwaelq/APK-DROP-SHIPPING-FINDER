@@ -18,3 +18,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp_code = serializers.CharField(max_length=6)
+
+from rest_framework import serializers
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

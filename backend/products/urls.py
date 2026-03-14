@@ -12,7 +12,7 @@ urlpatterns = [
     #  PORTFOLIO & FAVORIS (Workflow 2) ---
     # GET /api/products/watchlist/ -> Liste les favoris de l'utilisateur
     # POST /api/products/watchlist/ -> Ajoute un produit aux favoris
-    path('watchlist/', views.WatchlistAPIView.as_view(), name='watchlist-list-create'),
+    path('favorites/', views.WatchlistAPIView.as_view(), name='watchlist-list-create'),
     
     # DELETE /api/products/watchlist/1/ -> Retire un favori précis
     path('watchlist/<int:pk>/', views.WatchlistDetailAPIView.as_view(), name='watchlist-delete'),

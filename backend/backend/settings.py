@@ -44,6 +44,11 @@ INSTALLED_APPS = [
     'analytics',
     'education',
     'scraper',
+    'subscriptions',
+    'support',
+    'community',
+    'rewards',
+    
 ]
 
 MIDDLEWARE = [
@@ -131,6 +136,12 @@ REST_FRAMEWORK = {
     # On active les filtres pour toute l'API (utile pour l'app products)
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema', # <-- Ajoute ceci
+
+    #  on peut aussi personnaliser les renderers pour standardiser les réponses de l'API pour le frontend
+    'DEFAULT_RENDERER_CLASSES': [
+        'core.renderers.StandardizedJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer', # Optionnel : Garde l'interface web de DRF active
+    ],
 
 }
 

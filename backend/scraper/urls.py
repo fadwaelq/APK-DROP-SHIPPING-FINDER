@@ -15,7 +15,7 @@ urlpatterns = [
     # API endpoint for bulk live search
     path('bulk-search/', BulkLiveSearchAPIView.as_view(), name='bulk-live-search'),
     # API endpoints for asynchronous scraping with Puppeteer
-    path('scrape-puppeteer/', ScrapeAsyncAPIView.as_view(), name='scrape-async'),
+    path('products/scrape/', ScrapeAsyncAPIView.as_view(), name='scrape-async'),
     # API endpoint for bulk asynchronous scraping with Puppeteer
     path('bulk-scrape-puppeteer/', BulkScrapeAsyncAPIView.as_view(), name='bulk-scrape-async'),
     # API endpoint to check the status of an asynchronous scraping task

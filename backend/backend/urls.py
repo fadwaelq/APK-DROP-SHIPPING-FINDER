@@ -20,11 +20,23 @@ urlpatterns = [
     path('api/analytics/', include('analytics.urls')),
 
     # Api accounts
-    path('api/accounts/', include('accounts.urls')), 
+    path('api/user/', include('accounts.urls')), 
 
     # Inclure les URLs de l'application scraper
-    path('api/scraper/', include('scraper.urls')),
+    path('api/', include('scraper.urls')),
 
     # Inclure les URLs de l'application products
     path('api/products/', include('products.urls')),
+
+    # Inclure les URLs de l'application subscriptions
+    path('api/subscriptions/', include('subscriptions.urls')),
+
+    # Inclure les URLs de l'application support
+    path('api/support/', include('support.urls')),
+
+    # Inclure les URLs de l'application community
+    path('api/', include('community.urls')),
+
+    #  Inclure les URLs de l'application rewards
+    path('api/rewards/', include('rewards.urls')),
 ]

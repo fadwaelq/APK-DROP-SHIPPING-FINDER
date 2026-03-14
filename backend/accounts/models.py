@@ -8,7 +8,7 @@ class CustomUser(AbstractUser):
     is_email_verified = models.BooleanField(default=False, verbose_name="Email vérifié ?")
     otp_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Code de vérification")
 
-    # On force la connexion avec l'email plutôt que le pseudo (plus pro pour un SaaS)
+    # On force la connexion avec l'email au lieu du nom d'utilisateur
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
