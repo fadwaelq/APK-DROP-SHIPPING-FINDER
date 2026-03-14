@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     # --- LIBRAIRIES EXTERNES ---
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist', # Nécessaire pour pouvoir blacklister les tokens lors de la déconnexion
     'django_filters', # Nécessaire pour ton moteur de recherche (app products)
     'drf_spectacular', # Pour la documentation Swagger de l'API
 

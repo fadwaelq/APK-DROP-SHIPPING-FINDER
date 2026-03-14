@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from accounts.serializers.auth import ChangePasswordSerializer
+from rest_framework.permissions import IsAuthenticated
+from accounts.serializers.profile import BadgeSerializer
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
 
@@ -43,3 +45,14 @@ class ChangePasswordView(APIView):
             return Response({"detail": "Mot de passe mis à jour avec succès."}, status=status.HTTP_200_OK)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class UserBadgesView(generics.ListAPIView):
+    """Retourne la liste des badges de l'utilisateur connecté"""
+    serializer_class = BadgeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # On retourne uniquement les badges liés à l'utilisateur qui fait la requête
+        return self.request.user.badges.all()

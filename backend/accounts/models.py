@@ -2,11 +2,24 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 import random
 
+class Badge(models.Model):
+    """Modèle pour les badges utilisateurs (ex: Débutant, Top Vendeur, etc.)"""
+    name = models.CharField(max_length=50, unique=True, verbose_name="Nom du badge")
+    description = models.TextField(blank=True, verbose_name="Description")
+    # On utilise un URLField pour l'icône, c'est plus simple pour le frontend (Fadwa)
+    icon_url = models.URLField(blank=True, null=True, verbose_name="URL de l'icône")
+
+    def __str__(self):
+        return self.name
+
 class CustomUser(AbstractUser):
-    """Utilisateur personnalisé pour le SaaS Dropshipping"""
+    # On remplace le champ email pour le rendre unique et obligatoire
     email = models.EmailField(unique=True, verbose_name="Adresse Email")
     is_email_verified = models.BooleanField(default=False, verbose_name="Email vérifié ?")
     otp_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Code de vérification")
+
+    # Relation ManyToMany pour les badges, un utilisateur peut en avoir plusieurs et un badge peut être attribué à plusieurs utilisateurs
+    badges = models.ManyToManyField(Badge, blank=True, related_name="users", verbose_name="Badges de l'utilisateur")
 
     # On force la connexion avec l'email au lieu du nom d'utilisateur
     USERNAME_FIELD = 'email'
