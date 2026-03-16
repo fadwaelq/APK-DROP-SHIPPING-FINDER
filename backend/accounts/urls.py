@@ -11,7 +11,7 @@ from accounts.views.auth import (
     LogoutView          
 )
 from accounts.views.google import GoogleLoginView
-from accounts.views.profile import UpdateUserProfileV2View, UserBadgesView, UserProfileView
+from accounts.views.profile import UpdateUserProfileV2View, UserAvatarView, UserBadgesView, UserProfileView
 
 urlpatterns = [
     # Workflow d'inscription
@@ -31,6 +31,7 @@ urlpatterns = [
     # Endpoint pour le profil utilisateur
     path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('profile/v2/update/', UpdateUserProfileV2View.as_view(), name='user-profile-v2'), 
+    path('profile/v2/avatar/', UserAvatarView.as_view(), name='user-avatar'),
 
     # Endpoint pour afficher les badges de l'utilisateur
     path('badges/', UserBadgesView.as_view(), name='user-badges'), 
