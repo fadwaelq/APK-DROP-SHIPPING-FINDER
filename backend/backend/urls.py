@@ -39,4 +39,7 @@ urlpatterns = [
 
     #  Inclure les URLs de l'application rewards
     path('api/rewards/', include('rewards.urls')),
+
+    # Inclure les URLs de l'application economy
+    path('api/economy/', include('economy.urls')),
 ]

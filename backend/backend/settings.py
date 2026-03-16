@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'support',
     'community',
     'rewards',
+    'economy',
     
 ]
 

@@ -27,3 +27,16 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"Ticket #{self.id} - {self.subject} ({self.get_status_display()})"
+    
+# Modèle pour les messages associés à un ticket, permettant une communication entre l'utilisateur et le support
+class TicketMessage(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Message de {self.sender.username} sur le ticket #{self.ticket.id}"

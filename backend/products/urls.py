@@ -16,4 +16,8 @@ urlpatterns = [
     
     # DELETE /api/products/watchlist/1/ -> Retire un favori précis
     path('watchlist/<int:pk>/', views.WatchlistDetailAPIView.as_view(), name='watchlist-delete'),
-]
+
+    # HISTORIQUE DE CONSULTATION (Workflow 2) ---
+    # GET /api/products/history/ -> Liste les produits récemment consultés par l'utilisateur
+    path('history/', views.ProductHistoryAPIView.as_view(), name='product-history')
+    ]   
