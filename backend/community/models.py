@@ -17,6 +17,9 @@ class Post(models.Model):
 
 
 class Event(models.Model):
+    # 👇 NOUVEAU CHAMP : Permet d'identifier l'organisateur et sécuriser la modification
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_events')
+    
     title = models.CharField(max_length=200)
     description = models.TextField()
     event_date = models.DateTimeField(help_text="Date et heure de l'événement")
