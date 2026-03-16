@@ -14,11 +14,24 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated] 
 
+
+
     def get_object(self):
         # On renvoie l'utilisateur lié au token
         return self.request.user
     
 
+class UpdateUserProfileV2View(generics.UpdateAPIView):
+    """ 
+    PUT/PATCH /api/user/profile/v2/ 
+    Mise à jour du profil V2 (incluant l'avatar_url 3D Ready Player Me) 
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # On s'assure que l'utilisateur ne peut modifier que son propre profil
+        return self.request.user
 
 class ChangePasswordView(APIView):
     """ PUT /api/user/change-password : Changer le mot de passe depuis le profil  """

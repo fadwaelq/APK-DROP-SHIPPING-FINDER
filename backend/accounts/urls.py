@@ -11,7 +11,7 @@ from accounts.views.auth import (
     LogoutView          
 )
 from accounts.views.google import GoogleLoginView
-from accounts.views.profile import UserBadgesView, UserProfileView
+from accounts.views.profile import UpdateUserProfileV2View, UserBadgesView, UserProfileView
 
 urlpatterns = [
     # Workflow d'inscription
@@ -21,16 +21,19 @@ urlpatterns = [
     # Workflow de connexion standard
     path('login/', TokenObtainPairView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('logout/', LogoutView.as_view(), name='logout'), # <-- Modifié ici avec .as_view()
+    path('logout/', LogoutView.as_view(), name='logout'),
 
     # Workflow de récupération et modification de mot de passe
     path('password-reset/', ForgotPasswordView.as_view(), name='password-reset'),
     path('password-reset-confirm/', ResetPasswordConfirmView.as_view(), name='password-reset-confirm'),
-    path('change-password/', ChangePasswordView.as_view(), name='change-password'), # <-- Modifié ici avec .as_view()
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
 
     # Endpoint pour le profil utilisateur
     path('profile/', UserProfileView.as_view(), name='user-profile'),
-    path('badges/', UserBadgesView.as_view(), name='user-badges'), # <-- NOUVELLE ROUTE
+    path('profile/v2/update/', UpdateUserProfileV2View.as_view(), name='user-profile-v2'), 
+
+    # Endpoint pour afficher les badges de l'utilisateur
+    path('badges/', UserBadgesView.as_view(), name='user-badges'), 
 
     # La route pour l'authentification Google
     path('google-login/', GoogleLoginView.as_view(), name='google-login'),

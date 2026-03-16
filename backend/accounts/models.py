@@ -6,7 +6,7 @@ class Badge(models.Model):
     """Modèle pour les badges utilisateurs (ex: Débutant, Top Vendeur, etc.)"""
     name = models.CharField(max_length=50, unique=True, verbose_name="Nom du badge")
     description = models.TextField(blank=True, verbose_name="Description")
-    # On utilise un URLField pour l'icône, c'est plus simple pour le frontend (Fadwa)
+    # On utilise un URLField pour l'icône
     icon_url = models.URLField(blank=True, null=True, verbose_name="URL de l'icône")
 
     def __str__(self):
@@ -21,6 +21,9 @@ class CustomUser(AbstractUser):
     # Relation ManyToMany pour les badges, un utilisateur peut en avoir plusieurs et un badge peut être attribué à plusieurs utilisateurs
     badges = models.ManyToManyField(Badge, blank=True, related_name="users", verbose_name="Badges de l'utilisateur")
 
+    # avatar_url pour stocker l'URL de l'image de profil de l'utilisateur
+    avatar_url = models.URLField(max_length=500, blank=True, null=True, verbose_name="URL Avatar 3D")
+    
     # On force la connexion avec l'email au lieu du nom d'utilisateur
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
