@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
+import '../services/session_manager.dart';
+import '../models/user_model.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String initialName;
@@ -76,11 +78,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Modifications enregistrées')),
-                        );
+                      onPressed: () async {
+                        final session = SessionManager();
+                        if (session.user != null) {
+                          final result = await session.updateUserField(
+                            firstName: _nameController.text,
+                            email: _emailController.text,
+                            profilePicture: _image?.path,
+                          );
+
+                          if (mounted) {
+                            if (result['success'] == true) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Modifications enregistrées')),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Erreur: ${result['message'] ?? 'Échec de la mise à jour'}'),
+                                    backgroundColor: Colors.red),
+                              );
+                            }
+                          }
+                        }
                       },
                       icon: const Icon(Icons.save_outlined, size: 20),
                       label: const Text(
@@ -151,8 +173,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white24,
-                  backgroundImage: _image != null ? FileImage(_image!) : null,
-                  child: _image == null
+                  backgroundImage: _image != null 
+                      ? FileImage(_image!) 
+                      : (SessionManager().user?.profilePicture != null 
+                          ? FileImage(File(SessionManager().user!.profilePicture!)) 
+                          : null),
+                  child: (_image == null && SessionManager().user?.profilePicture == null)
                       ? const Icon(Icons.person, size: 50, color: Colors.white)
                       : null,
                 ),

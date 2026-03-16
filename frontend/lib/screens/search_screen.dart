@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
+import '../services/favorites_manager.dart';
+import 'dart:async';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -9,71 +13,93 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final List<String> _filters = [
-    'Catégories Tendance',
-    'Haute Marge Estimée',
-    'Nouveaux Lancements',
-    'Score Viralité Élevé',
-  ];
+  List<String> _getFilters(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      l10n.filter_trending,
+      l10n.filter_margin,
+      l10n.filter_new,
+      l10n.filter_viral,
+    ];
+  }
 
-  String _selectedFilter = 'Score Viralité Élevé';
+  String _selectedFilter = ''; // Will initialize in didChangeDependencies
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  List<dynamic> _products = [];
+  bool _isLoading = false;
+  Timer? _debounce;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_selectedFilter.isEmpty) {
+      _selectedFilter = AppLocalizations.of(context)!.filter_viral;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
+    // Initial fetch
+    _performSearch('');
+    // Load favorites from backend
+    FavoritesManager().loadFavorites();
+
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (_searchQuery != _searchController.text) {
+        setState(() {
+          _searchQuery = _searchController.text;
+        });
+        _performSearch(_searchQuery);
+      }
     });
+  }
+
+  Future<void> _performSearch(String query) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await ApiService().searchProducts(query);
+      if (mounted) {
+        setState(() {
+          if (result['success'] == true) {
+            // Handle both list and paginated response
+            if (result['data'] != null) {
+              _products = result['data'];
+            } else if (result['results'] != null) {
+              _products = result['results'];
+            } else {
+              _products = [];
+            }
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _filteredProducts {
-    return _products.where((product) {
-      final matchesSearch = product['name'].toString().toLowerCase().contains(_searchQuery);
-      // For now filters are just dummy, but we could add logic here if needed
-      return matchesSearch;
-    }).toList();
-  }
+  List<dynamic> get _filteredProducts => _products;
 
-  final List<Map<String, dynamic>> _products = [
-    {
-      'name': 'Montre Connectée V4',
-      'image': 'assets/images/smartwatch.png',
-      'stat': '7,5/10',
-      'change': '+25%',
-      'globalScore': '8.5/10',
-    },
-    {
-      'name': 'gadgets',
-      'image': 'assets/images/gadgets.png',
-      'stat': '7,5/10',
-      'change': '+2%',
-      'globalScore': '8.5/10',
-    },
-    {
-      'name': 'Apple Watch 11',
-      'image': 'assets/images/apple_watch.png',
-      'stat': '7,5/10',
-      'change': '+45%',
-      'globalScore': '8.5/10',
-    },
-    {
-      'name': 'AirPods Max',
-      'image': 'assets/images/airpods.png',
-      'stat': '7,5/10',
-      'change': '+45%',
-      'globalScore': '8.5/10',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () {},
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
         ),
         actions: [
           Container(
@@ -105,9 +131,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: const Icon(Icons.currency_bitcoin, size: 14, color: Colors.white),
                 ),
                 const SizedBox(width: 6),
-                const Text(
-                  '350 Coins',
-                  style: TextStyle(
+                Text(
+                  '350 ${AppLocalizations.of(context)!.coins_label}',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -121,22 +147,22 @@ class _SearchScreenState extends State<SearchScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
                   Text(
-                    'Trouver votre Produit Gagnant',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.search_find_winning,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Analysez la data, trouvez votre best-seller',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.search_analyze_hint,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
                     ),
@@ -155,11 +181,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 child: TextField(
                   controller: _searchController,
-                  decoration: const InputDecoration(
-                    icon: Icon(Icons.search, color: Colors.grey),
-                    hintText: 'Rechercher un mot-clé ou un produit...',
+                  decoration: InputDecoration(
+                    icon: const Icon(Icons.search, color: Colors.grey),
+                    hintText: AppLocalizations.of(context)!.search_input_hint,
                     border: InputBorder.none,
-                    hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                    hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
               ),
@@ -170,11 +196,12 @@ class _SearchScreenState extends State<SearchScreen> {
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
-                itemCount: _filters.length,
+                itemCount: _getFilters(context).length,
                 itemBuilder: (context, index) {
-                  bool isSelected = _filters[index] == _selectedFilter;
+                  final filters = _getFilters(context);
+                  bool isSelected = filters[index] == _selectedFilter;
                   return GestureDetector(
-                    onTap: () => setState(() => _selectedFilter = _filters[index]),
+                    onTap: () => setState(() => _selectedFilter = filters[index]),
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -190,7 +217,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          _filters[index],
+                          filters[index],
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -206,17 +233,24 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _filteredProducts.isEmpty
+              child: _isLoading
                   ? const Center(
                       child: Padding(
                         padding: EdgeInsets.all(32.0),
-                        child: Text(
-                          'Aucun produit trouvé',
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                        child: CircularProgressIndicator(color: AppColors.primary),
                       ),
                     )
-                  : GridView.builder(
+                  : _filteredProducts.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Text(
+                              AppLocalizations.of(context)!.search_no_results,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      : GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -256,17 +290,60 @@ class _SearchScreenState extends State<SearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: Colors.grey[50],
-                child: Image.asset(
-                  product['image'],
-                  fit: BoxFit.contain,
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    color: Colors.grey[50],
+                    child: product['image_url'] != null
+                        ? Image.network(
+                            product['image_url'],
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.image_not_supported),
+                          )
+                        : const Icon(Icons.image_not_supported),
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: ValueListenableBuilder<List<Map<String, dynamic>>>(
+                    valueListenable: FavoritesManager().favoritesNotifier,
+                    builder: (context, favoritesList, child) {
+                      final isFav = FavoritesManager().isFavorite(product);
+                      return GestureDetector(
+                        onTap: () async {
+                           final result = await FavoritesManager().toggleFavorite(product);
+                           if (result['success'] == false && mounted) {
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(content: Text('Erreur: ${result['message']}')),
+                             );
+                           }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black12, blurRadius: 4),
+                            ],
+                          ),
+                          child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            color: isFav ? AppColors.primary : Colors.grey,
+                            size: 18,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -275,7 +352,7 @@ class _SearchScreenState extends State<SearchScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product['name'],
+                  product['title'] ?? 'N/A',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -284,29 +361,30 @@ class _SearchScreenState extends State<SearchScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product['stat'],
+                      '${product['price'] ?? 0} MAD',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
-                      product['change'],
+                      'Profit: ${product['potential_profit'] ?? 0} MAD',
                       style: const TextStyle(
                         color: Colors.green,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Score Global: ${product['globalScore']}',
+                  '${AppLocalizations.of(context)!.search_global_score}: ${product['trend_score'] ?? 0}/10',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 11,

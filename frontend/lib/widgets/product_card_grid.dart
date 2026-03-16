@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/product_provider.dart';
-import '../screens/product_detail_screen.dart';
+import 'package:dropshipping_app/screens/product_details_screen.dart';
 import '../utils/theme.dart';
 
 class ProductCardGrid extends StatelessWidget {
@@ -228,7 +228,13 @@ class ProductCardGrid extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductDetailScreen(product: product),
+        builder: (context) => ProductDetailsScreen(product: {
+          'imageUrl': product.imageUrl,
+          'title': product.name,
+          'price': '${product.price}€',
+          'profit': '${product.profit}€',
+          'score': product.score.toString(),
+        }),
       ),
     );
   }

@@ -1,17 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import '../services/session_manager.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import 'edit_profile_screen.dart';
-import 'subscription_screen.dart';
-import 'my_subscription_screen.dart';
-import 'settings_screen.dart';
-import 'support_screen.dart';
-import 'tableau_de_bord_screen.dart';
-import 'badges_screen.dart';
-import 'parrainage_screen.dart';
 import 'mon_avatar_screen.dart';
-import 'communaute_screen.dart';
+import 'package:model_viewer_plus/model_viewer_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
+import '../services/favorites_manager.dart';
+import '../models/user_model.dart';
+import 'package:provider/provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final String userName;
   final String? email;
 
@@ -22,167 +23,200 @@ class ProfileScreen extends StatelessWidget {
   });
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic>? _dashboardStats;
+  bool _isLoadingStats = true;
+  String? _avatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStats();
+    _loadSavedAvatar();
+  }
+
+  Future<void> _loadSavedAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _avatarUrl = prefs.getString('rpm_avatar_url');
+      });
+    }
+  }
+
+  Future<void> _fetchStats() async {
+    final result = await ApiService().getDashboardStats();
+    if (mounted) {
+      setState(() {
+        if (result['success'] == true) {
+          _dashboardStats = result;
+        }
+        _isLoadingStats = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                   _buildStats(userName),
-                  const SizedBox(height: 24),
-                  _buildSection('Préférences', [
-                    _buildMenuItem(
-                      icon: Icons.notifications_none_outlined,
-                      title: 'Notifications',
-                      subtitle: 'Alertes et tendances',
-                      trailing: Switch(
-                        value: true,
-                        onChanged: (v) {},
-                        activeColor: AppColors.primary,
-                      ),
-                      iconColor: Colors.blue,
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.shield_outlined,
-                      title: 'Confidentialité',
-                      subtitle: 'Données et sécurité',
-                      iconColor: Colors.purple,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                        );
-                      },
-                    ),
-                  ]),
-                  const SizedBox(height: 24),
-                  _buildSection('Support', [
-                    _buildMenuItem(
-                      icon: Icons.help_outline,
-                      title: 'Centre d\'aide',
-                      subtitle: 'FAQ et tutoriels',
-                      iconColor: Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SupportScreen()),
-                        );
-                      },
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.workspace_premium_outlined,
-                      title: 'Passer à Pro',
-                      subtitle: 'Débloquer toutes les fonctionnalités',
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '-50%',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+      body: Consumer<SessionManager>(
+        builder: (context, session, _) {
+          final user = session.user;
+          final displayUserName = user?.fullName ?? widget.userName;
+          final displayEmail = user?.email ?? widget.email;
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(context, user, displayUserName, displayEmail),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    children: [
+                      _buildStats(displayUserName),
+                      const SizedBox(height: 24),
+                      _buildSection(AppLocalizations.of(context)!.pref_title, [
+                        _buildMenuItem(
+                          icon: Icons.notifications_none_outlined,
+                          title: 'Notifications',
+                          subtitle: 'Alertes et tendances',
+                          trailing: Switch(
+                            value: true,
+                            onChanged: (v) {},
+                            activeThumbColor: AppColors.primary,
                           ),
+                          iconColor: Colors.blue,
                         ),
-                      ),
-                      iconColor: Colors.orange,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-                        );
-                      },
-                    ),
-                  ]),
-                  const SizedBox(height: 24),
-                  _buildSection('Mes Activités', [
-                    _buildMenuItem(
-                      icon: Icons.bar_chart,
-                      title: 'Tableau de Bord Activité',
-                      subtitle: 'Mes statistiques',
-                      iconColor: AppColors.primary,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const TableauDeBordScreen()),
-                        );
-                      },
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.emoji_events,
-                      title: 'Badges & Progression',
-                      subtitle: 'Tous mes succès',
-                      iconColor: Colors.amber,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const BadgesScreen()),
-                        );
-                      },
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.people_alt_outlined,
-                      title: 'Partenaires & Compétitions',
-                      subtitle: 'Parrainage & récompenses',
-                      iconColor: Colors.teal,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ParrainageScreen()),
-                        );
-                      },
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.face_retouching_natural,
-                      title: 'Mon Avatar & Thèmes',
-                      subtitle: 'Personnaliser mon profil',
-                      iconColor: Colors.purple,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MonAvatarScreen(
-                              userName: userName,
-                              email: email,
+                        _buildMenuItem(
+                          icon: Icons.shield_outlined,
+                          title: 'Confidentialité',
+                          subtitle: 'Données et sécurité',
+                          iconColor: Colors.purple,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/settings');
+                          },
+                        ),
+                      ]),
+                      const SizedBox(height: 24),
+                      _buildSection(AppLocalizations.of(context)!.support_title, [
+                        _buildMenuItem(
+                          icon: Icons.help_outline,
+                          title: 'Centre d\'aide',
+                          subtitle: 'FAQ et tutoriels',
+                          iconColor: Colors.green,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/support');
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.workspace_premium,
+                          title: 'Passer à Pro',
+                          subtitle: 'Débloquer toutes les fonctionnalités',
+                          iconColor: Colors.orange,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '-50%',
+                              style: TextStyle(
+                                color: Colors.orange[800],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                              ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.group_outlined,
-                      title: 'Communauté',
-                      subtitle: 'Échanges et partages',
-                      iconColor: Colors.indigo,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const CommunauteScreen()),
-                        );
-                      },
-                    ),
-                  ]),
-                  const SizedBox(height: 32),
-                  _buildLogoutButton(context),
-                  const SizedBox(height: 40),
-                ],
-              ),
+                          onTap: () {
+                            Navigator.pushNamed(context, '/subscription');
+                          },
+                        ),
+                      ]),
+                      const SizedBox(height: 24),
+                      _buildSection('Mes Activités', [
+                        _buildMenuItem(
+                          icon: Icons.bar_chart,
+                          title: 'Tableau de Bord Activité',
+                          subtitle: 'Mes statistiques',
+                          iconColor: AppColors.primary,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/tableau_de_bord');
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.emoji_events,
+                          title: 'Badges & Progression',
+                          subtitle: 'Tous mes succès',
+                          iconColor: Colors.amber,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/badges');
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.people_alt_outlined,
+                          title: 'Partenaires & Compétitions',
+                          subtitle: 'Parrainage & récompenses',
+                          iconColor: Colors.teal,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/parrainage');
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.face_retouching_natural,
+                          title: 'Mon Avatar & Thèmes',
+                          subtitle: 'Personnaliser mon profil',
+                          iconColor: Colors.purple,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MonAvatarScreen(
+                                  userName: displayUserName,
+                                  email: displayEmail,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.favorite_border,
+                          title: 'Faire une Donation',
+                          subtitle: 'Soutenir notre mission',
+                          iconColor: Colors.orange,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/donation');
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.group_outlined,
+                          title: 'Communauté',
+                          subtitle: 'Échanges et partages',
+                          iconColor: Colors.indigo,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/communaute');
+                          },
+                        ),
+                      ]),
+                      const SizedBox(height: 32),
+                      _buildLogoutButton(context),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, UserModel? user, String displayUserName, String? displayEmail) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -200,10 +234,13 @@ class ProfileScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.arrow_back, color: Colors.white),
-                const Text(
-                  'Profil',
-                  style: TextStyle(
+                GestureDetector(
+                  onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
+                  child: const Icon(Icons.arrow_back, color: Colors.white),
+                ),
+                Text(
+                  AppLocalizations.of(context)!.nav_profile,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -216,8 +253,8 @@ class ProfileScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => EditProfileScreen(
-                          initialName: userName,
-                          initialEmail: email,
+                          initialName: displayUserName,
+                          initialEmail: displayEmail,
                         ),
                       ),
                     );
@@ -227,23 +264,47 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-          const CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.white24,
-            child: Icon(Icons.person, size: 50, color: Colors.white),
-          ),
+          if (_avatarUrl != null)
+            Container(
+              height: 120,
+              width: 120,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 2),
+              ),
+              child: ModelViewer(
+                key: ValueKey(_avatarUrl!),
+                backgroundColor: Colors.transparent,
+                src: _avatarUrl!,
+                alt: "3D Avatar",
+                autoRotate: true,
+                cameraControls: false,
+                loading: Loading.eager,
+              ),
+            )
+          else
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.white24,
+              backgroundImage: user?.profilePicture != null ? NetworkImage(user!.profilePicture!) : null,
+              child: user?.profilePicture == null
+                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  : null,
+            ),
           const SizedBox(height: 16),
           Text(
-            userName,
+            displayUserName,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (email != null && email!.isNotEmpty)
+          if (displayEmail != null && displayEmail!.isNotEmpty)
             Text(
-              email!,
+              displayEmail!,
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 14,
@@ -252,10 +313,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 24),
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MySubscriptionScreen(isPremium: true)),
-              );
+              Navigator.pushNamed(context, '/my_subscription');
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 40),
@@ -302,34 +360,40 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStats(String name) {
-    bool isGuest = name == 'Invité';
-    String favorisCount = isGuest ? '0' : '12';
-    String vistasCount = isGuest ? '0' : '847';
-    String scoreCount = isGuest ? '0' : '87';
+    return ValueListenableBuilder<List<Map<String, dynamic>>>(
+      valueListenable: FavoritesManager().favoritesNotifier,
+      builder: (context, favoritesList, child) {
+        String favorisCount = favoritesList.length.toString();
+        
+        // Stats from dashboard API
+        String vistasCount = _isLoadingStats ? '...' : (_dashboardStats?['total_activities']?.toString() ?? '0');
+        String scoreCount = _isLoadingStats ? '...' : (_dashboardStats?['points_earned']?.toString() ?? '0');
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem(favorisCount, 'Favoris'),
-          _buildDivider(),
-          _buildStatItem(vistasCount, 'Vues'),
-          _buildDivider(),
-          _buildStatItem(scoreCount, 'Score'),
-        ],
-      ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(favorisCount, 'Favoris'),
+              _buildDivider(),
+              _buildStatItem(vistasCount, 'Vues'),
+              _buildDivider(),
+              _buildStatItem(scoreCount, 'Score'),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -404,15 +468,22 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildLogoutButton(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      onTap: () async {
+        // Appel à l'API pour invalider le token côté serveur
+        await ApiService().logoutV2();
+        // Effacer la session locale (supprime le token JWT)
+        await SessionManager().setUser(null);
+        // Rediriger vers la page de connexion
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.withOpacity(0.1)),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,

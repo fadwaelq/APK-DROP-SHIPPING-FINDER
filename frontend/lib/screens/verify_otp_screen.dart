@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_verification_code_field/flutter_verification_code_field.dart';
 import '../providers/auth_provider.dart';
@@ -39,7 +40,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
 Future<void> _verifyOTP() async {
   if (_otpValue.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Veuillez entrer le code OTP')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.enter_otp)),
     );
     return;
   }
@@ -65,7 +66,7 @@ Future<void> _verifyOTP() async {
 
     if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Code vérifié avec succès !')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.otp_verified)),
       );
 
       // 🔥 Redirection selon le contexte
@@ -108,8 +109,8 @@ Future<void> _verifyOTP() async {
 
     if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Un nouveau code a été envoyé à votre email'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.code_sent),
         ),
       );
     } else {
@@ -132,7 +133,7 @@ Future<void> _verifyOTP() async {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Vérification Email',
+          AppLocalizations.of(context)!.email_verification,
           style: AppTheme.headlineSmall,
         ),
         backgroundColor: Colors.transparent,
@@ -165,7 +166,7 @@ Future<void> _verifyOTP() async {
 
             // Title
             Text(
-              'Vérifiez votre email',
+              AppLocalizations.of(context)!.verify_your_email,
               textAlign: TextAlign.center,
               style: AppTheme.displaySmall.copyWith(
                 fontSize: 28,
@@ -176,7 +177,7 @@ Future<void> _verifyOTP() async {
 
             // Description
             Text(
-              'Un code de vérification à 6 chiffres a été envoyé à',
+              AppLocalizations.of(context)!.otp_description,
               textAlign: TextAlign.center,
               style: AppTheme.bodyLarge.copyWith(
                 color: AppTheme.textSecondary,
@@ -237,7 +238,7 @@ Future<void> _verifyOTP() async {
                       ),
                     )
                   : Text(
-                      'Vérifier',
+                      AppLocalizations.of(context)!.verify_btn,
                       style: AppTheme.labelLarge.copyWith(
                         fontSize: 16,
                       ),
@@ -251,7 +252,7 @@ Future<void> _verifyOTP() async {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Vous n\'avez pas reçu le code ? ',
+                  '${AppLocalizations.of(context)!.did_not_receive_code} ',
                   style: AppTheme.bodyMedium.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -273,7 +274,7 @@ Future<void> _verifyOTP() async {
                           ),
                         )
                       : Text(
-                          'Renvoyer',
+                          AppLocalizations.of(context)!.resend_btn,
                           style: AppTheme.labelMedium.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppTheme.secondaryOrange,
@@ -305,7 +306,7 @@ Future<void> _verifyOTP() async {
                   const SizedBox(width: AppTheme.spacingS),
                   Expanded(
                     child: Text(
-                      'Le code expire après 10 minutes',
+                      AppLocalizations.of(context)!.otp_expiry,
                       style: AppTheme.bodyMedium.copyWith(
                         color: AppTheme.infoBlue,
                       ),

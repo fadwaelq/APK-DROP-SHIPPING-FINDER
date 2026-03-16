@@ -12,6 +12,7 @@ class UserModel {
   final String lastName;
   final String email;
   final String? token; // JWT ou autre token d'authentification
+  final String? profilePicture;
 
   UserModel({
     required this.id,
@@ -19,10 +20,10 @@ class UserModel {
     required this.lastName,
     required this.email,
     this.token,
+    this.profilePicture,
   });
 
   /// Crée un UserModel à partir d'une réponse JSON du backend.
-  /// TODO ─ Équipe Backend: adapter les clés JSON selon votre API
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id']?.toString() ?? '',
@@ -30,6 +31,7 @@ class UserModel {
       lastName: json['last_name'] ?? json['lastName'] ?? '',
       email: json['email'] ?? '',
       token: json['token'] ?? json['access_token'],
+      profilePicture: json['profile_picture'] ?? json['profilePicture'],
     );
   }
 
@@ -40,6 +42,27 @@ class UserModel {
       'first_name': firstName,
       'last_name': lastName,
       'email': email,
+      'profile_picture': profilePicture,
     };
   }
+
+  UserModel copyWith({
+    String? id,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? token,
+    String? profilePicture,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      token: token ?? this.token,
+      profilePicture: profilePicture ?? this.profilePicture,
+    );
+  }
+
+  String get fullName => '$firstName $lastName'.trim();
 }

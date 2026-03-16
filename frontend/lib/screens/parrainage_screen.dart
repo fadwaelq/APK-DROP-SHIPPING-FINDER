@@ -1,35 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
-class ParrainageScreen extends StatelessWidget {
+class ParrainageScreen extends StatefulWidget {
   const ParrainageScreen({super.key});
 
-  static const String _referralCode = '39F-BOOST168';
+  @override
+  State<ParrainageScreen> createState() => _ParrainageScreenState();
+}
 
-  static const List<Map<String, dynamic>> _leaderboard = [
-    {'rank': 1, 'name': 'Inscrit', 'date': '3 j. à 2 jours', 'points': '1.2V'},
-    {'rank': 2, 'name': 'Muhemet B.', 'date': '2 j. à 2 jours', 'points': ''},
-  ];
+class _ParrainageScreenState extends State<ParrainageScreen> {
+  final ApiService _apiService = ApiService();
+  String _referralCode = '...';
+  String _totalReferrals = '0';
+  String _pointsEarned = '0';
+  bool _isLoading = true;
+  String? _error;
+  List<Map<String, dynamic>> _invites = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _apiService.getRewards();
+
+    if (result['success'] == true) {
+      final data = result['data'] ?? {};
+      setState(() {
+        _referralCode = data['referral_code'] ?? 'NON-GÉNÉRÉ';
+        _totalReferrals = (data['total_referrals'] ?? 0).toString();
+        _pointsEarned = (data['points'] ?? 0).toString();
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = result['message'] ?? 'Erreur lors du chargement';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SingleChildScrollView(
         child: Column(
           children: [
             _buildHeader(context),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHowItWorks(),
+                  _buildHowItWorks(context),
                   const SizedBox(height: 20),
                   _buildReferralCode(context),
                   const SizedBox(height: 20),
-                  _buildLeaderboard(),
+                  _buildLeaderboard(context),
                   const SizedBox(height: 20),
                   _buildShareButton(context),
                   const SizedBox(height: 40),
@@ -63,11 +113,11 @@ class ParrainageScreen extends StatelessWidget {
                   onTap: () => Navigator.pop(context),
                   child: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Parrainage & Récompenses',
+                    AppLocalizations.of(context)!.referral_rewards,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -79,7 +129,6 @@ class ParrainageScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          // Stats row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -87,16 +136,16 @@ class ParrainageScreen extends StatelessWidget {
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.people,
-                    label: 'Parrainages Actifs',
-                    value: '5',
+                    label: AppLocalizations.of(context)!.active_referrals,
+                    value: _totalReferrals,
                   ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.star,
-                    label: 'Points Signés',
-                    value: '250',
+                    label: AppLocalizations.of(context)!.points_earned,
+                    value: _pointsEarned,
                   ),
                 ),
               ],
@@ -142,7 +191,8 @@ class ParrainageScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHowItWorks() {
+  Widget _buildHowItWorks(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -166,16 +216,16 @@ class ParrainageScreen extends StatelessWidget {
                 child: const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 10),
-              const Text(
-                'Comment ça marche',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              Text(
+                l10n.how_it_works,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          _buildStep('1', 'Partagez votre code unique à vos amis.'),
-          _buildStep('2', 'Quand ils s\'inscrivent avec, vous et eux gagnez des points.'),
-          _buildStep('3', 'Échangez vos points contre des récompenses exclusives !'),
+          _buildStep('1', l10n.referral_step_1),
+          _buildStep('2', l10n.referral_step_2),
+          _buildStep('3', l10n.referral_step_3),
         ],
       ),
     );
@@ -190,7 +240,7 @@ class ParrainageScreen extends StatelessWidget {
           Container(
             width: 24,
             height: 24,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primary,
               shape: BoxShape.circle,
             ),
@@ -211,6 +261,7 @@ class ParrainageScreen extends StatelessWidget {
   }
 
   Widget _buildReferralCode(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -223,9 +274,9 @@ class ParrainageScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Votre code de parrainage',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          Text(
+            l10n.your_referral_code,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 14),
           Container(
@@ -249,12 +300,12 @@ class ParrainageScreen extends StatelessWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Clipboard.setData(const ClipboardData(text: _referralCode));
+                    Clipboard.setData(ClipboardData(text: _referralCode));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Code copié dans le presse-papiers !'),
+                      SnackBar(
+                        content: Text(l10n.code_copied),
                         backgroundColor: AppColors.primary,
-                        duration: Duration(seconds: 2),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   },
@@ -275,7 +326,8 @@ class ParrainageScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLeaderboard() {
+  Widget _buildLeaderboard(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -288,28 +340,27 @@ class ParrainageScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Mes parrainages',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          Text(
+            l10n.my_referrals,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 14),
-          // Table header
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                SizedBox(width: 30, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey))),
-                Expanded(child: Text('Nom', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey))),
-                Text('Points', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                const SizedBox(width: 30, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey))),
+                Expanded(child: Text(l10n.name_label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey))),
+                Text(l10n.points_label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          ..._leaderboard.map((entry) => _buildLeaderboardRow(entry)),
+          ..._invites.map((entry) => _buildLeaderboardRow(entry)),
         ],
       ),
     );
@@ -362,21 +413,17 @@ class ParrainageScreen extends StatelessWidget {
   }
 
   Widget _buildShareButton(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Partage du code de parrainage...'),
-              backgroundColor: AppColors.primary,
-            ),
-          );
+          Share.share(l10n.referral_share_msg(_referralCode));
         },
         icon: const Icon(Icons.share, color: Colors.white),
-        label: const Text(
-          'Partager mon code',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+        label: Text(
+          l10n.share_code_btn,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,

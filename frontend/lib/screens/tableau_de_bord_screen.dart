@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
 class TableauDeBordScreen extends StatefulWidget {
   const TableauDeBordScreen({super.key});
@@ -9,9 +11,53 @@ class TableauDeBordScreen extends StatefulWidget {
 }
 
 class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
-  String _selectedPeriod = 'Cette semaine';
+  String _selectedPeriod = '';
+  Map<String, dynamic>? _dashboardStats;
+  bool _isLoading = true;
 
-  final List<String> _periods = ['Cette semaine', 'Ce mois', 'Total'];
+  @override
+  void initState() {
+    super.initState();
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    final result = await ApiService().getDashboardStats();
+    if (mounted) {
+      setState(() {
+        if (result['success'] == true) {
+          _dashboardStats = result;
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<String> _getPeriods(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [l10n.period_this_week, l10n.period_this_month, l10n.period_total];
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_selectedPeriod.isEmpty) {
+      _selectedPeriod = AppLocalizations.of(context)!.period_this_week;
+    }
+  }
+
+  String _getTranslated(String text) {
+    final l10n = AppLocalizations.of(context)!;
+    // Basic mapping for weekdays in chart
+    if (text == 'Lun') return 'Lun'; // Simplified for now
+    if (text == 'Mar') return 'Mar';
+    if (text == 'Mer') return 'Mer';
+    if (text == 'Jeu') return 'Jeu';
+    if (text == 'Ven') return 'Ven';
+    if (text == 'Sam') return 'Sam';
+    if (text == 'Dim') return 'Dim';
+    return text;
+  }
 
   // Bar chart data (relative heights 0.0–1.0)
   final List<Map<String, dynamic>> _chartData = [
@@ -75,11 +121,11 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
                   onTap: () => Navigator.pop(context),
                   child: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Mon Tableau de Bord',
+                    AppLocalizations.of(context)!.dashboard_title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -97,9 +143,21 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildTopStatCard(Icons.bar_chart, 'Fiches\nAnalysées', '127'),
-                _buildTopStatCard(Icons.access_time, 'Au Sav\nHeure', '3h 20'),
-                _buildTopStatCard(Icons.fact_check_outlined, 'Tâches\nActives', '8'),
+                _buildTopStatCard(
+                  Icons.bar_chart, 
+                  AppLocalizations.of(context)!.stat_analyzed, 
+                  _isLoading ? '...' : (_dashboardStats?['total_activities']?.toString() ?? '0')
+                ),
+                _buildTopStatCard(
+                  Icons.access_time, 
+                  AppLocalizations.of(context)!.stat_support, 
+                  '3h 20' // Keeping static for now as per backend response
+                ),
+                _buildTopStatCard(
+                  Icons.fact_check_outlined, 
+                  AppLocalizations.of(context)!.stat_tasks, 
+                  _isLoading ? '...' : (_dashboardStats?['points_earned']?.toString() ?? '0')
+                ),
               ],
             ),
           ),
@@ -141,8 +199,9 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
   }
 
   Widget _buildPeriodSelector() {
+    final periods = _getPeriods(context);
     return Row(
-      children: _periods.map((period) {
+      children: periods.map((period) {
         final isSelected = period == _selectedPeriod;
         return GestureDetector(
           onTap: () => setState(() => _selectedPeriod = period),
@@ -191,9 +250,9 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Évolution du Score Moyen',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          Text(
+            AppLocalizations.of(context)!.score_evolution,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -224,7 +283,7 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        Text(day, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(_getTranslated(day), style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }
@@ -233,25 +292,25 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Statistiques détaillées',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        Text(
+          AppLocalizations.of(context)!.detailed_stats_title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 12),
         _buildStatRow(
           icon: Icons.description_outlined,
           iconColor: Colors.blue,
-          title: 'Fiches Produits Analysées',
-          subtitle: 'Depuis le début',
-          value: '1,227',
+          title: AppLocalizations.of(context)!.stat_detailed_analyzed,
+          subtitle: AppLocalizations.of(context)!.since_beginning,
+          value: _isLoading ? '...' : (_dashboardStats?['recent_searches']?.toString() ?? '0'),
           valueColor: AppColors.primary,
         ),
         const SizedBox(height: 10),
         _buildStatRow(
           icon: Icons.savings_outlined,
           iconColor: Colors.green,
-          title: 'Produits Économiques',
-          subtitle: 'Temps total',
+          title: AppLocalizations.of(context)!.stat_detailed_economic,
+          subtitle: AppLocalizations.of(context)!.total_time_label,
           value: '6h+489',
           valueColor: Colors.green,
         ),
@@ -324,18 +383,18 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
         children: [
           const Icon(Icons.local_fire_department, color: Colors.white, size: 40),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Série de Jours de Veille',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  AppLocalizations.of(context)!.streak_days_title,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Vous êtes en feu ! 7 jours consécutifs de veille active.',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  AppLocalizations.of(context)!.streak_days_msg(7),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),

@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../widgets/otp_input_field.dart';
+import '../services/api_service.dart';
 
-class VerificationScreen extends StatelessWidget {
+class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
+
+  @override
+  State<VerificationScreen> createState() => _VerificationScreenState();
+}
+
+class _VerificationScreenState extends State<VerificationScreen> {
+  String _currentOtp = '';
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +56,9 @@ class VerificationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 60),
               
-              const Text(
-                'Vérifiez votre boîte mail',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.verify_email_title,
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -69,7 +79,7 @@ class VerificationScreen extends StatelessWidget {
                       fontFamily: 'Inter',
                     ),
                     children: [
-                      const TextSpan(text: 'Nous avons envoyé un code\nde vérification à '),
+                      TextSpan(text: AppLocalizations.of(context)!.verification_sent_to + ' '),
                       TextSpan(
                         text: displayEmail,
                         style: const TextStyle(
@@ -77,29 +87,62 @@ class VerificationScreen extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const TextSpan(text: '. Veuillez\nle saisir ci-dessous pour activer votre compte.'),
+                      TextSpan(text: AppLocalizations.of(context)!.verification_enter_code),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 40),
               
-              const OtpInputField(),
+              OtpInputField(
+                length: 6,
+                onCompleted: (otp) {
+                  setState(() {
+                    _currentOtp = otp;
+                  });
+                },
+              ),
               
               const SizedBox(height: 40),
               
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/login');
+                onPressed: _isLoading ? null : () async {
+                  if (_currentOtp.length < 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Veuillez entrer le code complet à 6 chiffres')),
+                    );
+                    return;
+                  }
+                  
+                  setState(() => _isLoading = true);
+                  final result = await ApiService().verifyOTP(displayEmail, _currentOtp);
+                  setState(() => _isLoading = false);
+
+                  if (result['success'] == true) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Compte vérifié ! Vous pouvez maintenant vous connecter.')),
+                      );
+                      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                    }
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(result['message'] ?? 'Erreur lors de la vérification')),
+                      );
+                    }
+                  }
                 },
-                child: const Text('Vérifier le compte', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(AppLocalizations.of(context)!.verify_account_btn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               
               const SizedBox(height: 24),
               
-              const Text(
-                'Renvoyer le code 60s',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.resend_code_timer(60),
+                style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 14,
                 ),
@@ -107,10 +150,10 @@ class VerificationScreen extends StatelessWidget {
               
               const SizedBox(height: 120), // Spacer before bottom text
               
-              const Text(
-                'En continuant, vous acceptez nos conditions d\'utilisation et notre\npolitique de confidentialité',
+              Text(
+                AppLocalizations.of(context)!.terms_privacy_notice,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10,
                   color: AppColors.textSecondary,
                 ),

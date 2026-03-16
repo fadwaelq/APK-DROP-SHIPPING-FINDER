@@ -1,20 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../services/favorites_manager.dart';
 
-class ProductDetailsScreen extends StatelessWidget {
+class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic>? product;
   
   const ProductDetailsScreen({super.key, this.product});
 
   @override
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
+}
+
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  late String _currentImageUrl;
+  int _selectedColorIndex = 0;
+
+  final List<Map<String, dynamic>> _colorOptions = [
+    {
+      'color': const Color(0xFFFFCCAA),
+      'image': 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      'color': const Color(0xFF00C853),
+      'image': 'https://images.unsplash.com/photo-1546435770-a3e426ff472b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      'color': const Color(0xFF2196F3),
+      'image': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      'color': const Color(0xFFE91E63),
+      'image': 'https://images.unsplash.com/photo-1484704849700-f032a568e944?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentImageUrl = widget.product?['imageUrl'] ?? _colorOptions[0]['image'];
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Determine info to show based on product or fallback
-    final title = product?['title'] ?? 'Casque Sans-\nfil Premium';
-    final price = product?['price'] ?? '29.99€';
-    final profit = product?['profit'] ?? '15.50€';
-    final scoreStr = product?['score']?.toString().replaceAll('Score: ', '') ?? '95';
-    final imageUrl = product?['imageUrl'] ?? 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+    final title = widget.product?['title'] ?? AppLocalizations.of(context)!.product_title_fallback;
+    final price = widget.product?['price'] ?? '29.99€';
+    final profit = widget.product?['profit'] ?? '15.50€';
+    final scoreStr = widget.product?['score']?.toString().replaceAll('Score: ', '') ?? '95';
+    final scoreLabel = AppLocalizations.of(context)!.score;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -26,18 +60,18 @@ class ProductDetailsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (product != null)
+          if (widget.product != null)
              ValueListenableBuilder<List<Map<String, dynamic>>>(
                 valueListenable: FavoritesManager().favoritesNotifier,
                 builder: (context, favoritesList, child) {
-                   bool isFav = FavoritesManager().isFavorite(product!);
+                   bool isFav = FavoritesManager().isFavorite(widget.product!);
                    return IconButton(
                       icon: Icon(
                          isFav ? Icons.favorite : Icons.favorite_border,
                          color: isFav ? AppColors.primary : AppColors.textPrimary,
                       ),
                       onPressed: () {
-                         FavoritesManager().toggleFavorite(product!);
+                         FavoritesManager().toggleFavorite(widget.product!);
                       },
                    );
                 },
@@ -69,7 +103,7 @@ class ProductDetailsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: DecorationImage(
-                          image: NetworkImage(imageUrl),
+                          image: NetworkImage(_currentImageUrl),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -77,12 +111,12 @@ class ProductDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildColorDot(const Color(0xFFFFCCAA), isSelected: true),
-                        _buildColorDot(const Color(0xFF00C853)),
-                        _buildColorDot(const Color(0xFF2196F3)),
-                        _buildColorDot(const Color(0xFFE91E63)),
-                      ],
+                      children: List.generate(_colorOptions.length, (index) {
+                        return _buildColorDot(
+                          _colorOptions[index]['color'], 
+                          index: index,
+                        );
+                      }),
                     ),
                  ]
                )
@@ -98,36 +132,39 @@ class ProductDetailsScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                           Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Text(
-                                  title.replaceAll('\n', ''),
-                                  style: const TextStyle(
-                                     fontSize: 16,
-                                     fontWeight: FontWeight.bold,
-                                     color: AppColors.textPrimary,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                               ),
-                               const SizedBox(height: 8),
-                               Container(
-                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                 decoration: BoxDecoration(
-                                    color: Colors.purple.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                           Expanded(
+                             child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                    title.replaceAll('\n', ''),
+                                    style: const TextStyle(
+                                       fontSize: 16,
+                                       fontWeight: FontWeight.bold,
+                                       color: AppColors.textPrimary,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                  ),
-                                 child: const Text(
-                                    'Audio & Tech',
-                                    style: TextStyle(color: Colors.purple, fontSize: 10, fontWeight: FontWeight.w600),
+                                 const SizedBox(height: 8),
+                                 Container(
+                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                   decoration: BoxDecoration(
+                                      color: Colors.purple.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                   ),
+                                   child: Text(
+                                      AppLocalizations.of(context)!.audio_tech_category,
+                                      style: const TextStyle(color: Colors.purple, fontSize: 10, fontWeight: FontWeight.w600),
+                                   ),
                                  ),
-                               ),
-                             ],
+                               ],
+                             ),
                            ),
+                           const SizedBox(width: 16),
                            Column(
                              children: [
-                                const Text('Score', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                Text(scoreLabel, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.all(8),
@@ -143,9 +180,9 @@ class ProductDetailsScreen extends StatelessWidget {
                         ],
                      ),
                      const SizedBox(height: 16),
-                     const Text(
-                        'Casque audio Bluetooth haute qualité avec réduction de bruit active, autonomie de 30h et design ergonomique pour un confort optimal.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
+                     Text(
+                        AppLocalizations.of(context)!.product_desc_fallback,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
                      ),
                      const SizedBox(height: 16),
                      Row(
@@ -155,11 +192,11 @@ class ProductDetailsScreen extends StatelessWidget {
                                  icon: Icons.sell_outlined,
                                  iconColor: AppColors.primary,
                                  bgColor: Colors.white,
-                                 label: 'Prix de vente',
+                                 label: AppLocalizations.of(context)!.selling_price,
                                  value: price,
                                  valueColor: AppColors.textPrimary,
                                  borderColor: const Color(0xFFF0F0F0),
-                              ),
+                               ),
                            ),
                            const SizedBox(width: 12),
                            Expanded(
@@ -167,7 +204,7 @@ class ProductDetailsScreen extends StatelessWidget {
                                  icon: Icons.attach_money,
                                  iconColor: Colors.green,
                                  bgColor: const Color(0xFFF1F8F5), // Light green tint
-                                 label: 'Profit estimé',
+                                 label: AppLocalizations.of(context)!.estimated_profit,
                                  value: profit,
                                  valueColor: Colors.green,
                                  borderColor: Colors.transparent,
@@ -188,20 +225,20 @@ class ProductDetailsScreen extends StatelessWidget {
                          children: [
                             const Icon(Icons.bar_chart, color: AppColors.primary, size: 20),
                             const SizedBox(width: 8),
-                            const Text(
-                               'Analyse de Performance',
-                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            Text(
+                               AppLocalizations.of(context)!.performance_analysis,
+                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                             ),
                          ],
                       ),
                       const SizedBox(height: 24),
-                      _buildProgressBar('Demande', '92%'),
+                      _buildProgressBar(AppLocalizations.of(context)!.demand_label, '92%'),
                       const SizedBox(height: 16),
-                      _buildProgressBar('Rentabilité', '88%'),
+                      _buildProgressBar(AppLocalizations.of(context)!.profitability_label, '88%'),
                       const SizedBox(height: 16),
-                      _buildProgressBar('Concurrence', '65%', color: AppColors.primary.withOpacity(0.6)),
+                      _buildProgressBar(AppLocalizations.of(context)!.competition_label, '65%', color: AppColors.primary.withOpacity(0.6)),
                       const SizedBox(height: 16),
-                      _buildProgressBar('Tendance', '95%'),
+                      _buildProgressBar(AppLocalizations.of(context)!.trend_label, '95%'),
                    ],
                 ),
              ),
@@ -211,16 +248,16 @@ class ProductDetailsScreen extends StatelessWidget {
                 child: Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
-                      const Text(
-                         'Insights Marché',
-                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      Text(
+                         AppLocalizations.of(context)!.market_insights,
+                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 16),
                       _buildInsightRow(
                          icon: Icons.trending_up,
                          iconColor: Colors.green,
                          bgColor: const Color(0xFFE8F5E9), // Light green
-                         title: 'Tendance à la hausse',
+                         title: AppLocalizations.of(context)!.trending_up_label,
                          subtitle: '+45% de recherches cette semaine',
                       ),
                       const SizedBox(height: 12),
@@ -228,16 +265,16 @@ class ProductDetailsScreen extends StatelessWidget {
                          icon: Icons.people_outline,
                          iconColor: Colors.blue,
                          bgColor: const Color(0xFFE3F2FD), // Light blue
-                         title: 'Forte demande',
-                         subtitle: '15K+ ventes mensuelles estimées',
+                         title: AppLocalizations.of(context)!.strong_demand_label,
+                         subtitle: AppLocalizations.of(context)!.monthly_sales_est('15'),
                       ),
                       const SizedBox(height: 12),
                       _buildInsightRow(
                          icon: Icons.attach_money,
                          iconColor: AppColors.primary,
                          bgColor: const Color(0xFFFFF8F3), // Light orange
-                         title: 'Marge importante',
-                         subtitle: '51% de marge bénéficiaire',
+                         title: AppLocalizations.of(context)!.large_margin_label,
+                         subtitle: AppLocalizations.of(context)!.profit_margin_est('51'),
                       ),
                    ],
                 ),
@@ -248,9 +285,9 @@ class ProductDetailsScreen extends StatelessWidget {
                 child: Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
-                      const Text(
-                         'Fournisseur',
-                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      Text(
+                         AppLocalizations.of(context)!.supplier_label,
+                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -264,26 +301,28 @@ class ProductDetailsScreen extends StatelessWidget {
                                child: const Icon(Icons.storefront, color: Colors.white, size: 20),
                             ),
                             const SizedBox(width: 12),
-                            Column(
-                               crossAxisAlignment: CrossAxisAlignment.start,
-                               children: [
-                                  const Text(
-                                     'AliExpress Premium',
-                                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                     children: [
-                                        const Icon(Icons.star, color: Colors.orange, size: 12),
-                                        const Icon(Icons.star, color: Colors.orange, size: 12),
-                                        const Icon(Icons.star, color: Colors.orange, size: 12),
-                                        const Icon(Icons.star, color: Colors.orange, size: 12),
-                                        Icon(Icons.star_half, color: Colors.orange.withOpacity(0.5), size: 12),
-                                        const SizedBox(width: 4),
-                                        const Text('4.8/5 - 2.5K avis', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                                     ],
-                                  ),
-                               ]
+                            Expanded(
+                              child: Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                    const Text(
+                                       'AliExpress Premium',
+                                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                       children: [
+                                          const Icon(Icons.star, color: Colors.orange, size: 12),
+                                          const Icon(Icons.star, color: Colors.orange, size: 12),
+                                          const Icon(Icons.star, color: Colors.orange, size: 12),
+                                          const Icon(Icons.star, color: Colors.orange, size: 12),
+                                          Icon(Icons.star_half, color: Colors.orange.withOpacity(0.5), size: 12),
+                                          const SizedBox(width: 4),
+                                          Text(AppLocalizations.of(context)!.reviews_count('4.8', '2.5K'), style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                       ],
+                                    ),
+                                 ]
+                              ),
                             ),
                          ],
                       ),
@@ -294,7 +333,7 @@ class ProductDetailsScreen extends StatelessWidget {
                                child: OutlinedButton.icon(
                                   onPressed: () {},
                                   icon: const Icon(Icons.chat_bubble_outline, size: 16, color: AppColors.primary),
-                                  label: const Text('Contacter', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  label: Text(AppLocalizations.of(context)!.contact_btn, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                                   style: OutlinedButton.styleFrom(
                                      side: const BorderSide(color: AppColors.primary),
                                      padding: const EdgeInsets.symmetric(vertical: 12),
@@ -307,7 +346,7 @@ class ProductDetailsScreen extends StatelessWidget {
                                child: ElevatedButton.icon(
                                   onPressed: () {},
                                   icon: const Icon(Icons.open_in_new, size: 16, color: Colors.white),
-                                  label: const Text('Voir', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  label: Text(AppLocalizations.of(context)!.view_btn, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                                   style: ElevatedButton.styleFrom(
                                      backgroundColor: AppColors.primary,
                                      padding: const EdgeInsets.symmetric(vertical: 12),
@@ -327,7 +366,7 @@ class ProductDetailsScreen extends StatelessWidget {
                          ),
                          child: Row(
                             children: [
-                               const Text('Prix fournisseur', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                Text(AppLocalizations.of(context)!.supplier_price, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                                const SizedBox(width: 8),
                                const Text('14.49 €', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                                const SizedBox(width: 8),
@@ -346,15 +385,27 @@ class ProductDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildColorDot(Color color, {bool isSelected = false}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: isSelected ? Border.all(color: AppColors.primary, width: 2) : null,
+  Widget _buildColorDot(Color color, {required int index}) {
+    bool isSelected = _selectedColorIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedColorIndex = index;
+          _currentImageUrl = _colorOptions[index]['image'];
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: isSelected ? Border.all(color: AppColors.primary, width: 2) : Border.all(color: Colors.transparent, width: 2),
+        ),
+        child: isSelected 
+          ? const Center(child: Icon(Icons.check, size: 16, color: Colors.white))
+          : null,
       ),
     );
   }
@@ -467,13 +518,15 @@ class ProductDetailsScreen extends StatelessWidget {
            children: [
               Icon(icon, color: iconColor, size: 20),
               const SizedBox(width: 12),
-              Column(
-                 crossAxisAlignment: CrossAxisAlignment.start,
-                 children: [
-                    Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                 ],
+              Expanded(
+                child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                      Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                   ],
+                ),
               ),
            ],
         ),

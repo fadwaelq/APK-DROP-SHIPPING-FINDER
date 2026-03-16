@@ -28,7 +28,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // If user is authenticated, show home screen
     // Otherwise, show onboarding/login
     return authProvider.isAuthenticated 
-        ? const WithStatusBar(child: HomeScreenV2()) 
+        ? WithStatusBar(child: HomeScreen(userName: authProvider.user?.name ?? 'Admin')) 
         : const WithStatusBar(child: OnboardingScreen());
   }
 }

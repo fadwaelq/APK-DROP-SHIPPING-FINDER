@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 class EvenementsScreen extends StatefulWidget {
   const EvenementsScreen({super.key});
@@ -12,14 +15,131 @@ class _EvenementsScreenState extends State<EvenementsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedDay = 13;
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  String? _error;
+  List<Map<String, dynamic>> _eventsList = [];
 
   final List<int> _days = [11, 12, 13, 14, 15, 16, 17];
-  final List<String> _weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  
+  String _getWeekDay(int i) {
+    // Basic mapping for mock data
+    switch (i) {
+      case 0: return 'Lun';
+      case 1: return 'Mar';
+      case 2: return 'Mer';
+      case 3: return 'Jeu';
+      case 4: return 'Ven';
+      case 5: return 'Sam';
+      case 6: return 'Dim';
+      default: return '';
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
+    _fetchEvents();
+  }
+
+  int _upcomingCount = 0;
+  int _registeredCount = 0;
+  int _thisWeekCount = 0;
+  int _inQueueCount = 0;
+
+  Future<void> _fetchEvents() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _apiService.getEvents();
+
+    if (result['success'] == true) {
+      final List<dynamic> data = result['data'] ?? [];
+      final now = DateTime.now();
+      final weekFromNow = now.add(const Duration(days: 7));
+      
+      int upcoming = 0;
+      int registered = 0;
+      int thisWeek = 0;
+
+      final mapped = data.map((e) {
+        DateTime? date;
+        try {
+          date = DateTime.parse(e['event_date']);
+        } catch (_) {}
+
+        if (date != null && date.isAfter(now)) {
+          upcoming++;
+          if (date.isBefore(weekFromNow)) {
+            thisWeek++;
+          }
+        }
+        
+        if (e['is_registered'] == true) {
+          registered++;
+        }
+
+        String displayDate = 'À venir';
+        String displayTime = '12:00';
+        if (date != null) {
+          displayDate = "${date.day} ${_getMonthName(date.month)} ${date.year}";
+          displayTime = "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+        }
+
+        return {
+          'id': e['id'],
+          'title': e['title'] ?? 'Sans titre',
+          'desc': e['description'] ?? '',
+          'date': displayDate,
+          'time': displayTime,
+          'location': e['location'] ?? 'En ligne',
+          'is_registered': e['is_registered'] ?? false,
+          'participants': '${e['participants_count'] ?? 0} / 500',
+          'progress': (e['participants_count'] ?? 0) / 500.0,
+          'price': 'Gratuit',
+          'imageUrl': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
+          'imageColor': AppColors.primary,
+          'category': e['title']?.toString().contains('Lancement') == true ? 'Lancements' : 'Webinaires',
+          'tag': e['tag'] ?? 'Nouveau',
+        };
+      }).toList();
+
+      setState(() {
+        _eventsList = mapped;
+        _upcomingCount = upcoming;
+        _registeredCount = registered;
+        _thisWeekCount = thisWeek;
+        _inQueueCount = mapped.length - registered;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = result['message'] ?? 'Erreur lors du chargement des événements';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getTranslated(String key) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (key) {
+      case 'Lancements': return l10n.tab_lancements;
+      case 'Webinaires': return l10n.tab_webinaires;
+      case 'Tous': return l10n.tab_tous;
+      case 'Nouveau': return l10n.tag_new;
+      case 'Populaire': return l10n.popular_tag;
+      case 'En ligne': return l10n.online;
+      case 'Gratuit': return l10n.free;
+      case 'Atelier': return l10n.atelier;
+      case 'Conférence': return l10n.conference;
+      default: return key;
+    }
   }
 
   @override
@@ -28,101 +148,86 @@ class _EvenementsScreenState extends State<EvenementsScreen>
     super.dispose();
   }
 
-  static final List<Map<String, dynamic>> _events = [
-    {
-      'tag': 'Nouveau',
-      'tagColor': Colors.orange,
-      'imageUrl': 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop',
-      'imageColor': Colors.orange,
-      'title': 'Lancement de Casque Sans-Fil Premium',
-      'desc': 'Découvrez notre nouveau casque avec une réduction de 30%.',
-      'date': '13 Mars 2026',
-      'time': '14:00',
-      'location': 'En ligne',
-      'participants': '184 / 500',
-      'progress': 0.37,
-      'price': 'Pro',
-      'priceColor': Colors.orange,
-    },
-    {
-      'tag': 'Populaire',
-      'tagColor': Colors.purple,
-      'imageUrl': 'https://images.unsplash.com/photo-1540317580384-e5d43867caa6?w=800&auto=format&fit=crop',
-      'imageColor': Colors.blue,
-      'title': 'Webinaire: Tendances Tech 2026',
-      'desc': 'Analysez les meilleures tendances et opportunités.',
-      'date': '15 Mars 2026',
-      'time': '10:30',
-      'location': 'Zoom',
-      'participants': '441 / 1000',
-      'progress': 0.44,
-      'price': 'Gratuit',
-      'priceColor': Colors.green,
-    },
-    {
-      'tag': 'Nouveau',
-      'tagColor': Colors.orange,
-      'imageUrl': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
-      'imageColor': Colors.grey,
-      'title': 'Flash Sale: Montres Connectées',
-      'desc': 'Accès VIP aux ventes stockées de montres connectées.',
-      'date': '20 Mars 2026',
-      'time': '09:00',
-      'location': 'Application',
-      'participants': '99 / 200',
-      'progress': 0.50,
-      'price': 'Enquête',
-      'priceColor': Colors.orange,
-    },
-    {
-      'tag': 'Conférence',
-      'tagColor': Colors.blue,
-      'imageUrl': 'https://images.unsplash.com/photo-1475721025505-c31da16b1f99?w=800&auto=format&fit=crop',
-      'imageColor': Colors.deepPurple,
-      'title': 'Conférence E-commerce 2026',
-      'desc': 'La plus grande conférence e-commerce de France.',
-      'date': '25 Mars 2026',
-      'time': '08:00',
-      'location': 'Paris',
-      'participants': '532 / 900',
-      'progress': 0.59,
-      'price': '89€',
-      'priceColor': Colors.orange,
-    },
-    {
-      'tag': 'Atelier',
-      'tagColor': Colors.teal,
-      'imageUrl': 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop',
-      'imageColor': Colors.green,
-      'title': 'Atelier: Marketing Produits',
-      'desc': 'Apprenez à marketer vos produits efficacement.',
-      'date': '22 Mars 2026',
-      'time': '15:00',
-      'location': 'En ligne',
-      'participants': '78 / 150',
-      'progress': 0.52,
-      'price': 'Gratuit',
-      'priceColor': Colors.green,
-    },
-  ];
+  List<Map<String, dynamic>> get _filteredEvents {
+    if (_tabController.index == 0) return _eventsList;
+    String category = _tabController.index == 1 ? 'Lancements' : 'Webinaires';
+    return _eventsList.where((e) => e['category'] == category).toList();
+  }
+
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Féb', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    return months[month - 1];
+  }
+
+  Future<void> _showFullCalendar(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2026, 3, _selectedDay),
+      firstDate: DateTime(2026, 1, 1),
+      lastDate: DateTime(2026, 12, 31),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDay = picked.day;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredEvents;
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
+      backgroundColor: Colors.white,
+      body: Stack(
         children: [
-          _buildHeader(context),
-          const SizedBox(height: 12),
-          _buildCalendarStrip(),
-          const SizedBox(height: 12),
-          _buildTabs(),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _events.length,
-              itemBuilder: (ctx, i) => _buildEventCard(_events[i]),
+          _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _fetchEvents,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildHeader(context),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 11), textAlign: TextAlign.center),
+                        ),
+                      _buildStatsCards(),
+                      _buildCalendarStrip(),
+                      _buildTabs(),
+                      _buildEventList(filtered),
+                      const SizedBox(height: 120),
+                    ],
+                  ),
+                ),
+              ),
+          // Navbar
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: CustomBottomNavBar(
+              currentIndex: -1,
+              onTap: (index) {},
             ),
           ),
         ],
@@ -133,31 +238,90 @@ class _EvenementsScreenState extends State<EvenementsScreen>
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back, color: Colors.white),
+            onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
+            child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
           ),
           const Text(
             'Événements',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
           ),
           Row(
             children: [
-              const Icon(Icons.filter_list, color: Colors.white),
-              const SizedBox(width: 12),
-              const Icon(Icons.add_box_outlined, color: Colors.white),
+              const Icon(Icons.filter_list, color: Colors.grey, size: 24),
+              const SizedBox(width: 15),
+              Stack(
+                children: [
+                  const Icon(Icons.notifications_none, color: Colors.grey, size: 24),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                    ),
+                  ),
+                ],
+              ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCards() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                  const SizedBox(height: 15),
+                  const Text('À venir', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  const SizedBox(height: 4),
+                  Text('$_upcomingCount', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('+ $_thisWeekCount cette semaine', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1D5CFF), // Blue card
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.trending_up, color: Colors.white, size: 20),
+                  const SizedBox(height: 15),
+                  const Text('Inscriptions', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  const SizedBox(height: 4),
+                  Text('$_registeredCount', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  const Text('2 cette semaine', style: TextStyle(color: Colors.white70, fontSize: 10)), // Static mock for now
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -166,49 +330,38 @@ class _EvenementsScreenState extends State<EvenementsScreen>
 
   Widget _buildCalendarStrip() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Mars 2026', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               TextButton(
-                onPressed: () {},
-                child: const Text('Voir Calendrier', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                onPressed: () => _showFullCalendar(context),
+                child: const Text('Voir calendrier', style: TextStyle(color: Colors.orange, fontSize: 12)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(_days.length, (i) {
               final isSelected = _days[i] == _selectedDay;
               return GestureDetector(
                 onTap: () => setState(() => _selectedDay = _days[i]),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                child: Container(
                   width: 44,
-                  height: 60,
+                  height: 55,
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isSelected
-                            ? AppColors.primary.withOpacity(0.3)
-                            : Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: isSelected ? Colors.orange : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _weekDays[i],
+                        _getWeekDay(i)[0], // L, M, M, J...
                         style: TextStyle(
                           fontSize: 10,
                           color: isSelected ? Colors.white70 : Colors.grey,
@@ -218,7 +371,7 @@ class _EvenementsScreenState extends State<EvenementsScreen>
                       Text(
                         '${_days[i]}',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: isSelected ? Colors.white : Colors.black87,
                         ),
@@ -235,196 +388,156 @@ class _EvenementsScreenState extends State<EvenementsScreen>
   }
 
   Widget _buildTabs() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _buildTabChip('Tous', 0),
-          const SizedBox(width: 8),
-          _buildTabChip('Lancements', 1),
-          const SizedBox(width: 8),
-          _buildTabChip('Webinaires', 2),
-        ],
+    final tabs = ['Tous', 'Lancements', 'Webinaires'];
+    final icons = [Icons.calendar_today, Icons.trending_up, Icons.people_outline];
+    
+    return Container(
+      height: 45,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: tabs.length,
+        itemBuilder: (context, index) {
+          bool isSelected = _tabController.index == index;
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () => setState(() => _tabController.index = index),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.orange : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    Icon(icons[index], size: 16, color: isSelected ? Colors.white : Colors.grey),
+                    const SizedBox(width: 8),
+                    Text(
+                      tabs[index],
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildTabChip(String label, int index) {
-    final isSelected = _tabController.index == index;
-    return GestureDetector(
-      onTap: () => setState(() => _tabController.index = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[700],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-      ),
+  Widget _buildEventList(List<Map<String, dynamic>> events) {
+    if (events.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(40.0),
+        child: Center(child: Text('Aucun événement trouvé')),
+      );
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: events.length,
+      itemBuilder: (ctx, i) => _buildEventCard(events[i]),
     );
   }
 
   Widget _buildEventCard(Map<String, dynamic> event) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image header
+          // Image logic
           Stack(
             children: [
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: (event['imageColor'] as Color).withOpacity(0.15),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: Image.network(
-                    event['imageUrl'] as String,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 60,
-                          color: event['imageColor'] as Color,
-                        ),
-                      );
-                    },
-                  ),
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: Image.network(
+                  event['imageUrl'] as String,
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                 ),
               ),
+              // Tags
               Positioned(
                 top: 12,
                 left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: event['tagColor'] as Color,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    event['tag'] as String,
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
+                child: Row(
+                  children: [
+                    _buildCardTag('Lancement produit', Colors.white, Colors.black87),
+                    const SizedBox(width: 8),
+                    _buildCardTag('Tendance', Colors.orange, Colors.white, icon: Icons.trending_up),
+                  ],
                 ),
               ),
+              // Bookmark
               Positioned(
-                top: 12,
+                bottom: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6)],
-                  ),
-                  child: Icon(Icons.play_circle_outline, color: event['imageColor'] as Color, size: 18),
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  child: const Icon(Icons.bookmark_border, size: 20, color: Colors.black87),
                 ),
               ),
             ],
           ),
-          // Content
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   event['title'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   event['desc'] as String,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 13, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(event['date'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.access_time, size: 13, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(event['time'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.location_on_outlined, size: 13, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(event['location'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Progress
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: event['progress'] as double,
-                              color: AppColors.primary,
-                              backgroundColor: Colors.grey[200],
-                              minHeight: 6,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${event['participants']} participants',
-                            style: const TextStyle(fontSize: 11, color: Colors.grey),
-                          ),
-                        ],
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow(Icons.calendar_today_outlined, event['date'] as String),
+                        const SizedBox(height: 8),
+                        _buildInfoRow(Icons.access_time, event['time'] as String),
+                        const SizedBox(height: 8),
+                        _buildInfoRow(Icons.location_on_outlined, 'En ligne'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    // Share
-                    const Icon(Icons.share_outlined, size: 20, color: Colors.grey),
-                    const SizedBox(width: 10),
-                    // Register button
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: (event['priceColor'] as Color).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: event['is_registered'] == true ? Colors.grey : AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        elevation: 0,
                       ),
                       child: Text(
-                        event['price'] as String,
-                        style: TextStyle(
-                          color: event['priceColor'] as Color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
+                        event['is_registered'] == true ? 'Inscrit' : "S'inscrire",
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ),
                   ],
@@ -435,5 +548,58 @@ class _EvenementsScreenState extends State<EvenementsScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildCardTag(String label, Color bgColor, Color textColor, {IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 12, color: textColor),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.grey),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+      ],
+    );
+  }
+
+  Future<void> _registerForEvent(dynamic eventId) async {
+    final result = await _apiService.registerForEvent(eventId.toString());
+    
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Inscription réussie !'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _fetchEvents(); // Refresh to update is_registered status
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erreur lors de l\'inscription'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
