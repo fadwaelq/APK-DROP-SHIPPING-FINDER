@@ -3,13 +3,16 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from drf_spectacular.utils import extend_schema
 from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 
 from .models import RewardProfile, Referral, Mission, UserMissionLog
 from .serializers import RewardProfileSerializer, ApplyCodeSerializer
 from economy.models import UserWallet, CoinTransaction
 
 # ==========================================
-# PARRAINAGE & RÉSUMÉ (Ton code existant)
+# 1. PARRAINAGE & RÉSUMÉ (Bloc Growth - P2)
 # ==========================================
 
 class RewardSummaryView(APIView):
@@ -25,6 +28,34 @@ class RewardSummaryView(APIView):
         data = serializer.data
         data['total_referrals'] = referrals_count
         return Response(data, status=status.HTTP_200_OK)
+
+class ReferralInviteView(APIView):
+    """ POST /api/user/referral-invite : Générer lien et code d'invitation """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(tags=["Growth"])
+    def post(self, request):
+        profile, _ = RewardProfile.objects.get_or_create(user=request.user)
+        # On simule la construction d'un lien basé sur ton domaine front-end
+        invite_link = f"https://finder.com/ref/{profile.referral_code}"
+        
+        return Response({
+            "invite_code": profile.referral_code, 
+            "invite_link": invite_link
+        }, status=status.HTTP_200_OK)
+
+class UserReferralsView(APIView):
+    """ GET /api/user/referrals : Liste des filleuls """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(tags=["Growth"])
+    def get(self, request):
+        referrals = Referral.objects.filter(referrer=request.user)
+        data = [
+            {"id": ref.id, "email": ref.referred_user.email, "date": ref.created_at.strftime('%Y-%m-%d')} 
+            for ref in referrals
+        ]
+        return Response({"referrals": data}, status=status.HTTP_200_OK)
 
 class ApplyReferralCodeView(APIView):
     """ POST /api/rewards/apply-code/ : Gagner des Coins et de l'XP via parrainage """
@@ -56,8 +87,6 @@ class ApplyReferralCodeView(APIView):
             ref_wallet, _ = UserWallet.objects.get_or_create(user=referrer)
             ref_wallet.balance += reward_coins
             ref_wallet.save()
-            
-            # Utilisation de add_xp (qui gère le passage de niveau)
             referrer_profile.add_xp(reward_xp)
 
             CoinTransaction.objects.create(
@@ -85,7 +114,7 @@ class ApplyReferralCodeView(APIView):
 
 
 # ==========================================
-# MISSIONS (Mises à jour)
+# 2. MISSIONS (Daily & Weekly - P1)
 # ==========================================
 
 class DailyMissionsView(APIView):
@@ -140,21 +169,16 @@ class CompleteMissionView(APIView):
         except Mission.DoesNotExist:
             return Response({"error": "Mission non trouvée"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Anti-triche : on vérifie si déjà faite aujourd'hui pour les DAILY
         today = timezone.now().date()
         if mission.mission_type == 'DAILY' and UserMissionLog.objects.filter(user=request.user, mission=mission, completed_at__date=today).exists():
             return Response({"error": "Mission déjà accomplie aujourd'hui"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Sauvegarde dans l'historique des missions accomplies
         UserMissionLog.objects.create(user=request.user, mission=mission)
 
         profile, _ = RewardProfile.objects.get_or_create(user=request.user)
         wallet, _ = UserWallet.objects.get_or_create(user=request.user)
 
-        # Gain XP (la méthode add_xp calcule automatiquement le niveau)
         profile.add_xp(mission.reward_xp)
-        
-        # Gain Coins
         wallet.balance += mission.reward_coins
         wallet.save()
 
@@ -163,15 +187,11 @@ class CompleteMissionView(APIView):
             source='mission', description=f"Mission validée: {mission.title}"
         )
 
-        # La réponse exacte que Fadwa attend !
-        return Response({
-            "success": True, 
-            "xp_earned": mission.reward_xp
-        }, status=status.HTTP_200_OK)
+        return Response({"success": True, "xp_earned": mission.reward_xp}, status=status.HTTP_200_OK)
 
 
 # ==========================================
-# XP & NIVEAUX
+# 3. XP & NIVEAUX
 # ==========================================
 
 class UserXPView(APIView):
@@ -213,8 +233,113 @@ class AddXPView(APIView):
         profile, _ = RewardProfile.objects.get_or_create(user=request.user)
         new_level = profile.add_xp(amount)
 
+        return Response({"success": True, "new_level": new_level, "new_xp": profile.total_xp}, status=status.HTTP_200_OK)
+
+
+# ==========================================
+# 4. DASHBOARD & STREAK (Bloc Gamification - P2)
+# ==========================================
+
+class UserStreakView(APIView):
+    """ GET /api/user/streak """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(tags=["Gamification"])
+    def get(self, request):
+        profile, _ = RewardProfile.objects.get_or_create(user=request.user)
         return Response({
-            "success": True,
-            "new_level": new_level,
-            "new_xp": profile.total_xp
+            "current_streak": profile.current_streak,
+            "last_activity": profile.last_activity_date
+        }, status=status.HTTP_200_OK)
+
+class UpdateStreakView(APIView):
+    """ POST /api/user/streak/update """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(tags=["Gamification"])
+    def post(self, request):
+        profile, _ = RewardProfile.objects.get_or_create(user=request.user)
+        today = timezone.now().date()
+        yesterday = today - timedelta(days=1)
+
+        if profile.last_activity_date == today:
+            message = "Déjà mis à jour aujourd'hui."
+        elif profile.last_activity_date == yesterday:
+            profile.current_streak += 1
+            message = "Série augmentée !"
+        else:
+            profile.current_streak = 1
+            message = "Série réinitialisée."
+
+        profile.last_activity_date = today
+        profile.save()
+
+        return Response({"success": True, "message": message, "current_streak": profile.current_streak}, status=status.HTTP_200_OK)
+
+class DashboardChartDataView(APIView):
+    """ GET /api/user/dashboard/chart-data """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(tags=["Dashboard"])
+    def get(self, request):
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        activity_data = UserMissionLog.objects.filter(
+            user=request.user, completed_at__gte=seven_days_ago
+        ).annotate(date=TruncDate('completed_at')).values('date').annotate(count=Count('id')).order_by('date')
+
+        chart_data = [{"date": item['date'].strftime('%Y-%m-%d'), "value": item['count']} for item in activity_data]
+        return Response({"chart_data": chart_data}, status=status.HTTP_200_OK)
+
+# ==========================================
+# 5. AJOUTS POUR LE BLOC GROWTH & VIRALITÉ 
+# ==========================================
+
+class ReferralLeaderboardView(APIView):
+    """ GET /api/user/referral-leaderboard : Classement des meilleurs parrains """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Growth"])
+    def get(self, request):
+        # Compte le nombre de filleuls pour chaque parrain et prend le top 10
+        leaderboard = Referral.objects.values('referrer__username').annotate(
+            total_referrals=Count('id')
+        ).order_by('-total_referrals')[:10]
+        
+        data = [
+            {
+                "username": item['referrer__username'], 
+                "referrals": item['total_referrals']
+            } for item in leaderboard
+        ]
+        return Response({"leaderboard": data}, status=status.HTTP_200_OK)
+
+class ReferralRewardsView(APIView):
+    """ GET /api/user/referral/rewards : Liste des gains potentiels """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Growth"])
+    def get(self, request):
+        # Données statiques pour le front-end (à lier à un modèle plus tard si besoin)
+        rewards = [
+            {"id": 1, "required_referrals": 5, "reward_coins": 500, "status": "locked"},
+            {"id": 2, "required_referrals": 10, "reward_coins": 1500, "status": "locked"},
+            {"id": 3, "required_referrals": 25, "reward_coins": 5000, "status": "locked"},
+        ]
+        return Response({"rewards": rewards}, status=status.HTTP_200_OK)
+
+class ClaimReferralRewardView(APIView):
+    """ POST /api/user/referral/claim-reward : Réclamer les coins après validation """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Growth"])
+    def post(self, request):
+        reward_id = request.data.get('reward_id')
+        
+        if not reward_id:
+            return Response({"error": "L'ID de la récompense est requis."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Logique simplifiée en attendant la validation stricte des paliers
+        return Response({
+            "success": True, 
+            "message": f"Récompense {reward_id} réclamée avec succès ! Les coins seront ajoutés après vérification."
         }, status=status.HTTP_200_OK)

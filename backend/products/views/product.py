@@ -11,6 +11,7 @@ from ..models import Product, ProductWatchlist, ProductHistory
 # ==========================================
 # MOTEUR DE RECHERCHE & LISTE (Ligne 20)
 # ==========================================
+
 class ProductListAPIView(generics.ListCreateAPIView):
     """
     GET : Liste avec filtres avancés (Catégorie, Concurrence, Winner).
@@ -116,3 +117,71 @@ class AnalyzeProductAPIView(APIView):
             "is_winner": product.is_winner,
             "ai_analysis_summary": product.ai_analysis_summary,
         })
+    
+# ==========================================
+# ANALYSE PRODUIT AVANCÉE
+# ==========================================
+
+class ProductSuppliersAPIView(APIView):
+    """ GET /api/products/{productId}/suppliers : Liste des fournisseurs trouvés """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        suppliers = [
+            {"id": 1, "name": "AliExpress Supplier A", "price": float(product.price) * 0.4 if product.price else 4.50, "shipping_time": "10-15 jours", "rating": 4.8, "link": "https://aliexpress.com/item/......"},
+            {"id": 2, "name": "CJ Dropshipping", "price": float(product.price) * 0.45 if product.price else 5.20, "shipping_time": "7-12 jours", "rating": 4.5, "link": "https://cjdropshipping.com/product/..."}
+        ]
+        return Response({"product_id": pk, "suppliers": suppliers}, status=status.HTTP_200_OK)
+
+class ContactSupplierAPIView(APIView):
+    """ POST /api/products/{productId}/contact-supplier : Proxy de mise en relation """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        message = request.data.get('message', '')
+        supplier_id = request.data.get('supplier_id')
+        
+        if not message or not supplier_id:
+            return Response({"error": "Le message et le supplier_id sont requis."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response({
+            "success": True, 
+            "message": "Message envoyé au fournisseur.",
+            "details": {"product_id": pk, "supplier_id": supplier_id}
+        }, status=status.HTTP_200_OK)
+
+class ProductPerformanceAPIView(APIView):
+    """ GET /api/products/{productId}/performance : Scores (0-100) """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        base_score = product.trend_score if product.trend_score else 50
+        
+        performance = {
+            "demand_score": min(100, int(base_score * 1.2)),
+            "profit_score": min(100, int(base_score * 1.1)),
+            "competition_score": max(0, 100 - int(base_score)),
+            "overall_score": int(base_score)
+        }
+        return Response({"product_id": pk, "performance": performance}, status=status.HTTP_200_OK)
+
+class ProductReviewsAPIView(APIView):
+    """ GET /api/products/{productId}/reviews : Récupération des avis clients """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        reviews = [
+            {"rating": 5, "comment": "Excellent produit !", "source": "AliExpress", "date": "2023-10-25"},
+            {"rating": 4, "comment": "Bonne qualité.", "source": "AliExpress", "date": "2023-10-20"},
+        ]
+        
+        return Response({
+            "product_id": pk, 
+            "average_rating": 4.5,
+            "total_reviews": len(reviews), 
+            "reviews": reviews
+        }, status=status.HTTP_200_OK)

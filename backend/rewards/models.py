@@ -8,10 +8,13 @@ class RewardProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='reward_profile')
     referral_code = models.CharField(max_length=20, unique=True, blank=True)
     
-    # --- AJOUTS POUR XP & NIVEAUX ---
+    # --- XP & NIVEAUX ---
     total_xp = models.PositiveIntegerField(default=0)
     current_level = models.PositiveIntegerField(default=1)
-    # -------------------------------
+    
+    # --- STREAK (SÉRIE D'ACTIVITÉ) ---
+    current_streak = models.PositiveIntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.referral_code:
@@ -22,13 +25,12 @@ class RewardProfile(models.Model):
 
     @property
     def xp_required_for_next_level(self):
-        # Logique : Niveau 1 demande 100 XP, Niveau 2 demande 200 XP, etc.
+        # Niveau 1 demande 100 XP, Niveau 2 demande 200 XP, etc.
         return self.current_level * 100
 
     def __str__(self):
         return f"{self.user.username} - Niv. {self.current_level} ({self.total_xp} XP)"
         
-    # Calcul du niveau en fonction de l'XP totale et de l'XP requis pour le niveau suivant
     def add_xp(self, amount):
         self.total_xp += amount
         # Tant que l'XP dépasse le requis, on monte d'un niveau
@@ -37,7 +39,7 @@ class RewardProfile(models.Model):
         self.save()
         return self.current_level
 
-# Pour les missions, on peut créer un modèle Mission et un modèle UserMissionLog pour suivre les missions validées par l'utilisateur.
+
 class Mission(models.Model):
     MISSION_TYPES = (('DAILY', 'Quotidienne'), ('WEEKLY', 'Hebdomadaire'))
     title = models.CharField(max_length=255)
@@ -50,7 +52,7 @@ class Mission(models.Model):
     def __str__(self):
         return f"[{self.mission_type}] {self.title}"
 
-#  User Mission pour suivre les missions validées par l'utilisateur
+
 class UserMissionLog(models.Model):
     """ Empêche de valider la même mission plusieurs fois """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mission_logs')
@@ -59,6 +61,7 @@ class UserMissionLog(models.Model):
 
     class Meta:
         ordering = ['-completed_at']
+
 
 class Referral(models.Model):
     referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referrals_made')

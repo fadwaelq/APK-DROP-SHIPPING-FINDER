@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     PostListCreateView, 
-    PostLikeToggleView, 
+    PostLikeView,       
+    PostUnlikeView,     
     PostCommentView,    
     PostShareView,     
     StoryListCreateView, 
@@ -13,7 +14,8 @@ from .views import (
 urlpatterns = [
     # --- Routes Communauté (Posts & Interactions) ---
     path('community/posts/', PostListCreateView.as_view(), name='post-list-create'),
-    path('community/posts/<int:pk>/like/', PostLikeToggleView.as_view(), name='post-like'),
+    path('community/posts/<int:pk>/like/', PostLikeView.as_view(), name='post-like'),
+    path('community/posts/<int:pk>/unlike/', PostUnlikeView.as_view(), name='post-unlike'),
     path('community/posts/<int:pk>/comments/', PostCommentView.as_view(), name='post-comments'), 
     path('community/posts/<int:pk>/share/', PostShareView.as_view(), name='post-share'),       
     
