@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     # --- LIBRAIRIES EXTERNES ---
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist', # Nécessaire pour pouvoir blacklister les tokens lors de la déconnexion
     'django_filters', # Nécessaire pour ton moteur de recherche (app products)
     'drf_spectacular', # Pour la documentation Swagger de l'API
 
@@ -44,6 +45,12 @@ INSTALLED_APPS = [
     'analytics',
     'education',
     'scraper',
+    'subscriptions',
+    'support',
+    'community',
+    'rewards',
+    'economy',
+    
 ]
 
 MIDDLEWARE = [
@@ -132,6 +139,12 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema', # <-- Ajoute ceci
 
+    #  on peut aussi personnaliser les renderers pour standardiser les réponses de l'API pour le frontend
+    'DEFAULT_RENDERER_CLASSES': [
+        'core.renderers.StandardizedJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer', # Optionnel : Garde l'interface web de DRF active
+    ],
+
 }
 
 # Configuration optionnelle pour Swagger (nom du projet, version, etc.)
@@ -158,3 +171,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE  # Utilise la même timezone que ton projet Django
+
+# Autorise ton IP locale et localhost
+ALLOWED_HOSTS = ['192.168.1.70', '127.0.0.1', 'localhost']

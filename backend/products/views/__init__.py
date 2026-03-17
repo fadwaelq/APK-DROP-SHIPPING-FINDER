@@ -1,2 +1,2 @@
-from .product import ProductListAPIView, ProductDetailAPIView
+from .product import ProductListAPIView, ProductDetailAPIView, ProductHistoryAPIView
 from .watchlist import WatchlistAPIView, WatchlistDetailAPIView
