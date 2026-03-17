@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import 'product_details_screen.dart';
 import '../services/favorites_manager.dart';
@@ -16,20 +17,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-           'Mes Favoris',
-           style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+           AppLocalizations.of(context)!.my_favorites,
+           style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
         ),
       ),
       body: ValueListenableBuilder<List<Map<String, dynamic>>>(
@@ -44,7 +41,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                      child: Row(
                        children: [
                          Text(
-                           '${favoritesList.length} produits sauvegardés',
+                           AppLocalizations.of(context)!.saved_products_count(favoritesList.length),
                            style: const TextStyle(
                              color: AppColors.textSecondary,
                              fontSize: 14,
@@ -81,9 +78,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            const Text(
-                              'Votre Liste de Veille est Vide',
-                              style: TextStyle(
+                            Text(
+                              AppLocalizations.of(context)!.empty_watchlist_title,
+                              style: const TextStyle(
                                  fontSize: 18,
                                  fontWeight: FontWeight.bold,
                                  color: Color(0xFF2C3E50), 
@@ -91,16 +88,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
-                            const Padding(
-                               padding: EdgeInsets.symmetric(horizontal: 24.0),
+                            Padding(
+                               padding: const EdgeInsets.symmetric(horizontal: 24.0),
                                child: Text(
-                                 'Commencez par trouver des produits gagnants pour les surveiller.',
-                                 style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+                                 AppLocalizations.of(context)!.empty_watchlist_subtitle,
+                                 style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
                                  textAlign: TextAlign.center,
                                ),
                             ),
                             const SizedBox(height: 48),
-                            // Orange Card (identical)
+                            // Orange Card
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 24.0),
                               width: double.infinity,
@@ -119,30 +116,30 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Découvrez les Produits Tendance',
-                                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  Text(
+                                    AppLocalizations.of(context)!.discover_trending_title,
+                                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 16),
-                                  const Text(
-                                    'Trouvez des produits à fort potentiel pour commencer votre veille personnalisée.',
-                                    style: TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
+                                  Text(
+                                    AppLocalizations.of(context)!.discover_trending_subtitle,
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
                                   ),
                                   const SizedBox(height: 24),
                                   GestureDetector(
                                     onTap: () {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                         const SnackBar(content: Text('Aller à la recherche...')),
+                                         SnackBar(content: Text(AppLocalizations.of(context)!.go_to_search_btn)),
                                       );
                                     },
                                     child: Container(
                                       width: double.infinity,
                                       padding: const EdgeInsets.symmetric(vertical: 14),
                                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                                      child: const Center(
+                                      child: Center(
                                         child: Text(
-                                          'Commencer la recherche',
-                                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                                          AppLocalizations.of(context)!.start_search_btn,
+                                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
                                         ),
                                       ),
                                     ),
@@ -190,13 +187,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Row(
+                                    Row(
                                       children: [
-                                        Icon(Icons.lightbulb, color: Colors.white, size: 20),
-                                        SizedBox(width: 8),
+                                        const Icon(Icons.lightbulb, color: Colors.white, size: 20),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'Conseil',
-                                          style: TextStyle(
+                                          AppLocalizations.of(context)!.advice_title,
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
@@ -205,9 +202,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 16),
-                                    const Text(
-                                      'Consultez régulièrement vos favoris pour suivre l\'évolution des tendances et des scores',
-                                      style: TextStyle(
+                                    Text(
+                                      AppLocalizations.of(context)!.advice_subtitle,
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 13,
                                         height: 1.5,
@@ -221,10 +218,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: const Center(
+                                      child: Center(
                                         child: Text(
-                                          'Découvrir plus de produits',
-                                          style: TextStyle(
+                                          AppLocalizations.of(context)!.discover_more_products_btn,
+                                          style: const TextStyle(
                                             color: AppColors.primary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,
@@ -341,9 +338,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Prix',
-                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                        Text(
+                          AppLocalizations.of(context)!.price_label,
+                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                         ),
                         Text(
                           price,
@@ -359,9 +356,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Profit',
-                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                        Text(
+                          AppLocalizations.of(context)!.profit_label,
+                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                         ),
                         Text(
                           profit,

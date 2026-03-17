@@ -1,51 +1,77 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
-class BadgesScreen extends StatelessWidget {
+class BadgesScreen extends StatefulWidget {
   const BadgesScreen({super.key});
 
-  static const List<Map<String, dynamic>> _badges = [
-    {
-      'title': 'La Prospecteur',
-      'desc': 'Produits top trouvés\nfacilement en réalité',
-      'icon': Icons.search,
-      'color': Colors.orange,
-      'unlocked': true,
-      'progress': 100,
-    },
-    {
-      'title': 'Le Veilleur',
-      'desc': '7 jours de veille\nconsécutifs',
-      'icon': Icons.visibility,
-      'color': Colors.blue,
-      'unlocked': true,
-      'progress': 100,
-    },
-    {
-      'title': 'Ambitieux',
-      'desc': 'Parrainage de 3\nadhérents au moins',
-      'icon': Icons.people,
-      'color': Colors.purple,
-      'unlocked': false,
-      'progress': 60,
-    },
-    {
-      'title': 'Le Méga',
-      'desc': 'Atteindre le niveau\nPlatinum Étoile',
-      'icon': Icons.star,
-      'color': Colors.amber,
-      'unlocked': false,
-      'progress': 40,
-    },
-    {
-      'title': "L'Expert Filtres",
-      'desc': 'Utiliser tous les\noutils de filtrage',
-      'icon': Icons.filter_alt,
-      'color': Colors.teal,
-      'unlocked': false,
-      'progress': 25,
-    },
-  ];
+  @override
+  State<BadgesScreen> createState() => _BadgesScreenState();
+}
+
+class _BadgesScreenState extends State<BadgesScreen> {
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _badges = [];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBadges();
+  }
+
+  Future<void> _fetchBadges() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _apiService.getUserBadges();
+
+    if (result['success'] == true) {
+      final List<dynamic> badgesData = result['data'] ?? [];
+      setState(() {
+        _badges = badgesData.map((b) => {
+          'title': b['title'] ?? 'Sans Titre',
+          'desc': b['description'] ?? 'Pas de description',
+          'icon': _getIconData(b['icon_name']),
+          'color': _getColor(b['color_hex']),
+          'unlocked': b['is_unlocked'] ?? false,
+          'progress': b['progress_percentage'] ?? 0,
+        }).toList();
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = result['message'] ?? 'Erreur lors du chargement des badges';
+        _isLoading = false;
+
+      });
+    }
+  }
+
+  IconData _getIconData(String? name) {
+    switch (name) {
+      case 'search': return Icons.search;
+      case 'visibility': return Icons.visibility;
+      case 'people': return Icons.people;
+      case 'star': return Icons.star;
+      case 'filter': return Icons.filter_alt;
+      default: return Icons.emoji_events;
+    }
+  }
+
+  Color _getColor(String? hex) {
+    if (hex == null) return Colors.blue;
+    try {
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return Colors.blue;
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -53,25 +79,36 @@ class BadgesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context, unlockedCount),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUnlockedSection(),
-                  const SizedBox(height: 24),
-                  _buildLockedSection(),
-                  const SizedBox(height: 40),
-                ],
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _fetchBadges,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    _buildHeader(context, unlockedCount),
+                    if (_error != null) 
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12), textAlign: TextAlign.center),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildUnlockedSection(),
+                          const SizedBox(height: 24),
+                          _buildLockedSection(),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -124,22 +161,26 @@ class BadgesScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.emoji_events, color: Colors.white, size: 32),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$unlockedCount badges de ${_badges.length} débloqués',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$unlockedCount badges de ${_badges.length} débloqués',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
-                    ),
-                    const Text(
-                      'Continuez ainsi pour en obtenir davantage de Diamant',
-                      style: TextStyle(color: Colors.white70, fontSize: 11),
-                    ),
-                  ],
+                      const Text(
+                        'Continuez ainsi pour en obtenir davantage de Diamant',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -152,6 +193,7 @@ class BadgesScreen extends StatelessWidget {
 
   Widget _buildUnlockedSection() {
     final unlocked = _badges.where((b) => b['unlocked'] == true).toList();
+    if (unlocked.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -166,7 +208,7 @@ class BadgesScreen extends StatelessWidget {
           mainAxisSpacing: 14,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.1,
+          childAspectRatio: 0.85,
           children: unlocked.map((badge) => _buildBadgeCard(badge)).toList(),
         ),
       ],
@@ -175,6 +217,7 @@ class BadgesScreen extends StatelessWidget {
 
   Widget _buildLockedSection() {
     final locked = _badges.where((b) => b['unlocked'] == false).toList();
+    if (locked.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

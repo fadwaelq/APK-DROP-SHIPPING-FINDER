@@ -1,17 +1,19 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:dropshipping_finder/screens/home_screenhh.dart';
-import 'package:dropshipping_finder/widgets/bottom_nav_bar.dart';
+import '../widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import '../utils/theme.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
+import 'payment_details_screen.dart';
+import 'paypal_details_screen.dart';
+import 'google_play_redeem_screen.dart';
 
 enum PaymentMethod {
   stripe,
   paypal,
-  momo,
+  googlePlay,
 }
 
 class PremiumCheckoutScreen extends StatefulWidget {
@@ -36,16 +38,16 @@ class _PremiumCheckoutScreenState
 
     switch (index) {
       case 0:
-        page = const HomeScreen();
+        page = const HomeScreen(userName: 'Utilisateur');
         break;
       case 1:
         page = const SearchScreen();
         break;
       case 2:
-        page = const ProfileScreen();
+        page = const ProfileScreen(userName: 'Utilisateur');
         break;
       default:
-        page = const HomeScreen();
+        page = const HomeScreen(userName: 'Utilisateur');
     }
 
     Navigator.of(context).pushReplacement(
@@ -195,9 +197,11 @@ class _PremiumCheckoutScreenState
             method: PaymentMethod.paypal,
           ),
           _buildPaymentOption(
-            title: 'Mobile Money (MoMo)',
-            icon: Icons.phone_android,
-            method: PaymentMethod.momo,
+            title: 'Google Play Balance',
+            icon: Icons.play_arrow,
+            method: PaymentMethod.googlePlay,
+            subtitle: 'Current Balance : 120 \$',
+            showRedeem: true,
           ),
         ],
       ),
@@ -208,6 +212,8 @@ class _PremiumCheckoutScreenState
     required String title,
     required IconData icon,
     required PaymentMethod method,
+    String? subtitle,
+    bool showRedeem = false,
   }) {
     final bool isSelected = _selectedMethod == method;
 
@@ -234,33 +240,89 @@ class _PremiumCheckoutScreenState
                 : AppTheme.lightGray,
           ),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? AppTheme.secondaryOrange
-                  : AppTheme.textSecondary,
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isSelected
+                      ? AppTheme.secondaryOrange
+                      : AppTheme.textSecondary,
+                ),
+                const SizedBox(width: AppTheme.spacingM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTheme.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Radio<PaymentMethod>(
+                  value: method,
+                  groupValue: _selectedMethod,
+                  activeColor: AppTheme.secondaryOrange,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedMethod = value!;
+                    });
+                  },
+                ),
+              ],
             ),
-            const SizedBox(width: AppTheme.spacingM),
-            Expanded(
-              child: Text(
-                title,
-                style: AppTheme.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w500,
+            if (isSelected && showRedeem) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GooglePlayRedeemScreen(),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 40),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Redeem Gift Card ',
+                          style: TextStyle(
+                            color: AppTheme.secondaryOrange,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Icon(
+                          Icons.add_circle_outline,
+                          color: AppTheme.secondaryOrange,
+                          size: 14,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            Radio<PaymentMethod>(
-              value: method,
-              groupValue: _selectedMethod,
-              activeColor: AppTheme.secondaryOrange,
-              onChanged: (value) {
-                setState(() {
-                  _selectedMethod = value!;
-                });
-              },
-            ),
+            ],
           ],
         ),
       ),
@@ -274,7 +336,33 @@ class _PremiumCheckoutScreenState
   Widget _buildPayButton() {
     return ElevatedButton(
       onPressed: () {
-        // TODO: logique paiement
+        if (_selectedMethod == PaymentMethod.stripe) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PaymentDetailsScreen(),
+            ),
+          );
+        } else if (_selectedMethod == PaymentMethod.paypal) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PaypalDetailsScreen(),
+            ),
+          );
+        } else if (_selectedMethod == PaymentMethod.googlePlay) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const GooglePlayRedeemScreen(),
+            ),
+          );
+        } else {
+          // TODO: logique paiement pour MoMo
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Paiement en cours...')),
+          );
+        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.secondaryOrange,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import 'subscription_screen.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 class MySubscriptionScreen extends StatelessWidget {
   final bool isPremium;
@@ -10,25 +10,28 @@ class MySubscriptionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                   _buildCurrentPlanCard(),
-                   const SizedBox(height: 24),
-                   _buildBenefitsCard(),
-                   const SizedBox(height: 40),
-                   _buildActionButtons(context),
-                ],
-              ),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                _buildMainContent(context),
+                const SizedBox(height: 120), // Spacer for floating navbar
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: CustomBottomNavBar(
+              currentIndex: -1,
+              onTap: (index) {},
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -36,11 +39,12 @@ class MySubscriptionScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 30),
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
         ),
       ),
       child: Column(
@@ -69,60 +73,72 @@ class MySubscriptionScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           const Text(
             'Votre Plan Actuel',
-            style: TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 8),
-          Text(
-            isPremium ? 'Premium Mensuel' : 'Gratuit (Freemium)',
-            style: const TextStyle(
+          const SizedBox(height: 12),
+          const Text(
+            'Premium Mensuel',
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 36,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            isPremium 
-              ? 'Prochain renouvellement 17 Déc. 2025'
-              : 'Votre plan est limité à 10 recherches et 3 alertes par jour.',
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          const SizedBox(height: 20),
+          const Text(
+            'Prochain renouvellement 17 Déc. 2025',
+            style: TextStyle(color: Colors.white, fontSize: 14),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildCurrentPlanCard() {
-    return Container(); // We already have the info in the header per design
+  Widget _buildMainContent(BuildContext context) {
+    return Container(
+      transform: Matrix4.translationValues(0.0, -20.0, 0.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(35),
+          topRight: Radius.circular(35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 32),
+          _buildBenefitsCard(context),
+          const SizedBox(height: 48),
+          _buildActionButtons(context),
+        ],
+      ),
+    );
   }
 
-  Widget _buildBenefitsCard() {
-    final benefits = isPremium 
-      ? [
-          {'title': 'Alertes illimitées', 'included': true},
-          {'title': 'Analyse complète des données', 'included': true},
-          {'title': 'Support prioritaire', 'included': true},
-        ]
-      : [
-          {'title': 'Volume de ventes analysé', 'included': false},
-          {'title': 'Export des données', 'included': false},
-          {'title': 'Support prioritaire', 'included': false},
-        ];
+  Widget _buildBenefitsCard(BuildContext context) {
+    final benefits = [
+      'Alertes illimitées',
+      'Analyses complètes',
+      'Support prioritaire',
+    ];
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -131,24 +147,20 @@ class MySubscriptionScreen extends StatelessWidget {
         children: [
           const Text(
             'Avantages inclus',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
-          const SizedBox(height: 20),
-          ...benefits.map((b) => Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
+          const SizedBox(height: 24),
+          ...benefits.map((benefit) => Padding(
+                padding: const EdgeInsets.only(bottom: 20.0),
                 child: Row(
                   children: [
-                    Icon(
-                      b['included'] as bool ? Icons.check_circle : Icons.cancel,
-                      color: b['included'] as bool ? Colors.green : Colors.redAccent,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 24),
+                    const SizedBox(width: 16),
                     Text(
-                      b['title'] as String,
-                      style: TextStyle(
-                        color: Colors.grey[800],
-                        fontSize: 14,
+                      benefit,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -161,52 +173,26 @@ class MySubscriptionScreen extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              if (!isPremium) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: Text(
-              isPremium ? 'Gérer le Paiement' : 'Mettre à Niveau vers Premium',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton(
+        onPressed: () => Navigator.pushNamed(context, '/payment_management'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        ),
+        child: const Text(
+          'Gérer le paiement',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 16),
-        if (isPremium) ...[
-          TextButton(
-            onPressed: () {},
-            child: const Text('Annuler le renouvellement', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Voir l\'historique des factures et reçus', style: TextStyle(color: Colors.grey)),
-          ),
-        ] else
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-              );
-            },
-            child: const Text('Comparer tous les plans', style: TextStyle(color: Colors.grey)),
-          ),
-      ],
+      ),
     );
   }
 }

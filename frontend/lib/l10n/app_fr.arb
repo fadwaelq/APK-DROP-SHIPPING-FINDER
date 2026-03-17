@@ -1,0 +1,418 @@
+{
+  "@@locale": "fr",
+  "nav_home": "Accueil",
+  "nav_search": "Recherche",
+  "nav_fav": "Favoris",
+  "nav_profile": "Profil",
+  "greeting": "Bonjour,",
+  "profit_score": "Score de Rentabilité",
+  "avg_profit": "Profit moy.",
+  "products": "Produits",
+  "top_niches": "Top niches",
+  "trending_products": "Produits Tendance",
+  "see_all": "Voir tout",
+  "lang_title": "Langue",
+  "settings_title": "Paramètres & Préférences",
+  "confirm_lang_title": "Changer la langue ?",
+  "confirm_lang_body": "Voulez-vous changer la langue de toute l'application en {lang} ?",
+  "@confirm_lang_body": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Annuler",
+  "confirm": "Confirmer",
+  "lang_changed": "La langue de l'application est maintenant : {lang}",
+  "@lang_changed": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "events": "Événements",
+  "community": "Communauté",
+  "rewards": "Récompenses",
+  "pref_title": "Préférences",
+  "support_title": "Support",
+  "activity_title": "Mes Activités",
+  "logout": "Déconnexion",
+  "pref_general": "Preference générale",
+  "lang_item": "Langue",
+  "currency_item": "Devise d'affichage",
+  "currency_usd": "Dollar Américain",
+  "currency_eur": "Euro",
+  "currency_mad": "Dirham Marocain",
+  "currency_gbp": "Livre Sterling",
+  "currency_sar": "Riyal Saoudien",
+  "change_pwd_item": "changer le mot de passe",
+  "faceid_item": "Activer Face ID | Touch ID",
+  "legal_support": "Information Légales and Support",
+  "privacy_policy": "Politique de confidentialité",
+  "app_version": "Version de l'application",
+  "contact_support": "Contact Support & Assistance",
+  "coin_balance": "Solde de Coins",
+  "active_streak": "Série active",
+  "days_streak": "{count} jours",
+  "@days_streak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bonus_text": "Bonus quotidien",
+  "coins_per_day": "+{count} coins/jour",
+  "@coins_per_day": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "history_btn": "Historique",
+  "shop_btn": "Boutique",
+  "level_text": "Niveau {level}",
+  "@level_text": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "elite_trader": "Élite Trader",
+  "xp_for_level": "XP pour niveau {nextLevel}",
+  "@xp_for_level": {
+    "placeholders": {
+      "nextLevel": {
+        "type": "int"
+      }
+    }
+  },
+  "daily_missions": "Missions Quotidiennes",
+  "weekly_missions": "Missions Hebdomadaires",
+  "mission_analyze": "Analyser {count} produits aujourd'hui",
+  "@mission_analyze": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mission_share": "Partager une tendance",
+  "mission_report": "Consulter le rapport hebdomadaire",
+  "mission_fav": "Ajouter 5 produits aux favoris",
+  "mission_event": "Participer à un événement",
+  "missions_tab": "Missions",
+  "success_tab": "Succès",
+  "boutique_tab": "Boutique",
+  "claim_btn": "Récupérer",
+  "tab_populaires": "Populaires",
+  "tab_suivis": "Suivis",
+  "tab_webinaires": "Webinaires",
+  "tab_lancements": "Lancements",
+  "no_events": "Aucun événement trouvé",
+  "no_posts": "Aucune publication trouvée",
+  "no_badges_found": "Aucun badge trouvé",
+  "reward_pro": "Analyse Pro",
+  "reward_pro_desc": "Analyse approfondie de produits",
+  "reward_trend": "Tendances Avancées",
+  "reward_trend_desc": "Accès tendances avancées",
+  "reward_social": "Social Dev",
+  "reward_social_desc": "Développeur réseaux sociaux",
+  "reward_bonus": "Bonus Diamant",
+  "reward_bonus_desc": "Récompense exclusive",
+  "success_report": "Rapport Premium",
+  "success_report_desc": "Analyse de tous les produits",
+  "success_badge": "Badge Exclusif",
+  "success_badge_desc": "Badge pour les élite",
+  "success_vip": "Accès VIP Événement",
+  "success_vip_desc": "Accès prioritaire aux événements",
+  "success_boost": "Boost XP x2",
+  "success_boost_desc": "Double XP pendant 24h",
+  "tag_new": "Nouveau",
+  "reset_timer": "Se réinitialise dans {hours}h",
+  "your_balance": "Votre solde",
+  "activate_btn": "Activer",
+  "popular_tag": "POPULAIRE",
+  "coins_label": "COINS",
+  "upcoming": "À venir",
+  "this_week": "+{count} cette semaine",
+  "@this_week": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "registrations": "Inscriptions",
+  "in_queue": "{count} en file d'attente",
+  "@in_queue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "view_calendar": "Voir Calendrier",
+  "product_launch_tag": "Lancement produit",
+  "no_events_found": "Aucun événement trouvé",
+  "tab_tous": "Tous",
+  "online": "En ligne",
+  "free": "Gratuit",
+  "atelier": "Atelier",
+  "conference": "Conférence",
+  "populaire_tag": "Populaire",
+  "participants": "{count} participants",
+  "@participants": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "active_members": "Membres Actifs",
+  "daily_posts": "Posts Quotidiens",
+  "community_growth": "Croissance",
+  "tab_for_you": "Pour vous",
+  "post_time": "il y a {count}h",
+  "@post_time": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "no_posts_found": "Aucune publication trouvée",
+  "members_online": "Membres en ligne",
+  "trending_topics": "Sujets tendances",
+  "search_find_winning": "Trouver des produits gagnants",
+  "search_analyze_hint": "Analysez le marché en temps réel",
+  "search_input_hint": "Rechercher un mot-clé ou un produit...",
+  "search_no_results": "Aucun résultat trouvé",
+  "search_global_score": "Score Global",
+  "filter_trending": "Catégories Tendance",
+  "filter_margin": "Haute Marge Estimée",
+  "filter_new": "Nouveaux Lancements",
+  "filter_viral": "Score Viralité Élevé",
+  "dashboard_title": "Mon Tableau de Bord",
+  "stat_analyzed": "Fiches\nAnalysées",
+  "stat_support": "Au Sav\nHeure",
+  "stat_tasks": "Tâches\nActives",
+  "period_this_week": "Cette semaine",
+  "period_this_month": "Ce mois",
+  "period_total": "Total",
+  "score_evolution": "Évolution du Score Moyen",
+  "detailed_stats_title": "Statistiques détaillées",
+  "stat_detailed_analyzed": "Fiches Produits Analysées",
+  "stat_detailed_economic": "Produits Économiques",
+  "since_beginning": "Depuis le début",
+  "total_time_label": "Temps total",
+  "streak_days_title": "Série de Jours de Veille",
+  "streak_days_msg": "Vous êtes en feu ! {count} jours consécutifs de veille active.",
+  "@streak_days_msg": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cancel_renewal": "Annuler le renouvellement",
+  "view_billing": "Voir l'historique des factures et reçus",
+  "compare_plans": "Comparer tous les plans",
+  "enter_otp": "Veuillez entrer le code OTP",
+  "otp_verified": "Code vérifié avec succès !",
+  "code_sent": "Un nouveau code a été envoyé à votre email",
+  "contact_btn": "Contacter",
+  "view_btn": "Voir",
+  "save_btn": "Enregistrer",
+  "view_on_source": "Voir sur {source}",
+  "@view_on_source": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "code_copied": "Code copié !",
+  "name_label": "Nom",
+  "points_label": "Points",
+  "sharing_code": "Je partage mon code : {code}",
+  "@sharing_code": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "selling_price": "Prix de vente",
+  "estimated_profit": "Profit estimé",
+  "pricing_disclaimer": "Ces prix sont estimés et peuvent varier en fonction de la quantité commandée",
+  "performance_analysis": "Analyse de Performance",
+  "market_insights": "Insights Marché",
+  "trending_up_label": "Tendance à la hausse",
+  "strong_demand_label": "Forte demande",
+  "large_margin_label": "Marge importante",
+  "monthly_sales_est": "{count}K+ ventes mensuelles estimées",
+  "@monthly_sales_est": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "profit_margin_est": "{percent}% de marge bénéficiaire",
+  "@profit_margin_est": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "supplier_label": "Fournisseur",
+  "reviews_count": "{rating}/5 • {count} avis",
+  "@reviews_count": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "supplier_price": "Prix fournisseur",
+  "email_verification": "Vérification Email",
+  "verify_your_email": "Vérifiez votre email",
+  "otp_description": "Un code de vérification à 6 chiffres a été envoyé à",
+  "did_not_receive_code": "Vous n'avez pas reçu le code ?",
+  "resend_btn": "Renvoyer",
+  "otp_expiry": "Le code expire après 10 minutes",
+  "go_to_search_btn": "Aller à la recherche...",
+  "sign_up_btn": "S'inscrire",
+  "audio_tech_category": "Audio & Tech",
+  "product_desc_fallback": "Casque audio Bluetooth haute qualité avec réduction de bruit active, autonomie de 30h et design ergonomique pour un confort optimal.",
+  "product_view_details": "Voir les détails du produit",
+  "product_title_fallback": "Casque Sans-fil Premium",
+  "score": "Score",
+  "my_favorites": "Mes Favoris",
+  "saved_products_count": "{count, plural, =0{Aucun produit sauvegardé} =1{1 produit sauvegardé} other{{count} produits sauvegardés}}",
+  "empty_watchlist_title": "Votre Liste de Veille est Vide",
+  "empty_watchlist_subtitle": "Commencez par trouver des produits gagnants pour les surveiller.",
+  "discover_trending_title": "Découvrez les Produits Tendance",
+  "discover_trending_subtitle": "Trouvez des produits à fort potentiel pour commencer votre veille personnalisée.",
+  "start_search_btn": "Commencer la recherche",
+  "advice_title": "Conseil",
+  "advice_subtitle": "Consultez régulièrement vos favoris pour suivre l'évolution des tendances et des scores",
+  "discover_more_products_btn": "Découvrir plus de produits",
+  "unknown_product": "Produit Inconnu",
+  "recently_added": "Récemment",
+  "price_label": "Prix",
+  "profit_label": "Profit",
+  "tracked_products": "Produits suivis",
+  "active_trends": "Tendances actives",
+  "pro_plan": "Plan Pro",
+  "active_until": "Actif jusqu'au {date}",
+  "theme_color": "Couleur de thème",
+  "choose_avatar": "Choisir un avatar",
+  "verify_account_btn": "Vérifier le compte",
+  "referral_rewards": "Récompenses de parrainage",
+  "active_referrals": "Filleuls actifs",
+  "points_earned": "Points gagnés",
+  "how_it_works": "Comment ça marche ?",
+  "referral_step_1": "Partagez votre code unique",
+  "referral_step_2": "Vos amis s'inscrivent",
+  "referral_step_3": "Gagnez des points bonus",
+  "your_referral_code": "Votre code de parrainage",
+  "my_referrals": "Mes parrainages",
+  "share_code_btn": "Partager mon code",
+  "unlimited_alerts": "Alertes illimitées",
+  "complete_analysis": "Analyses complètes",
+  "priority_support": "Support prioritaire",
+  "sales_volume_analysis": "Analyse volume de ventes",
+  "data_export": "Export de données",
+  "benefits_included": "Avantages inclus",
+  "manage_payment": "Gérer le paiement",
+  "upgrade_premium": "Passer Premium",
+  "my_subscription": "Mon abonnement",
+  "your_current_plan": "Votre forfait actuel",
+  "premium_monthly": "Premium Mensuel",
+  "free_plan": "Forfait Gratuit",
+  "freemium_limit": "Limite freemium atteinte",
+  "demand_label": "Demande",
+  "profitability_label": "Rentabilité",
+  "competition_label": "Concurrence",
+  "trend_label": "Tendance",
+  "preferences": "Préférences",
+  "support_section": "Support",
+  "notifications_label": "Notifications",
+  "privacy_label": "Confidentialité",
+  "help_center": "Centre d'aide",
+  "upgrade_to_pro": "Passer à Pro",
+  "data_security": "Données et sécurité",
+  "faq_tutorials": "FAQ et tutoriels",
+  "unlock_all_features": "Débloquer toutes les fonctionnalités",
+  "alerts_trends": "Alertes et tendances",
+  "verification_title": "Vérification",
+  "verification_desc": "Entrez le code envoyé à",
+  "profile_label": "Profil",
+  "verify_email_title": "Vérifiez votre boîte mail",
+  "verification_sent_to": "Nous avons envoyé un code\nde vérification à",
+  "verification_enter_code": ". Veuillez\nle saisir ci-dessous pour activer votre compte.",
+  "resend_code_timer": "Renvoyer le code {seconds}s",
+  "terms_privacy_notice": "En continuant, vous acceptez nos conditions d'utilisation et notre\npolitique de confidentialité",
+  "login_title": "Connexion",
+  "login_welcome": "Bienvenue ! Connectez-vous pour continuer",
+  "email_label": "Email",
+  "email_hint": "vous@exemple.com",
+  "password_label": "Mot de passe",
+  "password_hint": "********",
+  "forgot_password_btn": "Mot de passe oublié ?",
+  "signin_btn": "Se connecter",
+  "dont_have_account": "Pas encore de compte ?",
+  "create_account_btn": "Créer un compte",
+  "register_title": "S'inscrire",
+  "register_welcome": "Bienvenue ! Créez un compte pour commencer",
+  "already_have_account": "Déjà un compte ?",
+  "signup_btn": "S'inscrire",
+  "full_name_label": "Nom complet",
+  "full_name_hint": "Prénom Nom",
+  "continue_with": "Ou continuez avec",
+  "login_as_guest": "Se connecter en tant qu'invité",
+  "confirm_password_label": "Confirmer le mot de passe",
+  "user_label": "Utilisateur",
+  "forgot_password_desc": "Saisissez l'adresse e-mail associée à votre compte et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+  "send_link_btn": "Envoyer le lien",
+  "reset_link_sent": "Lien de réinitialisation envoyé !",
+  "verify_btn": "Vérifier",
+  "referral_status_joined": "Inscrit",
+  "referral_status_pending": "En attente",
+  "support_home_title": "Support & Assistance",
+  "support_home_subtitle": "\"Besoin d'aide ? Notre équipe est là pour vous accompagner dans votre réussite\"",
+  "send_email_title": "Envoyez-nous un e-mail",
+  "send_email_subtitle": "Réponse sous 24h",
+  "chat_with_agent_title": "Discuter avec un agent",
+  "chat_with_agent_subtitle": "Disponible 7j/7",
+  "faq_title": "FAQs",
+  "faq_q1": "Comment l'IA trouve-t-elle les produits gagnants ?",
+  "faq_a1": "Notre IA analyse en temps réel les données de ventes, les tendances sociales et les signaux du marché pour identifier les produits avec le plus haut potentiel de profit.",
+  "faq_q2": "À quelle fréquence les produits sont-ils mis à jour ?",
+  "faq_a2": "Les mises à jour sont effectuées quotidiennement pour vous garantir l'accès aux dernières opportunités du marché.",
+  "faq_q3": "Puis-je annuler mon abonnement à tout moment ?",
+  "faq_a3": "Oui, vous pouvez annuler votre abonnement à tout moment depuis vos paramètres de profil sans aucun frais supplémentaire.",
+  "faq_q4": "Mes recherches sont-elles confidentielles ?",
+  "faq_a4": "Absolument. Vos données de recherche et vos favoris sont strictement privés et ne sont jamais partagés avec d'autres utilisateurs.",
+  "faq_q5": "Comment contacter le support en cas de problème ?",
+  "faq_a5": "Vous pouvez nous contacter via le formulaire d'assistance ou par email. Notre équipe répond généralement en moins de 24 heures.",
+  "referral_share_msg": "Inscrivez-vous avec mon code {code} et gagnez des bonus !",
+  "@referral_share_msg": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "guest": "Invité"
+}

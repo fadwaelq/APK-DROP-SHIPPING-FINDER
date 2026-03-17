@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 import 'change_password_success_screen.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,7 +36,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'changer le mot de passe',
+          'Changer le mot de passe',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -70,20 +72,55 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) => _buildPinBox()),
-            ),
             const SizedBox(height: 48),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ChangePasswordSuccessScreen()),
-                  );
+                onPressed: _isLoading ? null : () async {
+                  final current = _currentPasswordController.text.trim();
+                  final newPass = _newPasswordController.text.trim();
+                  final confirm = _confirmPasswordController.text.trim();
+
+                  if (current.isEmpty || newPass.isEmpty || confirm.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Veuillez remplir tous les champs')),
+                    );
+                    return;
+                  }
+
+                  if (newPass != confirm) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Les nouveaux mots de passe ne correspondent pas')),
+                    );
+                    return;
+                  }
+
+                  if (newPass.length < 8) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Le mot de passe doit contenir au moins 8 caractères')),
+                    );
+                    return;
+                  }
+
+                  setState(() => _isLoading = true);
+                  final result = await ApiService().changePasswordV2(current, newPass);
+                  setState(() => _isLoading = false);
+
+                  if (mounted) {
+                    if (result['success'] == true) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ChangePasswordSuccessScreen()),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result['message'] ?? 'Erreur lors du changement de mot de passe'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -92,10 +129,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Enregistrer le Nouveau Mot de passe',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Enregistrer le Nouveau Mot de passe',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
               ),
             ),
           ],
@@ -137,19 +180,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPinBox() {
-    return Container(
-      width: 45,
-      height: 45,
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
     );
   }
 }

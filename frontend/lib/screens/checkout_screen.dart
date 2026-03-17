@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../widgets/google_play_logo.dart';
+import '../services/session_manager.dart';
+import 'google_play_redeem_screen.dart';
+import '../services/api_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String planName;
@@ -17,6 +22,17 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String _selectedPaymentMethod = 'stripe';
+
+  void _handleCheckout() {
+    // Navigation directe sans appel au backend pour le moment
+    if (_selectedPaymentMethod == 'stripe') {
+      Navigator.pushNamed(context, '/payment_details');
+    } else if (_selectedPaymentMethod == 'paypal') {
+      Navigator.pushNamed(context, '/paypal');
+    } else if (_selectedPaymentMethod == 'google_play') {
+      Navigator.pushNamed(context, '/google_play');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,9 +141,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           icon: Icons.payment,
         ),
         _buildPaymentOption(
-          id: 'momo',
-          title: 'Mobile Money (MoMo)',
-          icon: Icons.phone_android,
+          id: 'google_play',
+          title: 'Google Play Balance',
+          icon: Icons.play_arrow,
+          customIcon: const GooglePlayLogo(size: 20),
+          subtitle: 'Current Balance : 120 \$',
+          showRedeem: true,
         ),
       ],
     );
@@ -137,6 +156,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required String id,
     required String title,
     required IconData icon,
+    Widget? customIcon,
+    String? subtitle,
+    bool showRedeem = false,
   }) {
     bool isSelected = _selectedPaymentMethod == id;
     return GestureDetector(
@@ -152,42 +174,98 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             width: isSelected ? 2 : 1,
           ),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Icon(icon, color: isSelected ? AppColors.primary : Colors.grey[400]),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppColors.textPrimary : Colors.grey[600],
-                ),
-              ),
-            ),
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey[400]!,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
+            Row(
+              children: [
+                customIcon ?? Icon(icon, color: isSelected ? AppColors.primary : Colors.grey[400]),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? AppColors.textPrimary : Colors.grey[600],
                         ),
                       ),
-                    )
-                  : null,
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.grey[400]!,
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? Center(
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+              ],
             ),
+            if (isSelected && showRedeem) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GooglePlayRedeemScreen(),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 36),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Redeem Gift Card ',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Icon(
+                          Icons.add_circle_outline,
+                          color: AppColors.primary,
+                          size: 14,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -198,14 +276,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Paiement en cours...')),
-          );
-          Future.delayed(const Duration(seconds: 2), () {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          });
-        },
+        onPressed: _handleCheckout,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,

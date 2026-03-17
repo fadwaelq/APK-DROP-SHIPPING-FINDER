@@ -1,0 +1,417 @@
+{
+  "@@locale": "ar",
+  "nav_home": "الرئيسية",
+  "nav_search": "بحث",
+  "nav_fav": "المفضلة",
+  "nav_profile": "الملف الشخصي",
+  "greeting": "مرحباً،",
+  "profit_score": "درجة الربحية",
+  "avg_profit": "متوسط الربح",
+  "products": "منتجات",
+  "top_niches": "أفضل المجالات",
+  "trending_products": "منتجات شائعة",
+  "see_all": "عرض الكل",
+  "lang_title": "اللغة",
+  "settings_title": "الإعدادات والتفضيلات",
+  "confirm_lang_title": "تغيير اللغة؟",
+  "confirm_lang_body": "هل تريد تغيير لغة التطبيق بالكامل إلى {lang}؟",
+  "@confirm_lang_body": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "إلغاء",
+  "confirm": "تأكيد",
+  "lang_changed": "لغة التطبيق الآن هي: {lang}",
+  "@lang_changed": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "events": "فعاليات",
+  "community": "مجتمع",
+  "rewards": "مكافآت",
+  "pref_title": "التفضيلات",
+  "support_title": "الدعم",
+  "activity_title": "أنشطتي",
+  "logout": "تسجيل الخروج",
+  "pref_general": "التفضيلات العامة",
+  "lang_item": "اللغة",
+  "currency_item": "عملة العرض",
+  "currency_usd": "دولار أمريكي",
+  "currency_eur": "يورو",
+  "currency_mad": "درهم مغربي",
+  "currency_gbp": "جنيه إسترليني",
+  "currency_sar": "ريال سعودي",
+  "change_pwd_item": "تغيير كلمة المرور",
+  "faceid_item": "تفعيل بصمة الوجه | اليد",
+  "legal_support": "المعلومات القانونية والدعم",
+  "privacy_policy": "سياسة الخصوصية",
+  "app_version": "اصدار التطبيق",
+  "contact_support": "الاتصال بالدعم والمساعدة",
+  "coin_balance": "رصيد الكوينز",
+  "active_streak": "سلسلة النشاط",
+  "days_streak": "{count} أيام",
+  "@days_streak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bonus_text": "مكافأة يومية",
+  "coins_per_day": "+{count} كوينز/يوم",
+  "@coins_per_day": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "history_btn": "السجل",
+  "shop_btn": "المتجر",
+  "level_text": "المستوى {level}",
+  "@level_text": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "elite_trader": "تاجر النخبة",
+  "xp_for_level": "XP للمستوى {nextLevel}",
+  "@xp_for_level": {
+    "placeholders": {
+      "nextLevel": {
+        "type": "int"
+      }
+    }
+  },
+  "daily_missions": "المهام اليومية",
+  "weekly_missions": "المهام الأسبوعية",
+  "mission_analyze": "تحليل {count} منتجات اليوم",
+  "@mission_analyze": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mission_share": "مشاركة اتجاه",
+  "mission_report": "عرض التقرير الأسبوعي",
+  "mission_fav": "إضافة 5 منتجات للمفضلة",
+  "mission_event": "المشاركة في فعالية",
+  "missions_tab": "المهام",
+  "success_tab": "النجاحات",
+  "boutique_tab": "المتجر",
+  "claim_btn": "مطالبة",
+  "tab_populaires": "شائع",
+  "tab_suivis": "متابع",
+  "tab_webinaires": "ندوات",
+  "tab_lancements": "إطلاقات",
+  "no_events": "لا توجد فعاليات",
+  "no_posts": "لا توجد منشورات",
+  "reward_pro": "تحليل احترافي",
+  "reward_pro_desc": "تحليل منتجات مفصل",
+  "reward_trend": "اتجاهات متقدمة",
+  "reward_trend_desc": "الوصول إلى اتجاهات متقدمة",
+  "reward_social": "مطور اجتماعي",
+  "reward_social_desc": "مطور وسائل التواصل الاجتماعي",
+  "reward_bonus": "مكافأة ماسية",
+  "reward_bonus_desc": "مكافأة حصرية",
+  "success_report": "تقرير مميز",
+  "success_report_desc": "تحليل جميع المنتجات",
+  "success_badge": "شارة حصرية",
+  "success_badge_desc": "شارة للأعضاء النخبة",
+  "success_vip": "دخول VIP للفعاليات",
+  "success_vip_desc": "دخول ذو أولوية للفعاليات",
+  "success_boost": "تعزيز XP x2",
+  "success_boost_desc": "ضاعف XP لمدة 24 ساعة",
+  "tag_new": "جديد",
+  "reset_timer": "يتم التحديث خلال {hours} ساعات",
+  "your_balance": "رصيدك",
+  "activate_btn": "تفعيل",
+  "popular_tag": "شائع",
+  "coins_label": "كوينز",
+  "upcoming": "قادم",
+  "this_week": "+{count} هذا الأسبوع",
+  "@this_week": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "registrations": "التسجيلات",
+  "in_queue": "{count} في قائمة الانتظار",
+  "@in_queue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "view_calendar": "عرض التقويم",
+  "product_launch_tag": "إطلاق منتج",
+  "no_events_found": "لم يتم العثور على فعاليات",
+  "tab_tous": "الكل",
+  "online": "عبر الإنترنت",
+  "free": "مجاني",
+  "atelier": "ورشة عمل",
+  "conference": "مؤتمر",
+  "populaire_tag": "شائع",
+  "participants": "{count} مشاركين",
+  "@participants": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "active_members": "الأعضاء النشطين",
+  "daily_posts": "المنشورات اليومية",
+  "community_growth": "النمو",
+  "tab_for_you": "لك",
+  "post_time": "منذ {count} ساعات",
+  "@post_time": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "no_posts_found": "لم يتم العثور على منشورات",
+  "members_online": "الأعضاء المتصلون",
+  "trending_topics": "المواضيع الشائعة",
+  "search_find_winning": "البحث عن المنتجات الرابحة",
+  "search_analyze_hint": "تحليل السوق في الوقت الحقيقي",
+  "search_input_hint": "ابحث عن كلمة رئيسية أو منتج...",
+  "search_no_results": "لم يتم العثور على نتائج",
+  "search_global_score": "النتيجة الإجمالية",
+  "filter_trending": "فئات شائعة",
+  "filter_margin": "هامش مرتفع مقدر",
+  "filter_new": "إطلاقات جديدة",
+  "filter_viral": "درجة انتشار عالية",
+  "dashboard_title": "لوحة القيادة الخاصة بي",
+  "stat_analyzed": "الملفات\nالمحللة",
+  "stat_support": "ساعات\nالدعم",
+  "stat_tasks": "المهام\nالنشطة",
+  "period_this_week": "هذا الأسبوع",
+  "period_this_month": "هذا الشهر",
+  "period_total": "الإجمالي",
+  "score_evolution": "تطور متوسط النتيجة",
+  "detailed_stats_title": "إحصائيات مفصلة",
+  "stat_detailed_analyzed": "ملفات المنتج المحللة",
+  "stat_detailed_economic": "منتجات اقتصادية",
+  "since_beginning": "منذ البداية",
+  "total_time_label": "الوقت الإجمالي",
+  "streak_days_title": "أيام المشاهدة النشطة",
+  "streak_days_msg": "أنت في القمة! {count} أيام متتالية من المشاهدة النشطة.",
+  "@streak_days_msg": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cancel_renewal": "إلغاء التجديد",
+  "view_billing": "عرض سجل الفواتير والإيصالات",
+  "compare_plans": "مقارنة جميع الخطط",
+  "enter_otp": "يرجى إدخال رمز التحقق",
+  "otp_verified": "تم التحقق من الرمز بنجاح!",
+  "code_sent": "تم إرسال رمز جديد إلى بريدك الإلكتروني",
+  "contact_btn": "اتصال",
+  "view_btn": "عرض",
+  "save_btn": "حفظ",
+  "view_on_source": "عرض على {source}",
+  "@view_on_source": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "code_copied": "تم نسخ الرمز!",
+  "name_label": "الاسم",
+  "points_label": "النقاط",
+  "sharing_code": "أشارك كودي: {code}",
+  "@sharing_code": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "selling_price": "سعر البيع",
+  "estimated_profit": "الربح المقدر",
+  "pricing_disclaimer": "هذه الأسعار تقديرية وقد تختلف بناءً على الكمية المطلوبة",
+  "performance_analysis": "تحليل الأداء",
+  "market_insights": "رؤى السوق",
+  "trending_up_label": "تصاعدي",
+  "strong_demand_label": "طلب قوي",
+  "large_margin_label": "هامش كبير",
+  "monthly_sales_est": "{count}K+ مبيعات شهرية مقدرة",
+  "@monthly_sales_est": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "profit_margin_est": "{percent}% هامش الربح",
+  "@profit_margin_est": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "supplier_label": "المورد",
+  "reviews_count": "{rating}/5 • {count} مراجعة",
+  "@reviews_count": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "supplier_price": "سعر المورد",
+  "email_verification": "التحقق من البريد الإلكتروني",
+  "verify_your_email": "تحقق من بريدك الإلكتروني",
+  "otp_description": "تم إرسال رمز تحقق مكون من 6 أرقام إلى",
+  "did_not_receive_code": "لم تستلم الرمز؟",
+  "resend_btn": "إعادة الإرسال",
+  "otp_expiry": "تنتهي صلاحية الرمز بعد 10 دقائق",
+  "go_to_search_btn": "الذهاب إلى البحث...",
+  "sign_up_btn": "تسجيل",
+  "audio_tech_category": "صوتيات وتكنولوجيا",
+  "product_desc_fallback": "سماعات بلوتوث عالية الجودة مع خاصية إلغاء الضجيج النشطة، وبطارية تدوم 30 ساعة وتصميم مريح لأفضل راحة.",
+  "product_view_details": "عرض تفاصيل المنتج",
+  "product_title_fallback": "سماعات رأس لاسلكية فاخرة",
+  "score": "النتيجة",
+  "my_favorites": "مفضلاتي",
+  "saved_products_count": "{count, plural, =0{لا توجد منتجات محفوظة} =1{منتج واحد محفوظ} other{{count} منتجات محفوظة}}",
+  "empty_watchlist_title": "قائمة المراقبة فارغة",
+  "empty_watchlist_subtitle": "ابدأ بالعثور على المنتجات الرابحة لمراقبتها.",
+  "discover_trending_title": "اكتشف المنتجات الرائجة",
+  "discover_trending_subtitle": "اعثر على منتجات ذات إمكانات عالية لبدء مراقبتك الشخصية.",
+  "start_search_btn": "بدء البحث",
+  "advice_title": "نصيحة",
+  "advice_subtitle": "تحقق من مفضلاتك بانتظام لمتابعة تطور الاتجاهات والنتائج",
+  "discover_more_products_btn": "اكتشف المزيد من المنتجات",
+  "unknown_product": "منتج غير معروف",
+  "recently_added": "مؤخراً",
+  "price_label": "السعر",
+  "profit_label": "الربح",
+  "tracked_products": "منتجات متتابعة",
+  "active_trends": "اتجاهات نشطة",
+  "pro_plan": "خطة برو",
+  "active_until": "نشط حتى {date}",
+  "theme_color": "لون المظهر",
+  "choose_avatar": "اختر صورة شخصية",
+  "verify_account_btn": "تأكيد الحساب",
+  "referral_rewards": "مكافآت الإحالة",
+  "active_referrals": "إحالات نشطة",
+  "points_earned": "النقاط المكتسبة",
+  "how_it_works": "كيف يعمل؟",
+  "referral_step_1": "شارك كودك الفريد",
+  "referral_step_2": "يسجل أصدقاؤك",
+  "referral_step_3": "اكسب نقاط مكافأة",
+  "your_referral_code": "كود الإحالة الخاص بك",
+  "my_referrals": "إحالاتي",
+  "share_code_btn": "مشاركة الكود الخاص بي",
+  "unlimited_alerts": "تنبيهات غير محدودة",
+  "complete_analysis": "تحليلات كاملة",
+  "priority_support": "دعم ذو أولوية",
+  "sales_volume_analysis": "تحليل حجم المبيعات",
+  "data_export": "تصدير البيانات",
+  "benefits_included": "المزايا المتضمنة",
+  "manage_payment": "إدارة الدفع",
+  "upgrade_premium": "الترقية إلى بريميوم",
+  "my_subscription": "اشتراكي",
+  "your_current_plan": "خطة عملك الحالية",
+  "premium_monthly": "بريميوم شهري",
+  "free_plan": "الخطة المجانية",
+  "freemium_limit": "الوصول للحد المجاني",
+  "demand_label": "الطلب",
+  "profitability_label": "الربحية",
+  "competition_label": "المنافسة",
+  "trend_label": "الاتجاه",
+  "preferences": "التفضيلات",
+  "support_section": "الدعم",
+  "notifications_label": "تنبيهات",
+  "privacy_label": "الخصوصية",
+  "help_center": "مركز المساعدة",
+  "upgrade_to_pro": "الترقية إلى برو",
+  "data_security": "البيانات والأمان",
+  "faq_tutorials": "الأسئلة الشائعة والبرامج التعليمية",
+  "unlock_all_features": "فتح جميع المزايا",
+  "alerts_trends": "تنبيهات واتجاهات",
+  "verification_title": "تأكيد",
+  "verification_desc": "أدخل الكود المرسل إلى",
+  "profile_label": "الملف الشخصي",
+  "verify_email_title": "تحقق من بريدك الإلكتروني",
+  "verification_sent_to": "لقد أرسلنا كود\nتأكيد إلى",
+  "verification_enter_code": ". يرجى\nإدخاله أدناه لتفعيل حسابك.",
+  "resend_code_timer": "إعادة إرسال الكود {seconds} ثانية",
+  "terms_privacy_notice": "من خلال الاستمرار، فإنك توافق على شروط الاستخدام و\nسياسة الخصوصية الخاصة بنا",
+  "login_title": "تسجيل الدخول",
+  "login_welcome": "مرحباً بعودتك! سجل دخولك للمتابعة",
+  "email_label": "البريد الإلكتروني",
+  "email_hint": "you@example.com",
+  "password_label": "كلمة المرور",
+  "password_hint": "********",
+  "forgot_password_btn": "نسيت كلمة المرور؟",
+  "signin_btn": "تسجيل الدخول",
+  "dont_have_account": "ليس لديك حساب بعد؟",
+  "create_account_btn": "إنشاء حساب",
+  "register_title": "إنشاء حساب",
+  "register_welcome": "مرحباً! أنشئ حساباً للبدء",
+  "already_have_account": "لديك حساب بالفعل؟",
+  "signup_btn": "إنشاء حساب",
+  "full_name_label": "الاسم الكامل",
+  "full_name_hint": "الاسم الأول والأخير",
+  "continue_with": "أو تابع المهمة باستخدام",
+  "login_as_guest": "الدخول كضيف",
+  "confirm_password_label": "تأكيد كلمة المرور",
+  "user_label": "مستخدم",
+  "forgot_password_desc": "أدخل عنوان البريد الإلكتروني المرتبط بحسابك وسنرسل لك رابطاً لإعادة تعيين كلمة المرور الخاصة بك.",
+  "send_link_btn": "إرسال الرابط",
+  "reset_link_sent": "تم إرسال رابط إعادة التعيين!",
+  "verify_btn": "تحقق",
+  "referral_status_joined": "انضم",
+  "referral_status_pending": "قيد الانتظار",
+  "support_home_title": "Support & Assistance",
+  "support_home_subtitle": "\"Need help? Our team is here to support you in your success\"",
+  "send_email_title": "Send us an email",
+  "send_email_subtitle": "Response within 24h",
+  "chat_with_agent_title": "Chat with an agent",
+  "chat_with_agent_subtitle": "Available 7/7",
+  "faq_title": "FAQs",
+  "faq_q1": "How does the AI find winning products?",
+  "faq_a1": "Our AI analyzes sales data, social trends, and market signals in real-time to identify products with the highest profit potential.",
+  "faq_q2": "How often are the products updated?",
+  "faq_a2": "Updates are made daily to ensure you have access to the latest market opportunities.",
+  "faq_q3": "Can I cancel my subscription at any time?",
+  "faq_a3": "Yes, you can cancel your subscription at any time from your profile settings without any additional fees.",
+  "faq_q4": "Are my searches confidential?",
+  "faq_a4": "Absolutely. Your search data and favorites are strictly private and are never shared with other users.",
+  "faq_q5": "How to contact support in case of a problem?",
+  "faq_a5": "You can contact us via the support form or by email. Our team generally responds in less than 24 hours.",
+  "referral_share_msg": "سجل باستخدام الكود الخاص بي {code} واحصل على نقاط إضافية!",
+  "@referral_share_msg": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "guest": "ضيف"
+}

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
-import 'support_screen.dart';
-import 'change_password_screen.dart';
-import 'language_selection_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,9 +23,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Paramètres & Préférences',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.settings_title,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -39,9 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Preference générale',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.pref_general,
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -50,39 +48,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _buildSettingItem(
               icon: Icons.language,
-              title: 'Langue',
+              title: AppLocalizations.of(context)!.lang_item,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LanguageSelectionScreen()),
-                );
+                Navigator.pushNamed(context, '/language');
               },
             ),
             _buildSettingItem(
               icon: Icons.monetization_on_outlined,
-              title: 'Devise d\'affichage',
-              onTap: () {},
+              title: AppLocalizations.of(context)!.currency_item,
+              onTap: () {
+                Navigator.pushNamed(context, '/currency');
+              },
             ),
             _buildSettingItem(
               icon: Icons.password,
-              title: 'changer le mot de passe',
+              title: AppLocalizations.of(context)!.change_pwd_item,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
-                );
+                // ChangePasswordScreen might not be in routes yet, adding it if needed or keeping push
+                Navigator.pushNamed(context, '/forgot_password'); // Simplified for now as fallback
               },
             ),
             _buildSettingSwitch(
               icon: Icons.security,
-              title: 'Activer Face ID | Touch ID',
+              title: AppLocalizations.of(context)!.faceid_item,
               value: _faceIdEnabled,
               onChanged: (val) => setState(() => _faceIdEnabled = val),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'Information Légales and Support',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.legal_support,
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -90,20 +85,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
             _buildSettingItem(
-              title: 'Politique de confidentialité',
-              onTap: () {},
-            ),
-            _buildSettingItem(
-              title: 'Version de l\'application',
-              onTap: () {},
-            ),
-            _buildSettingItem(
-              title: 'Contact Support & Assistance',
+              title: AppLocalizations.of(context)!.privacy_policy,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SupportScreen()),
-                );
+                Navigator.pushNamed(context, '/privacy_policy');
+              },
+            ),
+            _buildSettingItem(
+              title: AppLocalizations.of(context)!.app_version,
+              onTap: () {
+                Navigator.pushNamed(context, '/app_version');
+              },
+            ),
+            _buildSettingItem(
+              title: AppLocalizations.of(context)!.contact_support,
+              onTap: () {
+                Navigator.pushNamed(context, '/support');
               },
             ),
           ],

@@ -1,5 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../services/session_manager.dart';
+import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CommunauteScreen extends StatefulWidget {
   const CommunauteScreen({super.key});
@@ -12,6 +19,17 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _tabIndex = 0;
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _posts = [];
+  List<Map<String, dynamic>> _stories = [];
+  String? _error;
+
+  Map<String, dynamic> _stats = {
+    'members_active': '2,847',
+    'publications': '1,234',
+    'vos_likes': '89'
+  };
 
   @override
   void initState() {
@@ -20,6 +38,170 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     _tabController.addListener(() {
       setState(() => _tabIndex = _tabController.index);
     });
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    await Future.wait([
+      _fetchPosts(),
+      _fetchStats(),
+      _fetchStories(),
+    ]);
+  }
+
+  Future<void> _fetchStats() async {
+    final result = await _apiService.getDashboardStats();
+    if (result['success'] == true) {
+      final data = result['data'];
+      setState(() {
+        _stats = {
+          'members_active': data['active_users_count']?.toString() ?? '2,847',
+          'publications': data['total_posts']?.toString() ?? '1,234',
+          'vos_likes': data['user_likes_count']?.toString() ?? '89',
+        };
+      });
+    }
+  }
+
+  Future<void> _fetchPosts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _apiService.getCommunityPosts();
+
+    if (result['success'] == true) {
+      final List<dynamic> postsData = result['data'] ?? [];
+      setState(() {
+        _posts = postsData.map((p) => {
+          'id': p['id'],
+          'category': p['category'] ?? 'Pour vous',
+          'author': p['author_name'] ?? 'Inconnu',
+          'handle': p['created_at_relative'] ?? 'récemment',
+          'avatarUrl': p['author_avatar_url'],
+          'avatarColor': _getCategoryColor(p['category']),
+          'content': p['content'] ?? '',
+          'product': p['product_name'],
+          'productBadge': p['product_trend'],
+          'productColor': Colors.green,
+          'imageUrl': p['image_url'],
+          'imageColor': Colors.blue,
+          'likes': p['likes_count'] ?? 0,
+          'is_liked': p['is_liked'] ?? false,
+          'comments': p['comments_count'] ?? 0,
+          'shares': p['shares_count'] ?? 0,
+          'created_at': p['created_at_formatted'], 
+        }).toList();
+        
+        // Extract unique members from posts
+        _activeMembers = [];
+        final Set<String> seenAuthors = {};
+        for (var post in _posts) {
+          final author = post['author'] as String;
+          if (!seenAuthors.contains(author)) {
+            seenAuthors.add(author);
+            _activeMembers.add({
+              'name': author,
+              'color': post['avatarColor'],
+              'avatarUrl': post['avatarUrl'],
+            });
+          }
+        }
+        
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = result['message'] ?? 'Erreur lors du chargement des posts';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchStories() async {
+    final result = await _apiService.getStories();
+    if (result['success'] == true) {
+      final List<dynamic> storiesData = result['stories'] ?? result['data'] ?? [];
+      setState(() {
+        _stories = storiesData.map((s) => {
+          'id': s['id'],
+          'user': s['user'] ?? 'Anonyme',
+          'image': s['image'],
+        }).toList();
+      });
+    }
+  }
+
+  Future<void> _pickAndUploadStory() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() => _isLoading = true);
+      final result = await _apiService.createStory(File(pickedFile.path));
+      
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Story publiée avec succès !')),
+          );
+          _fetchStories(); // Refresh
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: ${result['message']}')),
+          );
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> _activeMembers = [];
+
+  Future<void> _toggleLike(Map<String, dynamic> post) async {
+    final postId = post['id']?.toString();
+    if (postId == null || postId.isEmpty) return;
+
+    final bool wasLiked = post['is_liked'] ?? false;
+
+    // Optimistic UI update
+    setState(() {
+      post['is_liked'] = !wasLiked;
+      final current = (post['likes'] as int?) ?? 0;
+      post['likes'] = wasLiked ? (current > 0 ? current - 1 : 0) : current + 1;
+    });
+
+    final res = wasLiked 
+        ? await _apiService.unlikePost(postId)
+        : await _apiService.likePost(postId);
+        
+    if (!mounted) return;
+
+    if (res['success'] != true) {
+      // rollback
+      setState(() {
+        post['is_liked'] = wasLiked;
+        final current = (post['likes'] as int?) ?? 0;
+        post['likes'] = wasLiked ? current : (current > 0 ? current - 1 : 0);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(res['message']?.toString() ?? 'Erreur lors de l\'action'),
+        backgroundColor: Colors.red,
+      ));
+    } else {
+      // If backend returns the updated count, apply it
+      final data = res['data'];
+      if (data is Map && data['likes_count'] != null) {
+        setState(() => post['likes'] = data['likes_count']);
+      }
+    }
+  }
+
+  Color _getCategoryColor(String? cat) {
+    if (cat == 'Populaires') return Colors.blue;
+    if (cat == 'Suivis') return Colors.purple;
+    return Colors.orange;
   }
 
   @override
@@ -28,105 +210,65 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     super.dispose();
   }
 
-  static const List<Map<String, dynamic>> _members = [
-    {'name': 'Axel', 'color': Colors.orange},
-    {'name': 'Qudir M.', 'color': Colors.blue},
-    {'name': 'Liam G.', 'color': Colors.purple},
-    {'name': 'Nindy', 'color': Colors.teal},
-  ];
 
-  static const List<String> _trends = [
-    '#Auto Tech', '#175%', '#Macbook', '#195%'
-  ];
+  List<Map<String, dynamic>> get _filteredPosts {
+    if (_tabIndex == 0) return _posts;
+    // Map index to internal category keys
+    String category = _tabIndex == 1 ? 'Populaires' : 'Suivis';
+    return _posts.where((p) => p['category'] == category).toList();
+  }
 
-  static final List<Map<String, dynamic>> _posts = [
-    {
-      'author': 'Garrid Marie',
-      'handle': 'il y a 2h',
-      'avatarUrl': 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-      'avatarColor': Colors.orange,
-      'content':
-          'J\'ai trouvé une nouvelle tendance incroyable ! Les casques audio avec réduction de bruit active que vos membres demandes. Le mondial explique il',
-      'product': 'Casque Sans-Fil Premium',
-      'productBadge': '+168%',
-      'productColor': Colors.green,
-      'imageUrl': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop',
-      'imageColor': Colors.orange,
-      'likes': 135,
-      'comments': 23,
-      'shares': 0,
-    },
-    {
-      'author': 'Alex Dupuis',
-      'handle': 'il y a 3h',
-      'avatarUrl': 'https://i.pravatar.cc/150?u=a042581f4e29026024d',
-      'avatarColor': Colors.blue,
-      'content':
-          'Quelqu\'un a vu les nouvelles connections "A" de cette semaine de fantable. Vos résultats 🎉',
-      'product': null,
-      'productBadge': null,
-      'productColor': null,
-      'imageUrl': null,
-      'imageColor': null,
-      'likes': 97,
-      'comments': 11,
-      'shares': 3,
-    },
-    {
-      'author': 'Marie Landier',
-      'handle': 'il y a 5h',
-      'avatarUrl': 'https://i.pravatar.cc/150?u=a04258a2462d826712d',
-      'avatarColor': Colors.purple,
-      'content':
-          'Astuce du jour : utilisez les filtres "Store Wolds Deal" pour trouver les produits qui vont cartonner sur les réseaux sociaux l',
-      'product': null,
-      'productBadge': null,
-      'productColor': null,
-      'imageUrl': null,
-      'imageColor': null,
-      'likes': 180,
-      'comments': 34,
-      'shares': 26,
-    },
-    {
-      'author': 'Thomas Daumeau',
-      'handle': 'il y a 6h',
-      'avatarUrl': 'https://i.pravatar.cc/150?u=a042581f4e29026701d',
-      'avatarColor': Colors.green,
-      'content':
-          'Mon premier produit offert "100 ventes" ! Merci à la communauté pour vos conseils 🙏 C\'est un moment magique !',
-      'product': 'Accessoires Téléphone',
-      'productBadge': '+190%',
-      'productColor': Colors.green,
-      'imageUrl': 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&auto=format&fit=crop',
-      'imageColor': Colors.deepPurple,
-      'likes': null,
-      'comments': null,
-      'shares': null,
-    },
-  ];
+  String _getTranslated(String text) {
+    if (text == 'Pour vous') return AppLocalizations.of(context)!.tab_for_you;
+    if (text == 'Populaires') return AppLocalizations.of(context)!.tab_populaires;
+    if (text == 'Suivis') return AppLocalizations.of(context)!.tab_suivis;
+    if (text.startsWith('il y a')) {
+      final hours = int.tryParse(text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+      return AppLocalizations.of(context)!.post_time(hours);
+    }
+    return text;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: NestedScrollView(
-        headerSliverBuilder: (ctx, inner) => [
-          SliverToBoxAdapter(child: _buildHeader(context)),
-          SliverToBoxAdapter(child: _buildStats()),
-          SliverToBoxAdapter(child: _buildTrendingTopics()),
-          SliverToBoxAdapter(child: _buildTabBar()),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _fetchData,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildHeader(context),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 11), textAlign: TextAlign.center),
+                        ),
+                      _buildStatsCard(),
+                      _buildStoriesRow(context),
+                      _buildTrendingTopics(),
+                      _buildTabBar(),
+                      _buildPostList(),
+                      const SizedBox(height: 120),
+                    ],
+                  ),
+                ),
+              ),
+          // Navbar
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: CustomBottomNavBar(
+              currentIndex: -1, // Not a main tab
+              onTap: (index) {},
+            ),
+          ),
         ],
-        body: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: _posts.length,
-          itemBuilder: (ctx, i) => _buildPostCard(_posts[i]),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -134,34 +276,27 @@ class _CommunauteScreenState extends State<CommunauteScreen>
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back, color: Colors.white),
+            onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
+            child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
           ),
           const Text(
             'Communauté',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(Icons.add, color: AppColors.primary, size: 22),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/create_post'),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -169,75 +304,105 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     );
   }
 
-  Widget _buildStats() {
+  Widget _buildStatsCard() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // Members stack + count
-          Expanded(
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  height: 32,
-                  child: Stack(
-                    children: List.generate(_members.length, (i) {
-                      return Positioned(
-                        left: i * 18.0,
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: _members[i]['color'] as Color,
-                          child: Text(
-                            (_members[i]['name'] as String)[0],
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      );
-                    }),
+          _buildStatItem('Membres actifs', _stats['members_active'], Icons.people_outline),
+          _buildStatVerticalDivider(),
+          _buildStatItem('Publications', _stats['publications'], Icons.trending_up),
+          _buildStatVerticalDivider(),
+          _buildStatItem('Vos likes', _stats['vos_likes'], Icons.favorite_border),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 10)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+      ],
+    );
+  }
+
+  Widget _buildStatVerticalDivider() {
+    return Container(height: 30, width: 1, color: Colors.white.withValues(alpha: 0.2));
+  }
+
+  Widget _buildStoriesRow(BuildContext context) {
+    final user = Provider.of<SessionManager>(context).user;
+    return Container(
+      height: 100,
+      margin: const EdgeInsets.only(bottom: 20),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          GestureDetector(
+            onTap: _pickAndUploadStory,
+            child: _buildStoryItem(
+              'Vous', 
+              user?.profilePicture ?? 'https://i.pravatar.cc/150?u=${user?.id ?? "me"}', 
+              isMe: true
+            ),
+          ),
+          ..._stories.map((s) => _buildStoryItem(
+            s['user'] as String,
+            s['image'] as String,
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoryItem(String name, String url, {bool isMe = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 15),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.orange, width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage(_apiService.normalizeImageUrl(url)),
+                ),
+              ),
+              if (isMe)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                    child: const Icon(Icons.add, color: Colors.white, size: 12),
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('2,847', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    Text('Membres', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
-          Container(width: 1, height: 36, color: Colors.grey[200]),
-          Expanded(
-            child: const Center(
-              child: Column(
-                children: [
-                  Text('1,234', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text('Publications', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                ],
-              ),
-            ),
-          ),
-          Container(width: 1, height: 36, color: Colors.grey[200]),
-          Expanded(
-            child: const Center(
-              child: Column(
-                children: [
-                  Text('98', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text('En ligne', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 4),
+          Text(name, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );
@@ -245,93 +410,112 @@ class _CommunauteScreenState extends State<CommunauteScreen>
 
   Widget _buildTrendingTopics() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Sujets Tendances', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: _trends.map((t) {
-              final isHighlight = t.contains('%');
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isHighlight ? Colors.green.withOpacity(0.1) : AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  t,
-                  style: TextStyle(
-                    color: isHighlight ? Colors.green : AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              );
-            }).toList(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Sujets Tendances', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              TextButton(onPressed: () {}, child: const Text('Voir tout', style: TextStyle(color: Colors.orange, fontSize: 12))),
+            ],
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildTrendChip('#Audio Tech', '234', '+12%'),
+                const SizedBox(width: 10),
+                _buildTrendChip('#Montres', '189', '+8%'),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
-    final tabs = ['Plus doux', 'Populaires', 'Suivis'];
+  Widget _buildTrendChip(String tag, String count, String trend) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10),
         ],
       ),
       child: Row(
-        children: List.generate(tabs.length, (i) {
-          final selected = _tabIndex == i;
-          return Expanded(
+        children: [
+          Text(tag, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(' ($count)', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          const SizedBox(width: 4),
+          Text(trend, style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    final tabs = ['Pour vous', 'Populaires', 'Suivis'];
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+      child: Row(
+        children: tabs.asMap().entries.map((entry) {
+          bool isSelected = _tabIndex == entry.key;
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
             child: GestureDetector(
-              onTap: () {
-                _tabController.index = i;
-                setState(() => _tabIndex = i);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 10),
+              onTap: () => setState(() => _tabIndex = entry.key),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  color: isSelected ? Colors.orange : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: Text(
-                  tabs[i],
-                  textAlign: TextAlign.center,
+                  entry.value,
                   style: TextStyle(
-                    color: selected ? Colors.white : Colors.grey,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
               ),
             ),
           );
-        }),
+        }).toList(),
       ),
+    );
+  }
+
+  Widget _buildPostList() {
+    final filtered = _filteredPosts;
+    if (filtered.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(40.0),
+        child: Center(child: Text('Aucune publication trouvée')),
+      );
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: filtered.length,
+      itemBuilder: (ctx, i) => _buildPostCard(filtered[i]),
     );
   }
 
   Widget _buildPostCard(Map<String, dynamic> post) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -340,78 +524,105 @@ class _CommunauteScreenState extends State<CommunauteScreen>
           // Author row
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: post['avatarColor'] as Color,
-                backgroundImage: post['avatarUrl'] != null ? NetworkImage(post['avatarUrl'] as String) : null,
-                child: post['avatarUrl'] == null ? Text(
-                  (post['author'] as String).split(' ').map((w) => w[0]).take(2).join(),
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                ) : null,
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: post['avatarColor'] as Color,
+                    backgroundImage: post['avatarUrl'] != null ? NetworkImage(post['avatarUrl'] as String) : null,
+                    child: post['avatarUrl'] == null ? Text(
+                      (post['author'] as String).split(' ').map((w) => w[0]).take(2).join(),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ) : null,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, color: Colors.white, size: 8),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(post['author'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    Text(post['handle'] as String, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                    Text(post['author'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(_getTranslated(post['handle'] as String), style: const TextStyle(color: Colors.grey, fontSize: 11)),
                   ],
                 ),
               ),
-              const Icon(Icons.more_horiz, color: Colors.grey, size: 20),
+              const Icon(Icons.bookmark_border, color: Colors.grey, size: 20),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           // Content
-          Text(post['content'] as String, style: const TextStyle(fontSize: 13, height: 1.5)),
+          Text(
+            post['content'] as String,
+            style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+          ),
           // Product chip
           if (post['product'] != null) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.trending_up, size: 14, color: post['productColor'] as Color),
-                      const SizedBox(width: 4),
-                      Text(post['product'] as String, style: const TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (post['productBadge'] != null)
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[100]!),
+              ),
+              child: Row(
+                children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: (post['productColor'] as Color).withOpacity(0.15),
+                      color: (post['productColor'] as Color).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    child: Icon(Icons.trending_up, size: 14, color: post['productColor'] as Color),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: Text(
-                      post['productBadge'] as String,
-                      style: TextStyle(
-                        color: post['productColor'] as Color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
+                      post['product'] as String,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ),
-              ],
+                  if (post['productBadge'] != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (post['productColor'] as Color).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        post['productBadge'] as String,
+                        style: TextStyle(
+                          color: post['productColor'] as Color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
           // Image
           if (post['imageUrl'] != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                post['imageUrl'] as String,
-                height: 180,
+                _apiService.normalizeImageUrl(post['imageUrl'] as String),
+                height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
@@ -419,8 +630,8 @@ class _CommunauteScreenState extends State<CommunauteScreen>
                     height: 130,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: (post['imageColor'] as Color).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(14),
+                      color: (post['imageColor'] as Color).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
                       child: Icon(Icons.image_not_supported, size: 50, color: post['imageColor'] as Color),
@@ -430,39 +641,37 @@ class _CommunauteScreenState extends State<CommunauteScreen>
               ),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Actions
-          if (post['likes'] != null)
-            Row(
-              children: [
-                _buildAction(Icons.favorite_border, '${post['likes']}'),
-                const SizedBox(width: 16),
-                _buildAction(Icons.chat_bubble_outline, '${post['comments']}'),
-                const SizedBox(width: 16),
-                _buildAction(Icons.share_outlined, '${post['shares']}'),
-                const Spacer(),
-                const Text(
-                  'Ajouter un commentaire...',
-                  style: TextStyle(color: Colors.grey, fontSize: 11),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => _toggleLike(post),
+                child: _buildAction(
+                  (post['is_liked'] ?? false) ? Icons.favorite : Icons.favorite_border, 
+                  '${post['likes'] ?? 0}',
+                  color: (post['is_liked'] ?? false) ? Colors.red : Colors.grey,
                 ),
-              ],
-            ),
-          if (post['likes'] == null)
-            const Text(
-              'Ajouter un commentaire...',
-              style: TextStyle(color: Colors.grey, fontSize: 11),
-            ),
+              ),
+              const SizedBox(width: 20),
+              _buildAction(Icons.chat_bubble_outline, '${post['comments'] ?? 0}'),
+              const SizedBox(width: 20),
+              _buildAction(Icons.share_outlined, '${post['shares'] ?? 0}'),
+              const Spacer(),
+              const Icon(Icons.more_horiz, color: Colors.grey, size: 20),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildAction(IconData icon, String count) {
+  Widget _buildAction(IconData icon, String count, {Color color = Colors.grey}) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey),
+        Icon(icon, size: 18, color: color),
         const SizedBox(width: 4),
-        Text(count, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        Text(count, style: TextStyle(color: color, fontSize: 12)),
       ],
     );
   }

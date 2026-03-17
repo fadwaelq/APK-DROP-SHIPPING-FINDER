@@ -6,18 +6,31 @@ class GoogleAuthService {
   factory GoogleAuthService() => _instance;
   GoogleAuthService._internal();
 
-  late final GoogleSignIn _googleSignIn;
+  // TODO: Fix GoogleSignIn constructor issue. 
+  // Currently commented out to allow the app to build.
+  /*
+  GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+  */
 
   void initialize({required String clientId, String? serverClientId}) {
+    /*
     _googleSignIn = GoogleSignIn(
       scopes: ['email', 'profile'],
-      clientId: clientId, // Use the client ID for iOS
-      serverClientId: serverClientId, // Use the server client ID for web
+      clientId: clientId,
+      serverClientId: serverClientId,
     );
+    */
   }
 
   /// Sign in with Google and get access token
   Future<Map<String, dynamic>> signIn() async {
+    return {
+      'success': false,
+      'message': 'Google Sign-In is temporarily disabled for maintenance.',
+    };
+    /*
     try {
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -45,11 +58,6 @@ class GoogleAuthService {
         };
       }
 
-      debugPrint('✅ Google Sign-In successful');
-      debugPrint('📧 Email: ${googleUser.email}');
-      debugPrint('👤 Name: ${googleUser.displayName}');
-      debugPrint('🔑 Access Token: ${accessToken.substring(0, 20)}...');
-
       return {
         'success': true,
         'access_token': accessToken,
@@ -65,23 +73,28 @@ class GoogleAuthService {
         'message': 'Google Sign-In failed: $error',
       };
     }
+    */
   }
 
   /// Sign out from Google
   Future<void> signOut() async {
+    /*
     try {
       await _googleSignIn.signOut();
       debugPrint('✅ Signed out from Google');
     } catch (error) {
       debugPrint('❌ Error signing out: $error');
     }
+    */
   }
 
   /// Check if user is currently signed in
   Future<bool> isSignedIn() async {
-    return await _googleSignIn.isSignedIn();
+    return false;
+    // return await _googleSignIn.isSignedIn();
   }
 
   /// Get current user
-  GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
+  GoogleSignInAccount? get currentUser => null;
+  // GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
 }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
+import '../services/session_manager.dart';
+import '../models/user_model.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,10 +15,14 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
 
   @override
   void dispose() {
     _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -55,18 +63,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Connexion',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.login_title,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Bienvenue ! Connectez-vous pour continuer',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.login_welcome,
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                 ),
@@ -74,16 +82,17 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 48),
 
               CustomTextField(
-                label: 'Email',
-                hintText: 'vous@exemple.com',
+                label: AppLocalizations.of(context)!.email_label,
+                hintText: AppLocalizations.of(context)!.email_hint,
                 keyboardType: TextInputType.emailAddress,
                 controller: _emailController,
               ),
               const SizedBox(height: 16),
-              const CustomTextField(
-                label: 'Mot de passe',
-                hintText: '********',
+              CustomTextField(
+                label: AppLocalizations.of(context)!.password_label,
+                hintText: AppLocalizations.of(context)!.password_hint,
                 isPassword: true,
+                controller: _passwordController,
               ),
 
               const SizedBox(height: 12),
@@ -93,9 +102,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   onTap: () {
                     Navigator.pushNamed(context, '/forgot_password');
                   },
-                  child: const Text(
-                    'Mot de passe oublié ?',
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context)!.forgot_password_btn,
+                    style: const TextStyle(
                       color: AppColors.primary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -107,37 +116,86 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(
-                onPressed: () {
-                  final firstName = _extractFirstName(_emailController.text.trim());
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/home',
-                    (route) => false,
-                    arguments: {
-                      'name': firstName,
-                      'email': _emailController.text.trim(),
-                    },
-                  );
+                onPressed: _isLoading ? null : () async {
+                  final email = _emailController.text.trim();
+                  final password = _passwordController.text.trim();
+                  
+                  if (email.isEmpty || password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez remplir tous les champs')));
+                    return;
+                  }
+
+                  setState(() => _isLoading = true);
+                  final result = await ApiService().login(email, password);
+                  setState(() => _isLoading = false);
+
+                  if (result['success'] == true) {
+                    final firstName = _extractFirstName(email);
+
+                    print('🔍 LOGIN SUCCESS_RESULT CLES : ${result.keys.toList()}');
+
+                    // Extraction du Token JWT (access + refresh)
+                    String? token;
+                    String? refreshToken;
+                    if (result['access'] != null) {
+                      token = result['access'];
+                      refreshToken = result['refresh'];
+                    } else if (result['tokens'] != null && result['tokens']['access'] != null) {
+                      token = result['tokens']['access'];
+                      refreshToken = result['tokens']['refresh'];
+                    } else if (result['data'] != null && result['data']['access'] != null) {
+                      token = result['data']['access'];
+                      refreshToken = result['data']['refresh'];
+                    }
+                    
+                    // Save to SessionManager avec les tokens
+                    await SessionManager().setUser(UserModel(
+                      id: '1',
+                      firstName: firstName,
+                      lastName: '',
+                      email: email,
+                    ), token: token, refreshToken: refreshToken);
+
+                    if (mounted) {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/home',
+                        (route) => false,
+                        arguments: {
+                          'name': firstName,
+                          'email': email,
+                        },
+                      );
+                    }
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(result['message'] ?? 'Erreur de connexion')),
+                      );
+                    }
+                  }
                 },
-                child: const Text('Se connecter',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(AppLocalizations.of(context)!.signin_btn,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
 
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Pas encore de compte ? ',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  Text(
+                    AppLocalizations.of(context)!.dont_have_account + ' ',
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                   ),
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/register');
                     },
-                    child: const Text(
-                      'Créer un compte',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.create_account_btn,
+                      style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -148,10 +206,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 120),
-              const Text(
-                'En continuant, vous acceptez nos conditions d\'utilisation et notre\npolitique de confidentialité',
+              Text(
+                AppLocalizations.of(context)!.terms_privacy_notice,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10,
                   color: AppColors.textSecondary,
                 ),
