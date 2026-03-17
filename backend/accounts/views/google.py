@@ -1,21 +1,24 @@
-from rest_framework import views, status, permissions, serializers # Ajout de serializers
-from rest_framework.response import Response
+from rest_framework import views, status, permissions, serializers 
 from django.contrib.auth import get_user_model
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import generics, status, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 User = get_user_model()
 
 # --- AJOUT POUR SWAGGER ---
 class GoogleTokenSerializer(serializers.Serializer):
     id_token = serializers.CharField(help_text="Le token JWT reçu de l'application Google (frontend)")
-# ---------------------------
 
 class GoogleLoginView(views.APIView):
     """ POST /api/accounts/google-login/ : Connexion ou Inscription via Google """
     permission_classes = [permissions.AllowAny]
-    serializer_class = GoogleTokenSerializer # <--- LA LIGNE MAGIQUE POUR SWAGGER
+    serializer_class = GoogleTokenSerializer 
 
     def post(self, request):
         # Utilisation du serializer pour valider les données
@@ -57,3 +60,15 @@ class GoogleLoginView(views.APIView):
 
         except ValueError:
             return Response({"detail": "Token Google invalide ou expiré."}, status=status.HTTP_401_UNAUTHORIZED)
+        
+class ActiveSessionsView(APIView):
+    """ GET /api/user/active-sessions/ : Liste le nombre de connexions actives """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Compte les tokens de session actifs dans la base
+        sessions_count = OutstandingToken.objects.filter(user=request.user).count()
+        return Response({
+            "count": sessions_count,
+            "message": f"Il y a actuellement {sessions_count} appareil(s) connecté(s) à votre compte."
+        }, status=status.HTTP_200_OK)

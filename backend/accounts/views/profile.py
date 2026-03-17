@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+
 
 from accounts.serializers.profile import UserProfileSerializer, BadgeSerializer
 from accounts.serializers.auth import ChangePasswordSerializer
@@ -83,3 +85,33 @@ class UserBadgesView(generics.ListAPIView):
     def get_queryset(self):
         # On retourne uniquement les badges liés à l'utilisateur qui fait la requête
         return self.request.user.badges.all()
+
+
+class DeleteAccountView(APIView):
+    """ DELETE /api/user/delete-account/ : Suppression définitive du compte """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        # Suppression de l'utilisateur (ou désactivation selon ton choix business)
+        user.delete() 
+        return Response(
+            {"detail": "Votre compte a été supprimé définitivement conformément au RGPD."}, 
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+class LogoutAllDevicesView(APIView):
+    """ POST /api/user/logout-all/ : Déconnecter tous les appareils """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # On récupère tous les tokens valides émis pour cet utilisateur
+        tokens = OutstandingToken.objects.filter(user=request.user)
+        for token in tokens:
+            # On les ajoute à la liste noire
+            BlacklistedToken.objects.get_or_create(token=token)
+        
+        return Response(
+            {"detail": "Vous avez été déconnecté de tous vos appareils avec succès."}, 
+            status=status.HTTP_200_OK
+        )

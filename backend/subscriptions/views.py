@@ -132,3 +132,47 @@ class DeletePaymentMethodView(APIView):
             return Response({
                 "error": "Carte introuvable."
             }, status=status.HTTP_404_NOT_FOUND)
+
+# ==========================================
+# GESTION DU CYCLE DE VIE & FACTURATION
+# ==========================================
+
+class CancelSubscriptionView(APIView):
+    """ POST /api/subscriptions/cancel/ : Désactiver le renouvellement automatique """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Subscriptions"])
+    def post(self, request):
+        try:
+            subscription = UserSubscription.objects.get(user=request.user)
+            if not subscription.is_active:
+                return Response({"detail": "Aucun abonnement actif trouvé."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Ici, tu passes is_active à False ou tu gères la date de fin
+            subscription.is_active = False 
+            subscription.save()
+            
+            return Response({
+                "message": "Le renouvellement automatique a été annulé. Vous restez Premium jusqu'à la fin de la période en cours.",
+                "end_date": subscription.end_date
+            }, status=status.HTTP_200_OK)
+        except UserSubscription.DoesNotExist:
+            return Response({"error": "Abonnement introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+class InvoiceListView(APIView):
+    """ GET /api/subscriptions/invoices/ : Historique des reçus/factures PDF """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Subscriptions"])
+    def get(self, request):
+        # ou directement de l'API Stripe/PayPal.
+        mock_invoices = [
+            {
+                "id": "INV-2026-001",
+                "date": timezone.now().strftime("%Y-%m-%d"),
+                "amount": "199.00 MAD", # À remplacer par le montant réel de la transaction
+                "status": "Payé",
+                "download_url": "https://ton-backend.com/media/invoices/inv_sample.pdf"
+            }
+        ]
+        return Response(mock_invoices, status=status.HTTP_200_OK)

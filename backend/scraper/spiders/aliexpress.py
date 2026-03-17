@@ -1,3 +1,104 @@
+import requests
+import random
+
+class AliExpressSpider:
+    def __init__(self, headless=True):
+        self.api_key = "2952f6beebmsh5926600814a6213p190cd6jsn7b247ad25c97" 
+        self.host = "aliexpress-datahub.p.rapidapi.com"
+
+    def search_and_extract(self, search_query):
+        print(f"\n⚡ [API] Recherche via item_search_3 pour : {search_query}")
+        
+        url = f"https://{self.host}/item_search_3"
+        # On force la région US et monnaie USD pour avoir des prix de base stables
+        querystring = {"q": search_query, "page": "1", "sort": "default", "region": "US", "currency": "USD"}
+
+        headers = {
+            "X-RapidAPI-Key": self.api_key,
+            "X-RapidAPI-Host": self.host
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=querystring, timeout=10)
+            data = response.json()
+            result_list = data.get('result', {}).get('resultList', [])
+            
+            if not result_list:
+                raise Exception("Aucun produit trouvé.")
+
+            # On récupère le premier produit
+            item_data = result_list[0].get('item', {})
+            
+            # --- EXTRACTION DES DONNÉES ---
+            title = item_data.get('title', 'Produit sans titre')
+            
+            # Gestion du prix (Promotion ou Standard)
+            sku_def = item_data.get('sku', {}).get('def', {})
+            price_usd = float(sku_def.get('promotionPrice') or sku_def.get('price') or 0.0)
+
+            # Gestion de la VRAIE image
+            image_url = item_data.get('image', '')
+            if image_url.startswith('//'):
+                image_url = "https:" + image_url
+
+            source_url = f"https://www.aliexpress.com/item/{item_data.get('itemId')}.html"
+
+            # --- CALCULATEUR BUSINESS MAROC (VERSION RÉALITÉ SITE) ---
+            usd_to_mad = 10.45      # Taux incluant frais bancaires (dotation e-com)
+            
+            # 1. AJUSTEMENT MARCHÉ (Le "Secret")
+            # AliExpress affiche souvent des prix +30% à +40% élevés pour le Maroc 
+            # par rapport au prix de base API. On multiplie donc par 1.4
+            prix_objet_reel_mad = (price_usd * 1.40) * usd_to_mad
+            
+            # 2. FRAIS DE PORT (Shipping)
+            # 25 MAD était trop bas. La moyenne pour le Maroc est entre 40 et 70 MAD.
+            frais_port = 55.0       
+            
+            # 3. TVA / DOUANE MAROC (20%)
+            tva_maroc = 1.20        
+            
+            # Coût de revient final (Landed Cost)
+            # On applique la TVA sur (Prix Objet + Port)
+            cost_mad = (prix_objet_reel_mad + frais_port) * tva_maroc
+            
+            # 4. PRIX DE VENTE CONSEILLÉ (Marketing)
+            # Au lieu d'un % fixe, on ajoute une marge brute de 150 MAD minimum
+            selling_price = cost_mad + 150.0 
+
+            print(f"✅ [SUCCÈS] Image récupérée")
+            print(f"💰 Nouveau Coût estimé (Proche du site) : {round(cost_mad, 2)} MAD")
+
+            return {
+                "title": title,
+                "price_aliexpress_usd": price_usd,
+                "cost_mad": round(cost_mad, 2),
+                "suggested_price_mad": round(selling_price, 2),
+                "profit_estimated": round(selling_price - cost_mad, 2),
+                "image_url": image_url,
+                "source_url": source_url,
+                "source_platform": "aliexpress"
+            }
+            
+        except Exception as e:
+            print(f"⚠️ [API FALLBACK] {str(e)}")
+            return self._get_mock_data(search_query)
+
+    def _get_mock_data(self, query):
+        """Données de secours si l'API est en panne"""
+        return {
+            "title": f"[DEMO] {query.capitalize()} Premium",
+            "price_aliexpress_usd": 15.0,
+            "cost_mad": 180.0,
+            "suggested_price_mad": 299.0,
+            "profit_estimated": 119.0,
+            "image_url": "https://ae01.alicdn.com/kf/Sbc323568894145999f8d5f661138b307W.jpg",
+            "source_url": "https://www.aliexpress.com",
+            "source_platform": "aliexpress"
+        }
+    
+
+# Version alternative avec Playwright pour contourner les limitations de l'API (moins fiable à long terme à cause des anti-bots, mais plus réaliste pour le scraping direct)
 """import urllib.parse
 import random
 import re
@@ -75,7 +176,8 @@ class AliExpressSpider:
             "source_platform": "aliexpress", "source_url": url,
             "image_url": "https://ae01.alicdn.com/kf/Sbc323568894145999f8d5f661138b307W.jpg"
         }
-        """
+    
+        
 
 import urllib.parse
 import random
@@ -89,7 +191,6 @@ class AliExpressSpider:
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
     def search_and_extract(self, search_query):
-        """Cherche un produit, prend le premier lien, et extrait ses données."""
         print(f"\n🚀 [SCRAPER] Début de la recherche pour : {search_query}")
         url = self._get_first_product_url(search_query)
         print(f"🔗 [SCRAPER] URL trouvée : {url}")
@@ -181,3 +282,4 @@ class AliExpressSpider:
             "source_platform": "aliexpress", "source_url": url,
             "image_url": "https://ae01.alicdn.com/kf/Sbc323568894145999f8d5f661138b307W.jpg"
         }
+"""
