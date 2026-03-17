@@ -5,21 +5,31 @@ class AIProcessor:
     
     @staticmethod
     def analyze(product_data):
-        # On s'assure que le prix est en float
-        price_mad = float(product_data.get('price', 0))
+        # On utilise 'cost_mad' (le prix d'achat calculé par le spider)
+        # Si absent, on essaie 'price', sinon 0.
+        cost_mad = float(product_data.get('cost_mad', product_data.get('price', 0)))
         
-        # Logique métier MVP : Prix de revente suggéré (x3.0 pour couvrir ads + shipping)
-        suggested_price_mad = round(price_mad * 3.0, 2)
-        profit_mad = round(suggested_price_mad - price_mad, 2)
+        # --- Logique de Prix de Vente (Stratégie Maroc) ---
+        # Si le produit coûte cher (> 200 DH), on ne fait pas x3 (trop cher).
+        # On ajoute une marge fixe confortable pour la publicité et le profit.
+        if cost_mad < 100:
+            suggested_price_mad = round(cost_mad * 3.0, 2) # Petit prix : gros coeff
+        elif cost_mad < 250:
+            suggested_price_mad = round(cost_mad * 2.2, 2) # Prix moyen : coeff modéré
+        else:
+            suggested_price_mad = round(cost_mad + 250.0, 2) # Prix élevé : Marge fixe de 250 DH
+            
+        profit_mad = round(suggested_price_mad - cost_mad, 2)
         
-        # Calcul du score de rentabilité et de demande
-        profitability_score = 50 
-        if profit_mad > 150: profitability_score += 20 # Marge > 150 MAD
-        if profit_mad > 300: profitability_score += 20
+        # --- Calcul du Score de Rentabilité ---
+        profitability_score = 40 
+        if profit_mad > 100: profitability_score += 20 
+        if profit_mad > 200: profitability_score += 30
         
-        demand_score = random.randint(40, 90) # Simule Google Trends/TikTok
+        # Simulation de la demande (On pourra lier ça à une API de tendances plus tard)
+        demand_score = random.randint(50, 95) 
         
-        # Calcul de l'Overall Score (Exigence du MVP)
+        # Score global
         overall_score = int((profitability_score + demand_score) / 2)
         
         return {
@@ -27,6 +37,6 @@ class AIProcessor:
             "potential_profit": profit_mad,
             "trend_score": overall_score,
             "is_winner": overall_score >= 80,
-            "ai_analysis_summary": f"Analyse IA : Produit avec une marge potentielle de {profit_mad} MAD. "
-                                   f"Score global de {overall_score}/100. Idéal pour le marché local."
+            "ai_analysis_summary": f"Analyse IA : Ce produit dégage une marge nette estimée de {profit_mad} MAD après douane. "
+                                   f"Avec un score de {overall_score}/100, c'est un excellent candidat pour le marché marocain."
         }

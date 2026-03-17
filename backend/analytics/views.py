@@ -1,12 +1,21 @@
 from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
-from .serializers import ROICalculatorSerializer
 
+# Import de tes modèles et serializers
+from .models import UserActivity
+from .serializers import ROICalculatorSerializer, UserActivitySerializer
+
+# ==========================================
+# 1. CALCULATEUR ROI (Ton code original intact)
+# ==========================================
 class ROICalculatorAPIView(APIView):
     """
     Simulateur de profitabilité pour le marché Marocain (COD).
     """
+    permission_classes = [permissions.AllowAny] # Ou IsAuthenticated si tu veux le bloquer
+
     @extend_schema(request=ROICalculatorSerializer, tags=["Business Analytics"])
     def post(self, request):
         serializer = ROICalculatorSerializer(data=request.data)
@@ -42,5 +51,50 @@ class ROICalculatorAPIView(APIView):
                     "delivered_orders": delivered,
                     "returned_orders": returned
                 }
-            })
-        return Response(serializer.errors, status=400)
+            }, status=status.HTTP_200_OK)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ==========================================
+# 2. TABLEAU DE BORD (Nouvelles vues)
+# ==========================================
+class DashboardStatsView(APIView):
+    """ GET /api/dashboard/stats : Statistiques globales de l'utilisateur """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Dashboard"])
+    def get(self, request):
+        user = request.user
+        
+        # Calcul des statistiques
+        total_activities = UserActivity.objects.filter(user=user).count()
+        recent_searches = UserActivity.objects.filter(user=user, action__icontains="Recherche").count()
+        
+        # Vérification si l'utilisateur est premium
+        is_premium = False
+        plan_name = "Gratuit"
+        
+        # Utilisation de getattr pour éviter les erreurs si l'utilisateur n'a pas de profil d'abonnement
+        if hasattr(user, 'subscription') and getattr(user.subscription, 'is_active', False):
+            is_premium = True
+            plan_name = user.subscription.plan.name if user.subscription.plan else "Premium"
+
+        stats = {
+            "total_activities": total_activities,
+            "recent_searches": recent_searches,
+            "is_premium": is_premium,
+            "plan_name": plan_name,
+            "points_earned": 0, # Prêt pour le module récompenses
+        }
+        return Response(stats, status=status.HTTP_200_OK)
+
+class RecentActivityView(generics.ListAPIView):
+    """ GET /api/dashboard/recent-activity : Historique des dernières actions """
+    serializer_class = UserActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Dashboard"])
+    def get_queryset(self):
+        # On retourne uniquement les 10 dernières actions de l'utilisateur connecté
+        return UserActivity.objects.filter(user=self.request.user)[:10]
