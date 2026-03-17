@@ -185,3 +185,38 @@ class ProductReviewsAPIView(APIView):
             "total_reviews": len(reviews), 
             "reviews": reviews
         }, status=status.HTTP_200_OK)
+    
+# ==========================================
+# MODULE BENCHMARK (NOUVEAU)
+# ==========================================
+
+class BenchmarkSummaryAPIView(APIView):
+    """ GET /api/benchmark/summary/ : Stats globales pour comparaison """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # On calcule des stats réelles basées sur tes modèles
+        total_scraped = Product.objects.count()
+        user_history_count = ProductHistory.objects.filter(user=user).count()
+        
+        # Simulation de marge moyenne basée sur tes produits Winner
+        avg_profit = Product.objects.filter(is_winner=True).values_list('potential_profit', flat=True)
+        margin_mean = sum(avg_profit) / len(avg_profit) if avg_profit else 0
+
+        return Response({
+            "total_products_market": total_scraped,
+            "user_analyzed_count": user_history_count,
+            "average_market_margin": round(margin_mean, 2),
+            "monthly_performance_index": 78.5 # Index de tendance globale
+        }, status=status.HTTP_200_OK)
+
+class BenchmarkProductsAPIView(generics.ListAPIView):
+    """ GET /api/benchmark/products/ : Liste comparative des Top Potentiels """
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # On filtre les produits qui ont le meilleur score de tendance 
+        # pour l'écran "Meilleur Potentiel"
+        return Product.objects.filter(trend_score__gt=75).order_by('-trend_score')[:20]
