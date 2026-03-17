@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
+import 'support_screen.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
@@ -72,6 +74,89 @@ class HelpCenterScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            _buildContactCard(
+              context,
+              icon: Icons.confirmation_number_outlined,
+              title: 'Mes tickets',
+              subtitle: 'Consulter et répondre',
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (ctx) => DraggableScrollableSheet(
+                    initialChildSize: 0.75,
+                    minChildSize: 0.4,
+                    maxChildSize: 0.92,
+                    expand: false,
+                    builder: (_, scrollController) => FutureBuilder<Map<String, dynamic>>(
+                      future: ApiService().getSupportTickets(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final res = snapshot.data!;
+                        if (res['success'] != true) {
+                          return Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text(res['message']?.toString() ?? 'Erreur chargement tickets',
+                                style: const TextStyle(color: Colors.red)),
+                          );
+                        }
+                        final data = res['data'];
+                        final list = data is List
+                            ? data
+                            : (data is Map ? (data['results'] ?? data['data'] ?? const []) : const []);
+                        final tickets = List<Map<String, dynamic>>.from(list as List);
+                        if (tickets.isEmpty) {
+                          return ListView(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(20),
+                            children: const [
+                              Text('Aucun ticket pour le moment.', style: TextStyle(color: Colors.grey)),
+                            ],
+                          );
+                        }
+                        return ListView.separated(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: tickets.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          itemBuilder: (context, i) {
+                            final t = tickets[i];
+                            final id = (t['id'] ?? t['ticket_id'] ?? '').toString();
+                            final subject = (t['subject'] ?? t['category'] ?? 'Ticket').toString();
+                            final status = (t['status'] ?? '').toString();
+                            return ListTile(
+                              tileColor: const Color(0xFFFFEBD8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              leading: const Icon(Icons.support_agent, color: AppColors.primary),
+                              title: Text('#$id • $subject',
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              subtitle: status.isEmpty ? null : Text(status, style: const TextStyle(fontSize: 11)),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => SupportScreen(ticketId: id),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 40),
             Text(

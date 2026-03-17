@@ -39,11 +39,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadSavedAvatar() async {
-    final prefs = await SharedPreferences.getInstance();
+    // We now sync with backend on init to ensure sources are correct
     if (mounted) {
-      setState(() {
-        _avatarUrl = prefs.getString('rpm_avatar_url');
-      });
+      final session = Provider.of<SessionManager>(context, listen: false);
+      if (session.isLoggedIn) {
+        final result = await ApiService().getUserProfileV2();
+        if (result['success'] == true) {
+          final updatedUser = UserModel.fromJson(result['data'] ?? result);
+          await session.setUser(updatedUser);
+          setState(() {
+            _avatarUrl = updatedUser.avatarUrl;
+          });
+        }
+      }
     }
   }
 
@@ -77,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     children: [
-                      _buildStats(displayUserName),
+                      _buildStats(displayUserName, user),
                       const SizedBox(height: 24),
                       _buildSection(AppLocalizations.of(context)!.pref_title, [
                         _buildMenuItem(
@@ -146,6 +154,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           iconColor: AppColors.primary,
                           onTap: () {
                             Navigator.pushNamed(context, '/tableau_de_bord');
+                          },
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.analytics_outlined,
+                          title: 'Analyser un Produit (Benchmark)',
+                          subtitle: 'Comparer et benchmarker',
+                          iconColor: Colors.orange,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/benchmark');
                           },
                         ),
                         _buildMenuItem(
@@ -359,15 +376,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStats(String name) {
+  Widget _buildStats(String name, UserModel? user) {
     return ValueListenableBuilder<List<Map<String, dynamic>>>(
       valueListenable: FavoritesManager().favoritesNotifier,
       builder: (context, favoritesList, child) {
         String favorisCount = favoritesList.length.toString();
         
-        // Stats from dashboard API
-        String vistasCount = _isLoadingStats ? '...' : (_dashboardStats?['total_activities']?.toString() ?? '0');
-        String scoreCount = _isLoadingStats ? '...' : (_dashboardStats?['points_earned']?.toString() ?? '0');
+        // Stats from SessionManager/UserModel (Coins & XP)
+        String vistasCount = user?.coins.toString() ?? '0';
+        String scoreCount = user?.xp.toString() ?? '0';
 
         return Container(
           padding: const EdgeInsets.all(16),

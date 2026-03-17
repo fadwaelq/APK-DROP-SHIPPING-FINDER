@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -49,7 +48,6 @@ class _EvenementsScreenState extends State<EvenementsScreen>
   int _upcomingCount = 0;
   int _registeredCount = 0;
   int _thisWeekCount = 0;
-  int _inQueueCount = 0;
 
   Future<void> _fetchEvents() async {
     setState(() {
@@ -115,7 +113,6 @@ class _EvenementsScreenState extends State<EvenementsScreen>
         _upcomingCount = upcoming;
         _registeredCount = registered;
         _thisWeekCount = thisWeek;
-        _inQueueCount = mapped.length - registered;
         _isLoading = false;
       });
     } else {
@@ -123,22 +120,6 @@ class _EvenementsScreenState extends State<EvenementsScreen>
         _error = result['message'] ?? 'Erreur lors du chargement des événements';
         _isLoading = false;
       });
-    }
-  }
-
-  String _getTranslated(String key) {
-    final l10n = AppLocalizations.of(context)!;
-    switch (key) {
-      case 'Lancements': return l10n.tab_lancements;
-      case 'Webinaires': return l10n.tab_webinaires;
-      case 'Tous': return l10n.tab_tous;
-      case 'Nouveau': return l10n.tag_new;
-      case 'Populaire': return l10n.popular_tag;
-      case 'En ligne': return l10n.online;
-      case 'Gratuit': return l10n.free;
-      case 'Atelier': return l10n.atelier;
-      case 'Conférence': return l10n.conference;
-      default: return key;
     }
   }
 
@@ -528,7 +509,9 @@ class _EvenementsScreenState extends State<EvenementsScreen>
                       ],
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: event['is_registered'] == true
+                          ? null
+                          : () => _registerForEvent(event['id']),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: event['is_registered'] == true ? Colors.grey : AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -3,7 +3,6 @@ import '../theme/app_colors.dart';
 import 'product_details_screen.dart';
 import '../services/favorites_manager.dart';
 import '../services/api_service.dart';
-import 'dart:convert';
 import 'package:dropshipping_app/l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -47,22 +46,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchTrendingProducts() async {
     try {
-      // Fetch products filtered by is_winner=true
-      final response = await ApiService().client.get(
-        Uri.parse('${ApiService().baseUrl}/products/?is_winner=true'),
-        headers: ApiService().headers,
-      );
-      
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        if (mounted) {
-          setState(() {
-            _trendingProducts = List<Map<String, dynamic>>.from(data);
-            _isLoadingProducts = false;
-          });
-        }
+      final result = await ApiService().getTrendingProducts();
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        final data = result['data'];
+        final list = data is List ? data : (data is Map ? (data['results'] ?? data['data'] ?? []) : []);
+        setState(() {
+          _trendingProducts = List<Map<String, dynamic>>.from(list as List);
+          _isLoadingProducts = false;
+        });
       } else {
-        if (mounted) setState(() => _isLoadingProducts = false);
+        setState(() => _isLoadingProducts = false);
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingProducts = false);
@@ -386,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildTopIcon(Icons.group_outlined, () => Navigator.pushNamed(context, '/communaute')),
           _buildTopIcon(Icons.calendar_today_outlined, () => Navigator.pushNamed(context, '/evenements')),
           _buildTopIcon(Icons.emoji_events_outlined, () => Navigator.pushNamed(context, '/recompenses')),
-          _buildTopIcon(Icons.notifications_none, () {}),
+          _buildTopIcon(Icons.insights_outlined, () => Navigator.pushNamed(context, '/benchmark')),
         ],
       ),
     );

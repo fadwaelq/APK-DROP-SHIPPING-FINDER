@@ -65,7 +65,7 @@ void main() {
       });
       expect((await apiService.getRewards())['success'], true);
       expect((await apiService.getSubscriptionPlans())['success'], true);
-      expect((await apiService.checkoutSubscription({}))['success'], true);
+      expect((await apiService.checkoutSubscription('plan_1', 'card'))['success'], true);
     });
 
     // ─── PRODUITS & FAVORIS ───
@@ -86,6 +86,64 @@ void main() {
       });
       expect((await apiService.getSupportTickets())['success'], true);
       expect((await apiService.createSupportTicket({}))['success'], true);
+    });
+
+    // ─── BLOC 3 : GROWTH & VIRALITÉ (PARRAINAGE) ───
+    test('Bloc 3 — Referral APIs', () async {
+      apiService.client = MockClient((request) async {
+        return http.Response(jsonEncode({'success': true, 'data': []}), 200);
+      });
+      expect((await apiService.getReferrals())['success'], true);
+      expect((await apiService.sendReferralInvite(email: 'friend@example.com'))['success'], true);
+      expect((await apiService.getReferralLeaderboard())['success'], true);
+      expect((await apiService.getReferralRewards())['success'], true);
+      expect((await apiService.claimReferralReward('reward_1'))['success'], true);
+    });
+
+    // ─── BLOC 4 : ANALYSE PRODUIT AVANCÉE ───
+    test('Bloc 4 — Advanced Product APIs', () async {
+      apiService.client = MockClient((request) async {
+        return http.Response(jsonEncode({'success': true, 'data': []}), 200);
+      });
+      expect((await apiService.getProductSuppliers('42'))['success'], true);
+      expect((await apiService.getProductPerformance('42'))['success'], true);
+      expect((await apiService.getProductReviews('42'))['success'], true);
+      expect((await apiService.contactSupplier('42', {'message': 'Bonjour'}))['success'], true);
+    });
+
+    // ─── BLOC 5 : FINANCES & SUPPORT ───
+    test('Bloc 5 — Finance & Support APIs (Economy V2)', () async {
+      late String lastPath;
+      apiService.client = MockClient((request) async {
+        lastPath = request.url.path;
+        return http.Response(jsonEncode({'success': true, 'data': []}), 200);
+      });
+      
+      // Economy / Finance
+      await apiService.getCoinsBalance();
+      expect(lastPath, contains('/api/economy/user/coins-balance/'));
+
+      await apiService.transferCoins(recipientUsername: 'user1', amount: 100);
+      expect(lastPath, contains('/api/economy/user/coins/transfer/'));
+
+      await apiService.getCoinsTransactionLog();
+      expect(lastPath, contains('/api/economy/user/coins/transaction-log/'));
+
+      await apiService.earnCoins('daily', 10);
+      expect(lastPath, contains('/api/economy/user/coins/earn/'));
+
+      await apiService.spendCoins('shop', 50);
+      expect(lastPath, contains('/api/economy/user/coins/spend/'));
+
+      await apiService.checkoutEconomyPayment({'plan': 'pro'});
+      expect(lastPath, contains('/api/economy/payments/checkout/'));
+      
+      // Support
+      await apiService.getSupportCategories();
+      expect(lastPath, contains('/api/support/categories/'));
+
+      await apiService.closeTicket('ticket_123');
+      expect(lastPath, contains('/api/support/tickets/ticket_123/close/'));
     });
   });
 }

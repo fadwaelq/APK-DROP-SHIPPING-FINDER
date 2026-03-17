@@ -43,6 +43,21 @@ class ApiService {
   // Authentication
   Future<Map<String, dynamic>> login(String email, String password,
       {bool rememberMe = false}) async {
+    // --- BYPASS MOCK POUR DÉVELOPPEMENT ---
+    if (email.toLowerCase() == 'fadwa.elq1@gmail.com') {
+      return {
+        'success': true,
+        'access': 'mock_access_token_for_fadwa',
+        'refresh': 'mock_refresh_token_for_fadwa',
+        'user': {
+          'id': 1,
+          'email': email,
+          'full_name': 'Fadwa Elq',
+        }
+      };
+    }
+    // --------------------------------------
+
     try {
       final response = await client.post(
         Uri.parse('$baseUrl/user/login/'),
@@ -226,15 +241,24 @@ class ApiService {
 
   Future<Map<String, dynamic>> getTrendingProducts() async {
     try {
-      // Utilise l'endpoint standard avec filtrage pour simuler le "trending"
+      // Endpoint dédié si disponible
       final response = await client.get(
-        Uri.parse('$baseUrl/products/?is_winner=true&ordering=-trend_score'),
+        Uri.parse('$baseUrl/products/trending/'),
         headers: _headers,
       );
 
       return _handleResponse(response);
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      // Fallback: ancienne logique "simulée" si /products/trending/ n'est pas déployé
+      try {
+        final response = await client.get(
+          Uri.parse('$baseUrl/products/?is_winner=true&ordering=-trend_score'),
+          headers: _headers,
+        );
+        return _handleResponse(response);
+      } catch (e2) {
+        return {'success': false, 'message': e2.toString()};
+      }
     }
   }
 
@@ -300,6 +324,58 @@ class ApiService {
         headers: _headers,
       );
 
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/products/category-trends/ — tendances par catégorie (endpoint dédié)
+  Future<Map<String, dynamic>> getCategoryTrendsV2() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/category-trends/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/products/history/ — historique (consultations / recherches / etc.)
+  Future<Map<String, dynamic>> getProductsHistory() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/history/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/products/benchmark/products/ — liste benchmark
+  Future<Map<String, dynamic>> getBenchmarkProducts() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/benchmark/products/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/products/benchmark/summary/ — résumé benchmark
+  Future<Map<String, dynamic>> getBenchmarkSummary() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/benchmark/summary/'),
+        headers: _headers,
+      );
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -450,6 +526,18 @@ class ApiService {
         Uri.parse('$baseUrl/community/posts/'),
         headers: _headers,
         body: jsonEncode(data),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> togglePostLike(String postId) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/posts/$postId/like/'),
+        headers: _headers,
       );
       return _handleResponse(response);
     } catch (e) {
@@ -609,6 +697,56 @@ class ApiService {
     }
   }
 
+  // Rewards & Missions
+  Future<Map<String, dynamic>> getDailyMissions() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/missions/daily/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> completeMission(String missionId) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/missions/complete/'),
+        headers: _headers,
+        body: jsonEncode({'mission_id': missionId}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserXP() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/user/xp/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getShopItems() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/shop/items/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> applyRewardCode(String code) async {
     try {
       final response = await client.post(
@@ -657,6 +795,70 @@ class ApiService {
         Uri.parse('$baseUrl/support/tickets/'),
         headers: _headers,
         body: jsonEncode(data),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> replyToSupportTicket(String ticketId, String message) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/support/tickets/$ticketId/reply/'),
+        headers: _headers,
+        body: jsonEncode({'message': message}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Economy & Wallet
+  Future<Map<String, dynamic>> getCoinsBalance() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/economy/user/coins-balance/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getCoinsHistory() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/user/coins-history/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> earnCoins(String action, int amount) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/user/coins/earn/'),
+        headers: _headers,
+        body: jsonEncode({'action': action, 'amount': amount}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> spendCoins(String reason, int amount) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/user/coins/spend/'),
+        headers: _headers,
+        body: jsonEncode({'reason': reason, 'amount': amount}),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -906,6 +1108,20 @@ class ApiService {
     }
   }
 
+  /// POST /api/economy/payments/checkout/ — Paiement économie direct
+  Future<Map<String, dynamic>> checkoutEconomyPayment(Map<String, dynamic> data) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/payments/checkout/'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> updateSubscription(String planName) async {
     try {
       // Endpoint for updating an existing subscription
@@ -944,6 +1160,198 @@ class ApiService {
         body: jsonEncode({'enabled': enabled}),
       );
 
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // ─── Bloc 5 : Finances & Support ───
+
+  // 5.1 Économie et Transactions
+
+  /// POST /api/economy/user/coins/transfer/ — Transfert sécurisé P2P entre portefeuilles
+  Future<Map<String, dynamic>> transferCoins({
+    required String recipientUsername,
+    required int amount,
+    String? note,
+  }) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/user/coins/transfer/'),
+        headers: _headers,
+        body: jsonEncode({
+          'recipient_username': recipientUsername,
+          'amount': amount,
+          if (note != null) 'note': note,
+        }),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/economy/user/coins/transaction-log/ — Exportation historique (JSON & CSV)
+  Future<Map<String, dynamic>> getCoinsTransactionLog({String format = 'json'}) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/economy/user/coins/transaction-log/?format=$format'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // 5.2 Support Client
+
+  /// GET /api/support/categories/ — Liste dynamique des types de requêtes
+  Future<Map<String, dynamic>> getSupportCategories() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/support/categories/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// POST /api/support/tickets/{id}/close/ — Clôture autonome des tickets
+  Future<Map<String, dynamic>> closeTicket(String ticketId) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/support/tickets/$ticketId/close/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // ─── Bloc 3 : Growth & Viralité (Parrainage) ───
+
+  /// GET /api/user/referrals/ — Liste exhaustive des filleuls
+  Future<Map<String, dynamic>> getReferrals() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/user/referrals/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// POST /api/user/referral-invite/ — Génération de codes uniques et liens profonds
+  Future<Map<String, dynamic>> sendReferralInvite({String? email}) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/user/referral-invite/'),
+        headers: _headers,
+        body: jsonEncode(email != null ? {'email': email} : {}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/user/referral-leaderboard/ — Classement compétitif des parrains
+  Future<Map<String, dynamic>> getReferralLeaderboard() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/user/referral-leaderboard/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/user/referral/rewards/ — Consultation des paliers de gains
+  Future<Map<String, dynamic>> getReferralRewards() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/user/referral/rewards/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// POST /api/user/referral/claim-reward/ — Activation des récompenses
+  Future<Map<String, dynamic>> claimReferralReward(String rewardId) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/user/referral/claim-reward/'),
+        headers: _headers,
+        body: jsonEncode({'reward_id': rewardId}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // ─── Bloc 4 : Analyse Produit Avancée ───
+
+  /// GET /api/products/{id}/suppliers/ — Comparatif multi-fournisseurs
+  Future<Map<String, dynamic>> getProductSuppliers(String productId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/$productId/suppliers/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/products/{id}/performance/ — Scores de rentabilité (0-100)
+  Future<Map<String, dynamic>> getProductPerformance(String productId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/$productId/performance/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// GET /api/products/{id}/reviews/ — Agrégation d'avis clients réels
+  Future<Map<String, dynamic>> getProductReviews(String productId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/products/$productId/reviews/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// POST /api/products/{id}/contact-supplier/ — Tunnel de communication proxy
+  Future<Map<String, dynamic>> contactSupplier(
+      String productId, Map<String, dynamic> data) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/products/$productId/contact-supplier/'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -1036,6 +1444,44 @@ class ApiService {
         }),
       );
 
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Payment Methods
+  Future<Map<String, dynamic>> getPaymentMethods() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/subscriptions/payment-methods/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deletePaymentMethod(int id) async {
+    try {
+      final response = await client.delete(
+        Uri.parse('$baseUrl/subscriptions/payment-methods/$id/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> addPaymentMethod(Map<String, dynamic> data) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/subscriptions/payment-methods/'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': e.toString()};

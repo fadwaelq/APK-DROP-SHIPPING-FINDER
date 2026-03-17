@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'payment_success_screen.dart';
+import '../services/api_service.dart';
 
 class PaymentDetailsScreen extends StatefulWidget {
   const PaymentDetailsScreen({super.key});
@@ -200,39 +201,52 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                 Center(
                   child: SizedBox(
                     width: 200,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Paiement confirmé')),
-                        );
-                        Future.delayed(const Duration(seconds: 2), () {
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          setState(() {}); // Show loading if needed
+                          
+                          final result = await ApiService().addPaymentMethod({
+                            'card_type': 'VISA',
+                            'last_four': _cardNumberController.text.length >= 4 
+                                ? _cardNumberController.text.substring(_cardNumberController.text.length - 4)
+                                : '0000',
+                            'expiry_date': '${_selectedMonth ?? "12"}/${_selectedYear?.substring(2) ?? "25"}',
+                            'holder_name': _cardHolderController.text,
+                          });
+
                           if (mounted) {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => PaymentSuccessScreen(
-                                  amount: '20',
-                                  date: '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}',
-                                  paymentType: PaymentType.creditCard,
-                                  confirmationNumber: '${DateTime.now().millisecondsSinceEpoch}',
+                            if (result['success'] == true) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Carte enregistrée avec succès'),
+                                  backgroundColor: Colors.green,
                                 ),
-                              ),
-                            );
+                              );
+                              // Push replacement to force refresh of the management screen
+                              Navigator.pushReplacementNamed(context, '/payment_management');
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Erreur : ${result['message']}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF7931E),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        elevation: 4,
-                        shadowColor: Colors.orange.withOpacity(0.4),
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF7931E),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          elevation: 4,
+                          shadowColor: Colors.orange.withOpacity(0.4),
+                        ),
+                        child: const Text(
+                          'Ajouter la carte',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      child: const Text(
-                        'Confirmer le paiement',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                    ),
                   ),
                 ),
               ],

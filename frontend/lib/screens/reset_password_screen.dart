@@ -120,7 +120,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   }
 
                   setState(() => _isLoading = true);
-                  final result = await ApiService().confirmPasswordReset(email, token, password, confirm);
+                  final result = await ApiService().confirmPasswordReset(email, token, password);
                   setState(() => _isLoading = false);
 
                   if (mounted) {

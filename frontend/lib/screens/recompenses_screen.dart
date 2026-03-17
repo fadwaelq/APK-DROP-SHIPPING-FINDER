@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -18,14 +17,16 @@ class _RecompensesScreenState extends State<RecompensesScreen>
   bool _isLoading = true;
   String? _error;
 
-  // XP data (Missions) - Keep static as backend doesn't have it yet
-  final int _currentXP = 310;
-  final int _maxXP = 500;
-  final int _level = 7;
-  
   // Real data
   int _totalPoints = 0;
-  List<Map<String, dynamic>> _badges = [];
+  int _coinsBalance = 0;
+  int _xp = 0;
+  List<Map<String, dynamic>> _missions = [];
+  List<Map<String, dynamic>> _shopItems = [];
+
+  // Bloc 5 — Transaction log
+  List<Map<String, dynamic>> _transactionLog = [];
+  bool _loadingLog = false;
 
   @override
   void initState() {
@@ -47,26 +48,40 @@ class _RecompensesScreenState extends State<RecompensesScreen>
       final results = await Future.wait([
         _apiService.getRewards(),
         _apiService.getUserBadges(),
+        _apiService.getCoinsBalance(),
+        _apiService.getUserXP(),
+        _apiService.getDailyMissions(),
+        _apiService.getShopItems(),
       ]);
 
       final rewardsResult = results[0];
-      final badgesResult = results[1];
+      // badgesResult is fetched for consistency; UI shows badges elsewhere
+      final coinsResult = results[2];
+      final xpResult = results[3];
+      final missionsResult = results[4];
+      final shopResult = results[5];
 
       setState(() {
         if (rewardsResult['success'] == true) {
           _totalPoints = rewardsResult['data']?['points'] ?? 0;
         }
-
-        if (badgesResult['success'] == true) {
-          final List<dynamic> badgesData = badgesResult['data'] ?? [];
-          _badges = badgesData.map((b) => {
-            'title': b['title'] ?? 'Sans Titre',
-            'desc': b['description'] ?? 'Pas de description',
-            'icon': _getIconData(b['icon_name']),
-            'color': _getColor(b['color_hex']),
-            'unlocked': b['is_unlocked'] ?? false,
-            'progress': b['progress_percentage'] ?? 0,
-          }).toList();
+        if (coinsResult['success'] == true) {
+          final d = coinsResult['data'];
+          _coinsBalance = (d is Map ? (d['balance'] ?? d['coins'] ?? d['amount']) : d) as int? ?? _coinsBalance;
+        }
+        if (xpResult['success'] == true) {
+          final d = xpResult['data'];
+          _xp = (d is Map ? (d['xp'] ?? d['total_xp'] ?? d['value']) : d) as int? ?? _xp;
+        }
+        if (missionsResult['success'] == true) {
+          final raw = missionsResult['data'];
+          final list = raw is List ? raw : (raw is Map ? (raw['results'] ?? raw['data'] ?? const []) : const []);
+          _missions = List<Map<String, dynamic>>.from(list as List);
+        }
+        if (shopResult['success'] == true) {
+          final raw = shopResult['data'];
+          final list = raw is List ? raw : (raw is Map ? (raw['results'] ?? raw['data'] ?? const []) : const []);
+          _shopItems = List<Map<String, dynamic>>.from(list as List);
         }
         _isLoading = false;
       });
@@ -78,53 +93,229 @@ class _RecompensesScreenState extends State<RecompensesScreen>
     }
   }
 
-  IconData _getIconData(String? name) {
-    switch (name) {
-      case 'search': return Icons.search;
-      case 'visibility': return Icons.visibility;
-      case 'people': return Icons.people;
-      case 'star': return Icons.star;
-      case 'filter': return Icons.filter_alt;
-      default: return Icons.emoji_events;
+  // ── Bloc 5: load transaction log
+  Future<void> _loadTransactionLog() async {
+    setState(() => _loadingLog = true);
+    final res = await _apiService.getCoinsTransactionLog();
+    if (!mounted) return;
+    if (res['success'] == true) {
+      final raw = res['data'];
+      setState(() {
+        _transactionLog = raw is List
+            ? List<Map<String, dynamic>>.from(raw)
+            : [];
+      });
     }
+    setState(() => _loadingLog = false);
   }
 
-  Color _getColor(String? hex) {
-    if (hex == null) return Colors.blue;
-    try {
-      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
-    } catch (e) {
-      return Colors.blue;
-    }
+  // ── Bloc 5: show transaction log bottom sheet
+  void _showTransactionLog() async {
+    if (_transactionLog.isEmpty) await _loadTransactionLog();
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.35,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (_, scrollController) => Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Text('Historique de Transactions',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 12),
+            if (_loadingLog)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else if (_transactionLog.isEmpty)
+              const Expanded(
+                  child: Center(
+                      child: Text('Aucune transaction', style: TextStyle(color: Colors.grey))))
+            else
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: _transactionLog.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final tx = _transactionLog[i];
+                    final amount  = tx['amount']?.toString()  ?? '0';
+                    final type    = tx['type']    as String?   ?? tx['action'] as String? ?? 'transaction';
+                    final date    = tx['date']    as String?   ?? tx['created_at'] as String? ?? '';
+                    final note    = tx['note']    as String?   ?? tx['description'] as String?;
+                    final isCredit = (tx['amount'] as num? ?? 0) >= 0;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor:
+                            isCredit ? Colors.green.shade50 : Colors.red.shade50,
+                        child: Icon(
+                          isCredit ? Icons.arrow_downward : Icons.arrow_upward,
+                          size: 16,
+                          color: isCredit ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      title: Text(
+                        type,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      subtitle: note != null
+                          ? Text(note,
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey))
+                          : (date.isNotEmpty
+                              ? Text(date,
+                                  style: const TextStyle(
+                                      fontSize: 11, color: Colors.grey))
+                              : null),
+                      trailing: Text(
+                        '${isCredit ? '+' : ''}$amount 🪙',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: isCredit ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
 
-  String _getTranslated(String key) {
-    final l10n = AppLocalizations.of(context)!;
-    switch (key) {
-      case 'mission_analyze': return l10n.mission_analyze(2);
-      case 'mission_share': return l10n.mission_share;
-      case 'mission_report': return l10n.mission_report;
-      case 'mission_fav': return l10n.mission_fav;
-      case 'mission_event': return l10n.mission_event;
-      case 'reward_pro': return l10n.reward_pro;
-      case 'reward_pro_desc': return l10n.reward_pro_desc;
-      case 'reward_trend': return l10n.reward_trend;
-      case 'reward_trend_desc': return l10n.reward_trend_desc;
-      case 'reward_social': return l10n.reward_social;
-      case 'reward_social_desc': return l10n.reward_social_desc;
-      case 'reward_bonus': return l10n.reward_bonus;
-      case 'reward_bonus_desc': return l10n.reward_bonus_desc;
-      case 'success_report': return l10n.success_report;
-      case 'success_report_desc': return l10n.success_report_desc;
-      case 'success_badge': return l10n.success_badge;
-      case 'success_badge_desc': return l10n.success_badge_desc;
-      case 'success_vip': return l10n.success_vip;
-      case 'success_vip_desc': return l10n.success_vip_desc;
-      case 'success_boost': return l10n.success_boost;
-      case 'success_boost_desc': return l10n.success_boost_desc;
-      case 'tag_new': return l10n.tag_new;
-      default: return key;
-    }
+  // ── Bloc 5: coins transfer dialog
+  void _showTransferDialog() {
+    final recipientCtrl = TextEditingController();
+    final amountCtrl    = TextEditingController();
+    final noteCtrl      = TextEditingController();
+    bool sending = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !sending,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.send_to_mobile, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text('Transférer des Coins',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: recipientCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Nom d\'utilisateur destinataire',
+                  prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amountCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Montant (coins)',
+                  prefixIcon: const Icon(Icons.generating_tokens, color: AppColors.primary),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Note (optionnel)',
+                  prefixIcon: const Icon(Icons.note_outlined, color: AppColors.primary),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: sending ? null : () => Navigator.pop(ctx),
+              child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final recipient = recipientCtrl.text.trim();
+                      final amount    = int.tryParse(amountCtrl.text.trim());
+                      final note      = noteCtrl.text.trim();
+                      if (recipient.isEmpty || amount == null || amount <= 0) {
+                        return;
+                      }
+                      setDialogState(() => sending = true);
+                      final res = await _apiService.transferCoins(
+                        recipientUsername: recipient,
+                        amount: amount,
+                        note: note.isEmpty ? null : note,
+                      );
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(res['success'] == true
+                            ? 'Transfert de $amount coins envoyé à $recipient !'
+                            : res['message'] ?? 'Erreur lors du transfert'),
+                        backgroundColor:
+                            res['success'] == true ? AppColors.primary : Colors.red,
+                      ));
+                      if (res['success'] == true) _fetchData();
+                    },
+              child: sending
+                  ? const SizedBox(
+                      height: 18, width: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Text('Transférer',
+                      style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -134,141 +325,9 @@ class _RecompensesScreenState extends State<RecompensesScreen>
   }
 
   // Daily missions
-  static final List<Map<String, dynamic>> _dailyMissions = [
-    {
-      'icon': Icons.search,
-      'title': 'mission_analyze',
-      'points': 20,
-      'progress': 0.5,
-      'done': false,
-    },
-    {
-      'icon': Icons.trending_up,
-      'title': 'mission_share',
-      'points': 61,
-      'progress': 1.0,
-      'done': true,
-    },
-    {
-      'icon': Icons.bar_chart,
-      'title': 'mission_report',
-      'points': 30,
-      'progress': 0.0,
-      'done': false,
-    },
-  ];
+// Les données statiques et la méthode _getTranslated ont été supprimées car elles provoquaient des avertissements d'analyse.
+// Le contenu des onglets utilise désormais des textes en dur pour l'instant.
 
-  // Weekly missions
-  static final List<Map<String, dynamic>> _weeklyMissions = [
-    {
-      'icon': Icons.favorite_border,
-      'title': 'mission_fav',
-      'points': 100,
-      'progress': 0.4,
-      'done': false,
-    },
-    {
-      'icon': Icons.people_alt_outlined,
-      'title': 'mission_event',
-      'points': 88,
-      'progress': 0.7,
-      'done': false,
-    },
-  ];
-
-  // Rewards catalogue
-  static final List<Map<String, dynamic>> _rewards = [
-    {
-      'icon': Icons.analytics_outlined,
-      'title': 'reward_pro',
-      'desc': 'reward_pro_desc',
-      'cost': 500,
-      'unlocked': true,
-      'color': Colors.orange,
-    },
-    {
-      'icon': Icons.trending_up,
-      'title': 'reward_trend',
-      'desc': 'reward_trend_desc',
-      'cost': 1000,
-      'unlocked': false,
-      'color': Colors.blue,
-    },
-    {
-      'icon': Icons.lock_open_outlined,
-      'title': 'reward_social',
-      'desc': 'reward_social_desc',
-      'cost': 800,
-      'unlocked': false,
-      'color': Colors.purple,
-    },
-    {
-      'icon': Icons.star_border_outlined,
-      'title': 'reward_bonus',
-      'desc': 'reward_bonus_desc',
-      'cost': 1200,
-      'unlocked': false,
-      'color': Colors.amber,
-    },
-  ];
-
-  // Badges (Succès tab)
-  static final List<Map<String, dynamic>> _successes = [
-    {
-      'icon': Icons.bar_chart,
-      'title': 'success_report',
-      'desc': 'success_report_desc',
-      'tag': 'tag_new',
-      'tagColor': Colors.orange,
-      'points': 500,
-      'canClaim': true,
-    },
-    {
-      'icon': Icons.emoji_events,
-      'title': 'success_badge',
-      'desc': 'success_badge_desc',
-      'tag': null,
-      'tagColor': null,
-      'points': 800,
-      'canClaim': true,
-    },
-    {
-      'icon': Icons.event,
-      'title': 'success_vip',
-      'desc': 'success_vip_desc',
-      'tag': 'tag_new',
-      'tagColor': Colors.orange,
-      'points': 600,
-      'canClaim': true,
-    },
-    {
-      'icon': Icons.bolt,
-      'title': 'success_boost',
-      'desc': 'success_boost_desc',
-      'tag': null,
-      'tagColor': null,
-      'points': 400,
-      'canClaim': true,
-    },
-    {
-      'icon': Icons.dark_mode_outlined,
-      'title': 'Thème Dark Mode',
-      'desc': 'Thème personnalisé exclusif',
-      'tag': null,
-      'tagColor': null,
-      'points': 350,
-      'canClaim': false,
-    },
-    {
-      'icon': Icons.analytics_outlined,
-      'title': 'Analytics Pro',
-      'desc': 'Tableau de bord avancé',
-      'tag': null,
-      'tagColor': null,
-      'points': 1000,
-      'canClaim': false,
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +428,8 @@ class _RecompensesScreenState extends State<RecompensesScreen>
                           children: [
                             const Icon(Icons.generating_tokens, color: Colors.white, size: 24),
                             const SizedBox(width: 8),
-                            Text('$_totalPoints', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                            Text('${_coinsBalance != 0 ? _coinsBalance : _totalPoints}',
+                                style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ],
@@ -389,11 +449,17 @@ class _RecompensesScreenState extends State<RecompensesScreen>
                 Row(
                   children: [
                     Expanded(
-                      child: _buildSmallButton(Icons.home_work_outlined, 'Boutique', Colors.white, Colors.black87),
+                      child: GestureDetector(
+                        onTap: _showTransferDialog,
+                        child: _buildSmallButton(Icons.send_to_mobile, 'Transférer', Colors.white, Colors.black87),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _buildSmallButton(Icons.history, 'Historique', Colors.white.withOpacity(0.2), Colors.white),
+                      child: GestureDetector(
+                        onTap: _showTransactionLog,
+                        child: _buildSmallButton(Icons.history, 'Historique', Colors.white.withOpacity(0.2), Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -462,11 +528,11 @@ class _RecompensesScreenState extends State<RecompensesScreen>
                 ],
               ),
               const Spacer(),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('350 / 500 XP', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('+70%', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text('$_xp / 500 XP', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('+${(_xp / 5).round()}%', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
                 ],
               ),
             ],
@@ -553,6 +619,89 @@ class _RecompensesScreenState extends State<RecompensesScreen>
 
   // ── MISSIONS Tab ──────────────────────────────────────────────────────────
   Widget _buildMissionsTab() {
+    // If API missions exist, render them; else keep static fallback
+    if (_missions.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Missions Quotidiennes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 12),
+            ..._missions.map((m) {
+              final id = (m['id'] ?? m['mission_id'] ?? '').toString();
+              final title = (m['title'] ?? m['name'] ?? 'Mission').toString();
+              final progress = (m['progress'] as num?)?.toDouble() ?? 0.0;
+              final reward = (m['reward'] ?? m['reward_label'] ?? m['coins_reward'] ?? '').toString();
+              final done = (m['is_completed'] == true) || (m['done'] == true);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.grey.shade100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(title,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          ),
+                          if (!done)
+                            ElevatedButton(
+                              onPressed: id.isEmpty
+                                  ? null
+                                  : () async {
+                                      final res = await _apiService.completeMission(id);
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text(res['success'] == true
+                                            ? 'Mission validée'
+                                            : (res['message'] ?? 'Erreur mission')),
+                                        backgroundColor: res['success'] == true ? AppColors.primary : Colors.red,
+                                      ));
+                                      if (res['success'] == true) _fetchData();
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                elevation: 0,
+                              ),
+                              child: const Text('Valider', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            )
+                          else
+                            const Icon(Icons.check_circle, color: Colors.green),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (reward.isNotEmpty)
+                        Text(reward, style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress.clamp(0.0, 1.0),
+                          minHeight: 6,
+                          backgroundColor: Colors.grey.shade100,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -668,6 +817,117 @@ class _RecompensesScreenState extends State<RecompensesScreen>
 
   // ── BOUTIQUE Tab ──────────────────────────────────────────────────────────
   Widget _buildBoutiqueTab() {
+    if (_shopItems.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1D5CFF),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Votre solde', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.generating_tokens, color: Colors.white, size: 24),
+                            const SizedBox(width: 8),
+                            Text('${_coinsBalance != 0 ? _coinsBalance : _totalPoints}',
+                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(16)),
+                    child: const Icon(Icons.card_giftcard, color: Colors.white, size: 28),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._shopItems.map((it) {
+              final title = (it['title'] ?? it['name'] ?? 'Item').toString();
+              final desc = (it['description'] ?? it['subtitle'] ?? '').toString();
+              final cost = (it['cost'] ?? it['price'] ?? it['coins'] ?? 0);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.grey.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.storefront_outlined, color: Colors.orange),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            if (desc.isNotEmpty)
+                              Text(desc, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.generating_tokens, size: 12, color: Colors.orange),
+                              const SizedBox(width: 4),
+                              Text('$cost', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              final res = await _apiService.spendCoins('shop_purchase', (cost as num).toInt());
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(res['success'] == true ? 'Achat réussi' : (res['message'] ?? 'Erreur achat')),
+                                backgroundColor: res['success'] == true ? AppColors.primary : Colors.red,
+                              ));
+                              if (res['success'] == true) _fetchData();
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                              child: const Text('Acheter', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(

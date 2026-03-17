@@ -9,6 +9,9 @@ import 'rpm_editor_screen.dart';
 import 'subscription_screen.dart';
 import 'settings_screen.dart';
 import 'support_screen.dart';
+import 'package:provider/provider.dart';
+import '../services/session_manager.dart';
+import '../models/user_model.dart';
 
 class MonAvatarScreen extends StatefulWidget {
   final String userName;
@@ -38,10 +41,10 @@ class _MonAvatarScreenState extends State<MonAvatarScreen> {
   }
 
   Future<void> _loadSavedAvatar() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
+    final session = Provider.of<SessionManager>(context, listen: false);
+    if (mounted && session.user != null) {
       setState(() {
-        _avatarUrl = prefs.getString('rpm_avatar_url');
+        _avatarUrl = session.user!.avatarUrl;
       });
     }
   }
@@ -254,10 +257,9 @@ class _MonAvatarScreenState extends State<MonAvatarScreen> {
         await prefs.setString('rpm_avatar_url', _avatarUrl!);
       }
 
-      final result = await ApiService().updateUserProfileV2({
-        'full_name': widget.userName,
-        if (_avatarUrl != null) 'avatar_url': _avatarUrl,
-      });
+      final result = await SessionManager().updateUserField(
+        avatarUrl: _avatarUrl,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

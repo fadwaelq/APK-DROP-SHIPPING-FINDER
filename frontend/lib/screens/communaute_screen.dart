@@ -116,6 +116,38 @@ class _CommunauteScreenState extends State<CommunauteScreen>
 
   List<Map<String, dynamic>> _activeMembers = [];
 
+  Future<void> _toggleLike(Map<String, dynamic> post) async {
+    final postId = post['id']?.toString();
+    if (postId == null || postId.isEmpty) return;
+
+    // Optimistic UI update
+    setState(() {
+      final current = (post['likes'] as int?) ?? 0;
+      post['likes'] = current + 1;
+    });
+
+    final res = await _apiService.togglePostLike(postId);
+    if (!mounted) return;
+
+    if (res['success'] != true) {
+      // rollback
+      setState(() {
+        final current = (post['likes'] as int?) ?? 0;
+        post['likes'] = current > 0 ? current - 1 : 0;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(res['message']?.toString() ?? 'Erreur lors du like'),
+        backgroundColor: Colors.red,
+      ));
+    } else {
+      // If backend returns the updated count, apply it
+      final data = res['data'];
+      if (data is Map && data['likes_count'] != null) {
+        setState(() => post['likes'] = data['likes_count']);
+      }
+    }
+  }
+
   Color _getCategoryColor(String? cat) {
     if (cat == 'Populaires') return Colors.blue;
     if (cat == 'Suivis') return Colors.purple;
@@ -127,12 +159,6 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     _tabController.dispose();
     super.dispose();
   }
-
-
-  static const List<String> _trends = [
-    '#Auto Tech', '#175%', '#Macbook', '#195%'
-  ];
-
 
 
   List<Map<String, dynamic>> get _filteredPosts {
@@ -565,7 +591,10 @@ class _CommunauteScreenState extends State<CommunauteScreen>
           // Actions
           Row(
             children: [
-              _buildAction(Icons.favorite_border, '${post['likes'] ?? 0}'),
+              GestureDetector(
+                onTap: () => _toggleLike(post),
+                child: _buildAction(Icons.favorite_border, '${post['likes'] ?? 0}'),
+              ),
               const SizedBox(width: 20),
               _buildAction(Icons.chat_bubble_outline, '${post['comments'] ?? 0}'),
               const SizedBox(width: 20),

@@ -13,6 +13,7 @@ class TableauDeBordScreen extends StatefulWidget {
 class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
   String _selectedPeriod = '';
   Map<String, dynamic>? _dashboardStats;
+  List<dynamic> _recentActivity = const [];
   bool _isLoading = true;
 
   @override
@@ -23,14 +24,271 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
 
   Future<void> _fetchStats() async {
     final result = await ApiService().getDashboardStats();
+    final activity = await ApiService().getDashboardRecentActivity();
     if (mounted) {
       setState(() {
         if (result['success'] == true) {
           _dashboardStats = result;
         }
+        if (activity['success'] == true) {
+          final data = activity['data'];
+          _recentActivity = data is List
+              ? data
+              : (data is Map ? (data['results'] ?? data['data'] ?? const []) : const []);
+        }
         _isLoading = false;
       });
     }
+  }
+
+  void _showRoiCalculator() {
+    final cogsCtrl = TextEditingController();
+    final sellCtrl = TextEditingController();
+    final adsCtrl = TextEditingController();
+    bool loading = false;
+    Map<String, dynamic>? result;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text('ROI Calculator',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: sellCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Prix de vente',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: cogsCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Coût produit (COGS)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: adsCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Dépenses pub (Ads)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.red)),
+              if (result != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    result.toString(),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          final sell = double.tryParse(sellCtrl.text.trim());
+                          final cogs = double.tryParse(cogsCtrl.text.trim());
+                          final ads = double.tryParse(adsCtrl.text.trim());
+                          if (sell == null || cogs == null || ads == null) {
+                            setSheetState(() => error = 'Veuillez saisir des nombres valides.');
+                            return;
+                          }
+                          setSheetState(() {
+                            loading = true;
+                            error = null;
+                            result = null;
+                          });
+                          final res = await ApiService().calculateROI({
+                            'sell_price': sell,
+                            'cogs': cogs,
+                            'ads_spend': ads,
+                          });
+                          if (!ctx.mounted) return;
+                          setSheetState(() {
+                            loading = false;
+                            if (res['success'] == true) {
+                              result = (res['data'] is Map)
+                                  ? Map<String, dynamic>.from(res['data'])
+                                  : <String, dynamic>{'data': res['data']};
+                            } else {
+                              error = res['message']?.toString() ?? 'Erreur ROI';
+                            }
+                          });
+                        },
+                  child: loading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Calculer'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAdsMonitoring() async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (_, scrollController) => FutureBuilder<Map<String, dynamic>>(
+          future: ApiService().getAdsMonitoring(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final res = snapshot.data!;
+            if (res['success'] != true) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(res['message']?.toString() ?? 'Erreur Ads Monitoring',
+                    style: const TextStyle(color: Colors.red)),
+              );
+            }
+            final data = res['data'];
+            final list = data is List
+                ? data
+                : (data is Map ? (data['results'] ?? data['data'] ?? const []) : const []);
+            final items = List<Map<String, dynamic>>.from(list as List);
+            if (items.isEmpty) {
+              return ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                children: const [
+                  Text('Aucune donnée Ads Monitoring.',
+                      style: TextStyle(color: Colors.grey)),
+                ],
+              );
+            }
+            return ListView.separated(
+              controller: scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, i) {
+                final a = items[i];
+                final title = (a['title'] ?? a['name'] ?? a['ad_name'] ?? 'Annonce').toString();
+                final meta = (a['platform'] ?? a['network'] ?? a['status'] ?? '').toString();
+                return ListTile(
+                  tileColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  leading: const Icon(Icons.ads_click, color: AppColors.primary),
+                  title: Text(title,
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: meta.isEmpty ? null : Text(meta, style: const TextStyle(fontSize: 11)),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showRecentActivity() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (_, scrollController) {
+          if (_recentActivity.isEmpty) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(20),
+              children: const [
+                Text('Aucune activité récente.',
+                    style: TextStyle(color: Colors.grey)),
+              ],
+            );
+          }
+          return ListView.separated(
+            controller: scrollController,
+            padding: const EdgeInsets.all(16),
+            itemCount: _recentActivity.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, i) {
+              final raw = _recentActivity[i];
+              final m = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{'data': raw};
+              final title = (m['title'] ?? m['action'] ?? m['label'] ?? 'Activité').toString();
+              final date = (m['created_at'] ?? m['date'] ?? m['time'] ?? '').toString();
+              return ListTile(
+                tileColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: const Icon(Icons.history, color: AppColors.primary),
+                title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: date.isEmpty ? null : Text(date, style: const TextStyle(fontSize: 11)),
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
   List<String> _getPeriods(BuildContext context) {
@@ -47,7 +305,6 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
   }
 
   String _getTranslated(String text) {
-    final l10n = AppLocalizations.of(context)!;
     // Basic mapping for weekdays in chart
     if (text == 'Lun') return 'Lun'; // Simplified for now
     if (text == 'Mar') return 'Mar';
@@ -84,6 +341,54 @@ class _TableauDeBordScreenState extends State<TableauDeBordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildPeriodSelector(),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _showAdsMonitoring,
+                          icon: const Icon(Icons.ads_click, size: 18),
+                          label: const Text('Ads'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _showRoiCalculator,
+                          icon: const Icon(Icons.calculate_outlined, size: 18),
+                          label: const Text('ROI'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showRecentActivity,
+                          icon: const Icon(Icons.history, size: 18),
+                          label: const Text('Activité'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   _buildChartCard(),
                   const SizedBox(height: 20),

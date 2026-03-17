@@ -46,6 +46,10 @@ class SessionManager extends ChangeNotifier {
     String? lastName,
     String? email,
     String? profilePicture,
+    String? avatarUrl,
+    int? coins,
+    int? xp,
+    int? level,
   }) async {
     if (_user != null) {
       // 1. Appeler le backend si le nom change
@@ -56,12 +60,26 @@ class SessionManager extends ChangeNotifier {
         }
       }
 
-      // 2. Mettre à jour l'état local après succès API
+      // 2. Mettre à jour l'avatar sur le backend si nécessaire
+      if (avatarUrl != null && avatarUrl != _user!.avatarUrl) {
+        final result = await ApiService().updateUserProfileV2({
+          'avatar_url': avatarUrl,
+        });
+        if (result['success'] == false) {
+          return result;
+        }
+      }
+
+      // 3. Mettre à jour l'état local après succès API
       final updatedUser = _user!.copyWith(
         firstName: firstName,
         lastName: lastName,
         email: email,
         profilePicture: profilePicture,
+        avatarUrl: avatarUrl,
+        coins: coins,
+        xp: xp,
+        level: level,
       );
       await setUser(updatedUser);
       return {'success': true};

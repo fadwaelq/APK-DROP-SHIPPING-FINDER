@@ -39,6 +39,7 @@ import 'screens/privacy_policy_screen.dart';
 import 'screens/paypal_details_screen.dart';
 import 'screens/payment_details_screen.dart';
 import 'screens/google_play_redeem_screen.dart';
+import 'screens/benchmark_screen.dart';
 import 'services/favorites_manager.dart'; // Added this import
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
@@ -117,6 +118,7 @@ class DropshippingApp extends StatelessWidget {
               '/paypal': (context) => const PaypalDetailsScreen(),
               '/payment_details': (context) => const PaymentDetailsScreen(),
               '/google_play': (context) => const GooglePlayRedeemScreen(),
+              '/benchmark': (context) => const BenchmarkScreen(),
             },
   
           );

@@ -28,6 +28,7 @@ class _SearchScreenState extends State<SearchScreen> {
   String _searchQuery = '';
   List<dynamic> _products = [];
   bool _isLoading = false;
+  bool _usePostSearch = false;
   Timer? _debounce;
 
   @override
@@ -67,7 +68,9 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final result = await ApiService().searchProducts(query);
+      final result = _usePostSearch
+          ? await ApiService().search(query)
+          : await ApiService().searchProducts(query);
       if (mounted) {
         setState(() {
           if (result['success'] == true) {
@@ -88,6 +91,205 @@ class _SearchScreenState extends State<SearchScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _showBulkSearchDialog() async {
+    final ctrl = TextEditingController();
+    bool loading = false;
+    String? error;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Bulk Search',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Un mot-clé par ligne.'),
+              const SizedBox(height: 10),
+              TextField(
+                controller: ctrl,
+                maxLines: 6,
+                decoration: const InputDecoration(
+                  hintText: 'ex:\nécouteurs\nlampe led\nmontre sport',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (error != null) ...[
+                const SizedBox(height: 10),
+                Text(error!, style: const TextStyle(color: Colors.red)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: loading ? null : () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      final keywords = ctrl.text
+                          .split('\n')
+                          .map((s) => s.trim())
+                          .where((s) => s.isNotEmpty)
+                          .toList();
+                      if (keywords.isEmpty) {
+                        setDialogState(() => error = 'Ajoute au moins un mot-clé.');
+                        return;
+                      }
+                      setDialogState(() {
+                        loading = true;
+                        error = null;
+                      });
+                      final res = await ApiService().bulkSearch(keywords);
+                      if (!ctx.mounted) return;
+                      if (res['success'] == true) {
+                        final data = res['data'];
+                        final list = data is List
+                            ? data
+                            : (data is Map ? (data['results'] ?? data['data'] ?? const []) : const []);
+                        if (mounted) {
+                          setState(() => _products = list as List<dynamic>);
+                        }
+                        Navigator.pop(ctx);
+                      } else {
+                        setDialogState(() {
+                          loading = false;
+                          error = res['message']?.toString() ?? 'Erreur bulk-search';
+                        });
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: loading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Lancer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showScrapeDialog() async {
+    final ctrl = TextEditingController();
+    bool loading = false;
+    String? error;
+    String? taskId;
+    Map<String, dynamic>? status;
+
+    Future<void> poll(String id) async {
+      for (int i = 0; i < 20; i++) {
+        final s = await ApiService().getAsyncScrapeStatus(id);
+        if (!mounted) return;
+        status = s;
+        if (s['success'] == true) {
+          final data = s['data'];
+          final state = (data is Map ? (data['status'] ?? data['state']) : null)?.toString() ?? '';
+          if (state.toLowerCase() == 'done' || state.toLowerCase() == 'completed') {
+            return;
+          }
+        }
+        await Future.delayed(const Duration(milliseconds: 800));
+      }
+    }
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Scraper un lien',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: ctrl,
+                decoration: const InputDecoration(
+                  hintText: 'Colle une URL produit (AliExpress, etc.)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (taskId != null)
+                Text('Task: $taskId', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              if (status != null)
+                Text(status.toString(), style: const TextStyle(fontSize: 11)),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.red)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: loading ? null : () => Navigator.pop(ctx),
+              child: const Text('Fermer'),
+            ),
+            ElevatedButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      final url = ctrl.text.trim();
+                      if (url.isEmpty) {
+                        setDialogState(() => error = 'URL obligatoire.');
+                        return;
+                      }
+                      setDialogState(() {
+                        loading = true;
+                        error = null;
+                        status = null;
+                        taskId = null;
+                      });
+                      final res = await ApiService().scrapeProductAsync(url);
+                      if (!ctx.mounted) return;
+                      if (res['success'] == true) {
+                        final data = res['data'];
+                        final id = (data is Map ? (data['task_id'] ?? data['id'] ?? data['taskId']) : null)?.toString();
+                        if (id == null || id.isEmpty) {
+                          setDialogState(() {
+                            loading = false;
+                            error = 'Réponse OK mais taskId manquant: ${res.toString()}';
+                          });
+                          return;
+                        }
+                        setDialogState(() => taskId = id);
+                        await poll(id);
+                        if (!ctx.mounted) return;
+                        setDialogState(() => loading = false);
+                      } else {
+                        setDialogState(() {
+                          loading = false;
+                          error = res['message']?.toString() ?? 'Erreur scrape';
+                        });
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: loading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Lancer'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -113,6 +315,22 @@ class _SearchScreenState extends State<SearchScreen> {
           onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
         ),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.tune, color: AppColors.textPrimary),
+            onSelected: (v) {
+              if (v == 'bulk') _showBulkSearchDialog();
+              if (v == 'scrape') _showScrapeDialog();
+              if (v == 'post') setState(() => _usePostSearch = !_usePostSearch);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'bulk', child: Text('Bulk search')),
+              const PopupMenuItem(value: 'scrape', child: Text('Scraper URL')),
+              PopupMenuItem(
+                value: 'post',
+                child: Text(_usePostSearch ? 'Recherche: GET (products)' : 'Recherche: POST (/search/)'),
+              ),
+            ],
+          ),
           Container(
             margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
