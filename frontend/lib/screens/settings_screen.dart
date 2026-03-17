@@ -1,7 +1,8 @@
-import 'package:dropshipping_finder/screens/change_password_screen.dart';
-import 'package:dropshipping_finder/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
-import '../utils/theme.dart';
+import '../theme/app_colors.dart';
+import 'support_screen.dart';
+import 'change_password_screen.dart';
+import 'language_selection_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,267 +12,172 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-
-  int _currentIndex = 3; // ← 3ème index
-
-  void _navigateToPage(int index) {
-    if (index == 3) return; // Déjà sur la page Profil
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(context, '/search');
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/favorites');
-        break;
-      case 3:
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-    }
-  }
+  bool _faceIdEnabled = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          _navigateToPage(index);
-        },
-      ),
-
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         elevation: 0,
-        backgroundColor: AppTheme.backgroundColor,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Paramètres & Préférences',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                /// ===== Section 1 =====
-                const Text(
-                  'Préférence générale',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                _SettingsCard(
-                  icon: Icons.language,
-                  title: 'Langue',
-                  onTap: () {},
-                ),
-
-                _SettingsCard(
-                  icon: Icons.attach_money,
-                  title: 'Devise d\'affichage',
-                  onTap: () {},
-                ),
-
-                _SettingsCard(
-                  icon: Icons.lock_outline,
-                  title: 'Changer le mot de passe',
-                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ChangePasswordScreen(),
-                    ),
-                  );
-                },
-
-                ),
-
-                _SwitchSettingsCard(
-                  icon: Icons.fingerprint,
-                  title: 'Activer Face ID | Touch ID',
-                  value: false,
-                  onChanged: (value) {},
-                ),
-
-                const SizedBox(height: 28),
-
-                /// ===== Section 2 =====
-                const Text(
-                  'Informations légales & Support',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                _SettingsCard(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Politique de confidentialité',
-                  onTap: () {},
-                ),
-
-                _SettingsCard(
-                  icon: Icons.info_outline,
-                  title: 'Version de l\'application',
-                  onTap: () {},
-                ),
-
-                _SettingsCard(
-                  icon: Icons.support_agent,
-                  title: 'Contact Support & Assistance',
-                  onTap: () {},
-                ),
-              ],
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Preference générale',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+            _buildSettingItem(
+              icon: Icons.language,
+              title: 'Langue',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LanguageSelectionScreen()),
+                );
+              },
+            ),
+            _buildSettingItem(
+              icon: Icons.monetization_on_outlined,
+              title: 'Devise d\'affichage',
+              onTap: () {},
+            ),
+            _buildSettingItem(
+              icon: Icons.password,
+              title: 'changer le mot de passe',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                );
+              },
+            ),
+            _buildSettingSwitch(
+              icon: Icons.security,
+              title: 'Activer Face ID | Touch ID',
+              value: _faceIdEnabled,
+              onChanged: (val) => setState(() => _faceIdEnabled = val),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Information Légales and Support',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSettingItem(
+              title: 'Politique de confidentialité',
+              onTap: () {},
+            ),
+            _buildSettingItem(
+              title: 'Version de l\'application',
+              onTap: () {},
+            ),
+            _buildSettingItem(
+              title: 'Contact Support & Assistance',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SupportScreen()),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _SettingsCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  const _SettingsCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 18,
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 22, color: Colors.grey.shade700),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.grey,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-class _SwitchSettingsCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SwitchSettingsCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
+  Widget _buildSettingItem({IconData? icon, required String title, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: Colors.grey.shade700),
-            const SizedBox(width: 16),
+            if (icon != null) ...[
+              Icon(icon, color: Colors.grey[600], size: 20),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
+                  color: Colors.grey[700],
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeColor: Colors.orange,
-            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSettingSwitch({
+    required IconData icon,
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.grey[600], size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+          ),
+        ],
       ),
     );
   }

@@ -1,0 +1,8 @@
+# Layer 3 — Python dependencies
+# v1 (weighted formula) — no extra dependencies needed
+# v2 (XGBoost) — install these when outcome data is ready
+
+# v2 only
+xgboost>=1.7.0
+scikit-learn>=1.3.0
+numpy>=1.24.0

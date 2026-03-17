@@ -1,11 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
-import '../utils/theme.dart';
-import 'login_screen.dart';
-import '../providers/auth_provider.dart';
-import 'home_screen.dart';
+import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,28 +12,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingPage> _pages = [
-    OnboardingPage(
-      title: 'Bienvenue sur DropShippingFinder',
-      description:
-          'Trouvez les produits gagnants pour votre business de dropshipping en quelques clics',
-      imageUrl:
-          'assets/images/Immagine WhatsApp 2025-11-08 ore 00.55.42_cb654da5.jpg',
-    ),
-    OnboardingPage(
-      title: 'Analyse IA Puissante',
-      description:
-          'Notre intelligence artificielle analyse des milliers de produits pour vous',
-      imageUrl:
-          'assets/images/Immagine WhatsApp 2025-11-08 ore 00.55.42_cb654da5.jpg',
-    ),
-    OnboardingPage(
-      title: 'Gagnez du Temps',
-      description:
-          'Concentrez-vous sur votre business pendant que nous trouvons les meilleurs produits',
-      imageUrl:
-          'assets/images/Immagine WhatsApp 2025-11-08 ore 00.55.42_cb654da5.jpg',
-    ),
+  final List<Map<String, String>> _pages = [
+    {
+      'title': 'Bienvenue sur DropshippingFinder',
+      'description': 'Trouvez les produits gagnants pour votre business de dropshipping en quelques clics',
+      'image': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    },
+    {
+      'title': 'Analyse des Tendances',
+      'description': 'Identifiez les produits les plus demandés avant vos concurrents',
+      'image': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    },
+    {
+      'title': 'Logistique Simplifiée',
+      'description': 'Gérez vos expéditions facilement avec nos partenaires de confiance',
+      'image': 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    },
   ];
 
   @override
@@ -48,203 +36,142 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _onPageChanged(int page) {
-    setState(() {
-      _currentPage = page;
-    });
-  }
-
-  void _navigateToLogin() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.cardBackground,
       body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(height: AppTheme.spacingXL),
-
-            // Logo and Title
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: MediaQuery.sizeOf(context).width * .5,
-                  child: Image.asset(
-                    'assets/images/logo.png', // Create or download a PNG logo
-                    fit: BoxFit.contain,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              // Logo
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 2),
+                    ),
+                    child: const Icon(Icons.search, color: AppColors.primary, size: 24),
                   ),
-                )
-              ],
-            ),
-
-            SizedBox(height: AppTheme.spacingXL),
-
-            // Welcome Text
-            Text(
-              _pages[_currentPage].title,
-              style: AppTheme.titleLarge.copyWith(
-                
-                color: AppTheme.textPrimary,
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Dropshipping\nFinder',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: AppTheme.spacingL),
-
-            // Description
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingS),
-              child: Text(
-                _pages[_currentPage].description,
-                style: AppTheme.bodySmall.copyWith(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
+              const SizedBox(height: 40),
+              
+              // Dynamic Text Content
+              Text(
+                _pages[_currentPage]['title']!,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
-            ),
-
-            SizedBox(height: AppTheme.spacingXL),
-
-            // Image Carousel
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: _onPageChanged,
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: AppTheme.spacingXL),
-                    child: ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.borderRadiusLarge),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.lightGray,
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadiusLarge),
-                          boxShadow: AppTheme.cardShadow,
-                        ),
-                        child: Image.asset(
-                          _pages[index].imageUrl,
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 40,
+                child: Text(
+                  _pages[_currentPage]['description']!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              // Image Section (PageView)
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (int page) {
+                    setState(() {
+                      _currentPage = page;
+                    });
+                  },
+                  itemCount: _pages.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 24),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.grey[200],
+                        image: DecorationImage(
+                          image: NetworkImage(_pages[index]['image']!),
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            // Fallback to network image if asset not found
-                            return Image.network(
-                              'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=600&fit=crop&q=80',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.lightGray,
-                                    borderRadius: BorderRadius.circular(
-                                        AppTheme.borderRadiusLarge),
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.shopping_bag_outlined,
-                                      size: 80,
-                                      color: AppTheme.mediumGray,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            SizedBox(height: AppTheme.spacingXL),
-
-            // Page Indicators
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _pages.length,
-                (index) => Container(
-                  margin: EdgeInsets.symmetric(horizontal: AppTheme.spacingXS),
-                  width: _currentPage == index ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _currentPage == index
-                        ? AppTheme.primaryOrange
-                        : AppTheme.mediumGray,
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.borderRadiusSmall),
-                  ),
+                      clipBehavior: Clip.antiAlias,
+                    );
+                  },
                 ),
               ),
-            ),
 
-            SizedBox(height: AppTheme.spacingXL),
-
-            // Start Button
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingXL),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _navigateToLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryOrange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.borderRadiusMedium),
-                    ),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                  ),
-                  child: Row(
+              // Bottom Section
+              Column(
+                children: [
+                  // Dynamic Indicators
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Commencer',
-                        style: AppTheme.labelLarge.copyWith(
-                          fontSize: 16,
+                    children: List.generate(
+                      _pages.length,
+                      (index) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: _currentPage == index ? 24 : 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: _currentPage == index 
+                              ? AppColors.primary 
+                              : const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      SizedBox(width: AppTheme.spacingS),
-                      Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 32),
+                  // Button
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_currentPage < _pages.length - 1) {
+                         _pageController.nextPage(
+                           duration: const Duration(milliseconds: 300),
+                           curve: Curves.easeInOut,
+                         );
+                      } else {
+                        Navigator.pushNamed(context, '/register');
+                      }
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_currentPage < _pages.length - 1 ? 'Suivant' : 'Commencer'),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_ios, size: 16),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-
-            SizedBox(height: AppTheme.spacingXL),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class OnboardingPage {
-  final String title;
-  final String description;
-  final String imageUrl;
-
-  OnboardingPage({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-  });
 }
