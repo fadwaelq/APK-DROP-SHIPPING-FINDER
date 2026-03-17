@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dropshipping_app/l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
@@ -5,6 +6,7 @@ import '../services/api_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../services/session_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CommunauteScreen extends StatefulWidget {
   const CommunauteScreen({super.key});
@@ -20,6 +22,7 @@ class _CommunauteScreenState extends State<CommunauteScreen>
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _posts = [];
+  List<Map<String, dynamic>> _stories = [];
   String? _error;
 
   Map<String, dynamic> _stats = {
@@ -42,6 +45,7 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     await Future.wait([
       _fetchPosts(),
       _fetchStats(),
+      _fetchStories(),
     ]);
   }
 
@@ -84,9 +88,10 @@ class _CommunauteScreenState extends State<CommunauteScreen>
           'imageUrl': p['image_url'],
           'imageColor': Colors.blue,
           'likes': p['likes_count'] ?? 0,
+          'is_liked': p['is_liked'] ?? false,
           'comments': p['comments_count'] ?? 0,
           'shares': p['shares_count'] ?? 0,
-          'created_at': p['created_at_formatted'], // Assuming this is available
+          'created_at': p['created_at_formatted'], 
         }).toList();
         
         // Extract unique members from posts
@@ -114,29 +119,74 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     }
   }
 
+  Future<void> _fetchStories() async {
+    final result = await _apiService.getStories();
+    if (result['success'] == true) {
+      final List<dynamic> storiesData = result['stories'] ?? result['data'] ?? [];
+      setState(() {
+        _stories = storiesData.map((s) => {
+          'id': s['id'],
+          'user': s['user'] ?? 'Anonyme',
+          'image': s['image'],
+        }).toList();
+      });
+    }
+  }
+
+  Future<void> _pickAndUploadStory() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() => _isLoading = true);
+      final result = await _apiService.createStory(File(pickedFile.path));
+      
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Story publiée avec succès !')),
+          );
+          _fetchStories(); // Refresh
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: ${result['message']}')),
+          );
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   List<Map<String, dynamic>> _activeMembers = [];
 
   Future<void> _toggleLike(Map<String, dynamic> post) async {
     final postId = post['id']?.toString();
     if (postId == null || postId.isEmpty) return;
 
+    final bool wasLiked = post['is_liked'] ?? false;
+
     // Optimistic UI update
     setState(() {
+      post['is_liked'] = !wasLiked;
       final current = (post['likes'] as int?) ?? 0;
-      post['likes'] = current + 1;
+      post['likes'] = wasLiked ? (current > 0 ? current - 1 : 0) : current + 1;
     });
 
-    final res = await _apiService.togglePostLike(postId);
+    final res = wasLiked 
+        ? await _apiService.unlikePost(postId)
+        : await _apiService.likePost(postId);
+        
     if (!mounted) return;
 
     if (res['success'] != true) {
       // rollback
       setState(() {
+        post['is_liked'] = wasLiked;
         final current = (post['likes'] as int?) ?? 0;
-        post['likes'] = current > 0 ? current - 1 : 0;
+        post['likes'] = wasLiked ? current : (current > 0 ? current - 1 : 0);
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(res['message']?.toString() ?? 'Erreur lors du like'),
+        content: Text(res['message']?.toString() ?? 'Erreur lors de l\'action'),
         backgroundColor: Colors.red,
       ));
     } else {
@@ -304,14 +354,18 @@ class _CommunauteScreenState extends State<CommunauteScreen>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildStoryItem(
-            'Vous', 
-            user?.profilePicture ?? 'https://i.pravatar.cc/150?u=${user?.id ?? "me"}', 
-            isMe: true
+          GestureDetector(
+            onTap: _pickAndUploadStory,
+            child: _buildStoryItem(
+              'Vous', 
+              user?.profilePicture ?? 'https://i.pravatar.cc/150?u=${user?.id ?? "me"}', 
+              isMe: true
+            ),
           ),
-          _buildStoryItem('Sarah M', 'https://i.pravatar.cc/150?u=sarah'),
-          _buildStoryItem('Alex D', 'https://i.pravatar.cc/150?u=alex'),
-          _buildStoryItem('Marie L', 'https://i.pravatar.cc/150?u=marie'),
+          ..._stories.map((s) => _buildStoryItem(
+            s['user'] as String,
+            s['image'] as String,
+          )),
         ],
       ),
     );
@@ -332,7 +386,7 @@ class _CommunauteScreenState extends State<CommunauteScreen>
                 ),
                 child: CircleAvatar(
                   radius: 30,
-                  backgroundImage: NetworkImage(url),
+                  backgroundImage: NetworkImage(_apiService.normalizeImageUrl(url)),
                 ),
               ),
               if (isMe)
@@ -567,7 +621,7 @@ class _CommunauteScreenState extends State<CommunauteScreen>
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                post['imageUrl'] as String,
+                _apiService.normalizeImageUrl(post['imageUrl'] as String),
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -593,7 +647,11 @@ class _CommunauteScreenState extends State<CommunauteScreen>
             children: [
               GestureDetector(
                 onTap: () => _toggleLike(post),
-                child: _buildAction(Icons.favorite_border, '${post['likes'] ?? 0}'),
+                child: _buildAction(
+                  (post['is_liked'] ?? false) ? Icons.favorite : Icons.favorite_border, 
+                  '${post['likes'] ?? 0}',
+                  color: (post['is_liked'] ?? false) ? Colors.red : Colors.grey,
+                ),
               ),
               const SizedBox(width: 20),
               _buildAction(Icons.chat_bubble_outline, '${post['comments'] ?? 0}'),
@@ -608,12 +666,12 @@ class _CommunauteScreenState extends State<CommunauteScreen>
     );
   }
 
-  Widget _buildAction(IconData icon, String count) {
+  Widget _buildAction(IconData icon, String count, {Color color = Colors.grey}) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey),
+        Icon(icon, size: 18, color: color),
         const SizedBox(width: 4),
-        Text(count, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        Text(count, style: TextStyle(color: color, fontSize: 12)),
       ],
     );
   }

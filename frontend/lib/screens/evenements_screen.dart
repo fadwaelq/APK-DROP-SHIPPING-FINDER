@@ -586,3 +586,4 @@ class _EvenementsScreenState extends State<EvenementsScreen>
     }
   }
 }
+}

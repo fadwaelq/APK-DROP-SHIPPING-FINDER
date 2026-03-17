@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,6 +23,14 @@ class ApiService {
     }
   }
 
+  String get baseHost => baseUrl.replaceAll('/api', '');
+
+  String normalizeImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http')) return url;
+    return '$baseHost$url';
+  }
+
   String? _authToken;
 
   void setAuthToken(String token) {
@@ -43,19 +52,6 @@ class ApiService {
   // Authentication
   Future<Map<String, dynamic>> login(String email, String password,
       {bool rememberMe = false}) async {
-    // --- BYPASS MOCK POUR DÉVELOPPEMENT ---
-    if (email.toLowerCase() == 'fadwa.elq1@gmail.com') {
-      return {
-        'success': true,
-        'access': 'mock_access_token_for_fadwa',
-        'refresh': 'mock_refresh_token_for_fadwa',
-        'user': {
-          'id': 1,
-          'email': email,
-          'full_name': 'Fadwa Elq',
-        }
-      };
-    }
     // --------------------------------------
 
     try {
@@ -533,10 +529,79 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> togglePostLike(String postId) async {
+  // Stories
+  Future<Map<String, dynamic>> getStories() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/community/stories/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createStory(File imageFile) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/community/stories/'),
+      );
+
+      // Add Headers manually since MultipartRequest doesn't use _headers directly
+      if (_authToken != null) {
+        request.headers['Authorization'] = 'Bearer $_authToken';
+      }
+
+      // Add image file
+      final fileStream = http.ByteStream(imageFile.openRead());
+      final length = await imageFile.length();
+      final multipartFile = http.MultipartFile(
+        'image',
+        fileStream,
+        length,
+        filename: imageFile.path.split('/').last,
+      );
+      request.files.add(multipartFile);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> likePost(String postId) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/posts/$postId/like/'),
+        Uri.parse('$baseUrl/community/posts/$postId/like/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> unlikePost(String postId) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/community/posts/$postId/unlike/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getPostComments(String postId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/community/posts/$postId/comments/'),
         headers: _headers,
       );
       return _handleResponse(response);
@@ -664,7 +729,7 @@ class ApiService {
       final response = await client.post(
         Uri.parse('$baseUrl/products/favorites/'),
         headers: _headers,
-        body: jsonEncode({'product': int.tryParse(productId) ?? productId}),
+        body: jsonEncode({'product': productId}), // 🔥 Changé 'product_id' en 'product'
       );
       return _handleResponse(response);
     } catch (e) {
@@ -701,7 +766,19 @@ class ApiService {
   Future<Map<String, dynamic>> getDailyMissions() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/missions/daily/'),
+        Uri.parse('$baseUrl/rewards/missions/daily/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getWeeklyMissions() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/rewards/missions/weekly/'),
         headers: _headers,
       );
       return _handleResponse(response);
@@ -713,9 +790,8 @@ class ApiService {
   Future<Map<String, dynamic>> completeMission(String missionId) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/missions/complete/'),
+        Uri.parse('$baseUrl/rewards/missions/$missionId/complete/'),
         headers: _headers,
-        body: jsonEncode({'mission_id': missionId}),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -726,7 +802,43 @@ class ApiService {
   Future<Map<String, dynamic>> getUserXP() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/user/xp/'),
+        Uri.parse('$baseUrl/rewards/user/xp/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserLevel() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/rewards/user/level/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserStreak() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/rewards/user/streak/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getDashboardChartData() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/rewards/user/dashboard/chart-data/'),
         headers: _headers,
       );
       return _handleResponse(response);
@@ -738,7 +850,19 @@ class ApiService {
   Future<Map<String, dynamic>> getShopItems() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/shop/items/'),
+        Uri.parse('$baseUrl/economy/shop/items/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> buyShopItem(String itemId) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/shop/items/$itemId/buy/'),
         headers: _headers,
       );
       return _handleResponse(response);
@@ -776,95 +900,7 @@ class ApiService {
     }
   }
 
-  // Support
-  Future<Map<String, dynamic>> getSupportTickets() async {
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/support/tickets/'),
-        headers: _headers,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  Future<Map<String, dynamic>> createSupportTicket(Map<String, dynamic> data) async {
-    try {
-      final response = await client.post(
-        Uri.parse('$baseUrl/support/tickets/'),
-        headers: _headers,
-        body: jsonEncode(data),
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  Future<Map<String, dynamic>> replyToSupportTicket(String ticketId, String message) async {
-    try {
-      final response = await client.post(
-        Uri.parse('$baseUrl/support/tickets/$ticketId/reply/'),
-        headers: _headers,
-        body: jsonEncode({'message': message}),
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  // Economy & Wallet
-  Future<Map<String, dynamic>> getCoinsBalance() async {
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/economy/user/coins-balance/'),
-        headers: _headers,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  Future<Map<String, dynamic>> getCoinsHistory() async {
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/user/coins-history/'),
-        headers: _headers,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  Future<Map<String, dynamic>> earnCoins(String action, int amount) async {
-    try {
-      final response = await client.post(
-        Uri.parse('$baseUrl/economy/user/coins/earn/'),
-        headers: _headers,
-        body: jsonEncode({'action': action, 'amount': amount}),
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  Future<Map<String, dynamic>> spendCoins(String reason, int amount) async {
-    try {
-      final response = await client.post(
-        Uri.parse('$baseUrl/economy/user/coins/spend/'),
-        headers: _headers,
-        body: jsonEncode({'reason': reason, 'amount': amount}),
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
+  // User (V2)
 
   // User (V2)
   Future<Map<String, dynamic>> getUserBadges() async {
@@ -1063,35 +1099,21 @@ class ApiService {
 
 
 
-  // Favorites
-  Future<Map<String, dynamic>> getFavorites() async {
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/favorites/'),
-        headers: _headers,
-      );
-
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  Future<Map<String, dynamic>> toggleFavorite(String productId) async {
-    try {
-      final response = await client.post(
-        Uri.parse('$baseUrl/favorites/toggle/'),
-        headers: _headers,
-        body: jsonEncode({'product_id': productId}),
-      );
-
-      return _handleResponse(response);
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
-  }
+  // --- Favorites (Doublons supprimés, utilisez getProductsFavorites et toggleProductFavorite) ---
 
   // Subscription & Checkout
+  Future<Map<String, dynamic>> getInvoices() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/subscriptions/invoices/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> checkoutSubscription(String planId, String paymentMethod) async {
     try {
       final response = await client.post(
@@ -1170,6 +1192,30 @@ class ApiService {
 
   // 5.1 Économie et Transactions
 
+  Future<Map<String, dynamic>> getCoinsBalance() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/economy/user/coins-balance/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getCoinsHistory() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/economy/user/coins-history/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   /// POST /api/economy/user/coins/transfer/ — Transfert sécurisé P2P entre portefeuilles
   Future<Map<String, dynamic>> transferCoins({
     required String recipientUsername,
@@ -1220,6 +1266,47 @@ class ApiService {
     }
   }
 
+  /// GET /api/support/tickets/ — Liste des tickets
+  Future<Map<String, dynamic>> getSupportTickets() async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/support/tickets/'),
+        headers: _headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// POST /api/support/tickets/ — Création de ticket
+  Future<Map<String, dynamic>> createSupportTicket(Map<String, dynamic> data) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/support/tickets/'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// POST /api/support/tickets/{id}/reply/ — Réponse au ticket
+  Future<Map<String, dynamic>> replyToSupportTicket(String ticketId, String message) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/support/tickets/$ticketId/reply/'),
+        headers: _headers,
+        body: jsonEncode({'message': message}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   /// POST /api/support/tickets/{id}/close/ — Clôture autonome des tickets
   Future<Map<String, dynamic>> closeTicket(String ticketId) async {
     try {
@@ -1235,11 +1322,11 @@ class ApiService {
 
   // ─── Bloc 3 : Growth & Viralité (Parrainage) ───
 
-  /// GET /api/user/referrals/ — Liste exhaustive des filleuls
+  /// GET /api/rewards/user/referrals/ — Liste exhaustive des filleuls
   Future<Map<String, dynamic>> getReferrals() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/user/referrals/'),
+        Uri.parse('$baseUrl/rewards/user/referrals/'), // 🔥 Ajouté /rewards
         headers: _headers,
       );
       return _handleResponse(response);
@@ -1248,11 +1335,11 @@ class ApiService {
     }
   }
 
-  /// POST /api/user/referral-invite/ — Génération de codes uniques et liens profonds
+  /// POST /api/rewards/user/referral-invite/ — Génération de codes uniques et liens profonds
   Future<Map<String, dynamic>> sendReferralInvite({String? email}) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/user/referral-invite/'),
+        Uri.parse('$baseUrl/rewards/user/referral-invite/'), // 🔥 Ajouté /rewards
         headers: _headers,
         body: jsonEncode(email != null ? {'email': email} : {}),
       );
@@ -1262,11 +1349,11 @@ class ApiService {
     }
   }
 
-  /// GET /api/user/referral-leaderboard/ — Classement compétitif des parrains
+  /// GET /api/rewards/user/referral-leaderboard/ — Classement compétitif des parrains
   Future<Map<String, dynamic>> getReferralLeaderboard() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/user/referral-leaderboard/'),
+        Uri.parse('$baseUrl/rewards/user/referral-leaderboard/'), // 🔥 Ajouté /rewards
         headers: _headers,
       );
       return _handleResponse(response);
@@ -1275,11 +1362,11 @@ class ApiService {
     }
   }
 
-  /// GET /api/user/referral/rewards/ — Consultation des paliers de gains
+  /// GET /api/rewards/user/referral/rewards/ — Consultation des paliers de gains
   Future<Map<String, dynamic>> getReferralRewards() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/user/referral/rewards/'),
+        Uri.parse('$baseUrl/rewards/user/referral/rewards/'), // 🔥 Ajouté /rewards
         headers: _headers,
       );
       return _handleResponse(response);
@@ -1288,11 +1375,11 @@ class ApiService {
     }
   }
 
-  /// POST /api/user/referral/claim-reward/ — Activation des récompenses
+  /// POST /api/rewards/user/referral/claim-reward/ — Activation des récompenses
   Future<Map<String, dynamic>> claimReferralReward(String rewardId) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/user/referral/claim-reward/'),
+        Uri.parse('$baseUrl/rewards/user/referral/claim-reward/'), // 🔥 Ajouté /rewards
         headers: _headers,
         body: jsonEncode({'reward_id': rewardId}),
       );
@@ -1450,11 +1537,11 @@ class ApiService {
     }
   }
 
-  // Payment Methods
+  // Payment Methods (Cartes Bancaires)
   Future<Map<String, dynamic>> getPaymentMethods() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/subscriptions/payment-methods/'),
+        Uri.parse('$baseUrl/subscriptions/cards/'), // 🔥 Changé payment-methods en cards
         headers: _headers,
       );
       return _handleResponse(response);
@@ -1466,7 +1553,7 @@ class ApiService {
   Future<Map<String, dynamic>> deletePaymentMethod(int id) async {
     try {
       final response = await client.delete(
-        Uri.parse('$baseUrl/subscriptions/payment-methods/$id/'),
+        Uri.parse('$baseUrl/subscriptions/cards/$id/'), // 🔥 Changé payment-methods en cards
         headers: _headers,
       );
       return _handleResponse(response);
@@ -1478,9 +1565,35 @@ class ApiService {
   Future<Map<String, dynamic>> addPaymentMethod(Map<String, dynamic> data) async {
     try {
       final response = await client.post(
-        Uri.parse('$baseUrl/subscriptions/payment-methods/'),
+        Uri.parse('$baseUrl/subscriptions/cards/'), // 🔥 Changé payment-methods en cards
         headers: _headers,
         body: jsonEncode(data),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> earnCoins(String action, int amount) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/user/coins/earn/'),
+        headers: _headers,
+        body: jsonEncode({'action': action, 'amount': amount}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> spendCoins(String reason, int amount) async {
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/economy/user/coins/spend/'),
+        headers: _headers,
+        body: jsonEncode({'reason': reason, 'amount': amount}),
       );
       return _handleResponse(response);
     } catch (e) {
