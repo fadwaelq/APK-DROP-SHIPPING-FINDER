@@ -127,24 +127,33 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CONFIGURATION SAAS DROPSHIPPING
 # ==========================================
 
-# 1. On indique à Django d'utiliser notre modèle Utilisateur personnalisé
+#  On indique à Django d'utiliser notre modèle Utilisateur personnalisé
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
-# 2. Configuration de l'API (Django Rest Framework)
+#  Configuration de l'API (Django Rest Framework)
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     # On active les filtres pour toute l'API (utile pour l'app products)
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema', # <-- Ajoute ceci
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
-    #  on peut aussi personnaliser les renderers pour standardiser les réponses de l'API pour le frontend
+    # Personnalisation des renderers pour standardiser les réponses de l'API
     'DEFAULT_RENDERER_CLASSES': [
         'core.renderers.StandardizedJSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer', # Optionnel : Garde l'interface web de DRF active
+        'rest_framework.renderers.BrowsableAPIRenderer', 
     ],
-
+    
+    # --- CORRECTION QA : bug TC-SEC-04 (Rate Limiting / Anti Brute-Force) ---
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle', # Limite pour les non-connectés (ex: page de login)
+        'rest_framework.throttling.UserRateThrottle'  # Limite pour les utilisateurs connectés
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '5/minute',   # Max 5 tentatives par minute pour bloquer les bots sur le Login
+        'user': '100/minute'  # Max 100 requêtes par minute en navigation normale
+    }
 }
 
 # Configuration optionnelle pour Swagger (nom du projet, version, etc.)
@@ -155,11 +164,23 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-# 3. Paramètres des Tokens JWT
+#  Paramètres des Tokens JWT
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Le token dure 1 jour
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), # Peut être rafraîchi pendant 7 jours
-    'AUTH_HEADER_TYPES': ('Bearer',),            # Format standard: "Bearer <token>"
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), 
+    'ROTATE_REFRESH_TOKENS': True,               # On change le refresh token à chaque utilisation
+    'BLACKLIST_AFTER_ROTATION': True,            # On désactive l'ancien token
+    
+    'ALGORITHM': 'HS256',                        # Algorithme de cryptage forcé
+    'SIGNING_KEY': SECRET_KEY,                   # On lie la signature à ta SECRET_KEY Django
+    'VERIFYING_KEY': None,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),            
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
 # ==========================================
