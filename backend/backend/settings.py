@@ -193,5 +193,3 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE  # Utilise la même timezone que ton projet Django
 
-# Autorise ton IP locale et localhost
-ALLOWED_HOSTS = ['192.168.1.70', '127.0.0.1', 'localhost']
