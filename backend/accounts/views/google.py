@@ -9,9 +9,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
+# AJOUT POUR SWAGGER
+from drf_spectacular.utils import extend_schema
+
 User = get_user_model()
 
-# --- AJOUT POUR SWAGGER ---
 class GoogleTokenSerializer(serializers.Serializer):
     id_token = serializers.CharField(help_text="Le token JWT reçu de l'application Google (frontend)")
 
@@ -20,8 +22,21 @@ class GoogleLoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = GoogleTokenSerializer 
 
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object", 
+                "properties": {
+                    "refresh": {"type": "string"}, 
+                    "access": {"type": "string"},
+                    "is_new_user": {"type": "boolean"},
+                    "detail": {"type": "string"}
+                }
+            },
+            401: {"type": "object", "properties": {"detail": {"type": "string"}}}
+        }
+    )
     def post(self, request):
-        # Utilisation du serializer pour valider les données
         serializer = GoogleTokenSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -29,15 +44,11 @@ class GoogleLoginView(views.APIView):
         token = serializer.validated_data.get('id_token')
 
         try:
-            # 1. On demande à Google si ce token est authentique
             idinfo = id_token.verify_oauth2_token(token, requests.Request())
-
-            # 2. On extrait les informations du profil Google
             email = idinfo.get('email')
             first_name = idinfo.get('given_name', '')
             last_name = idinfo.get('family_name', '')
 
-            # 3. On cherche si cet utilisateur existe déjà
             user, created = User.objects.get_or_create(email=email)
 
             if created:
@@ -48,7 +59,6 @@ class GoogleLoginView(views.APIView):
                 user.set_unusable_password()
                 user.save()
 
-            # 4. Génération JWT
             refresh = RefreshToken.for_user(user)
 
             return Response({
@@ -61,12 +71,23 @@ class GoogleLoginView(views.APIView):
         except ValueError:
             return Response({"detail": "Token Google invalide ou expiré."}, status=status.HTTP_401_UNAUTHORIZED)
         
+
 class ActiveSessionsView(APIView):
     """ GET /api/user/active-sessions/ : Liste le nombre de connexions actives """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object", 
+                "properties": {
+                    "count": {"type": "integer"}, 
+                    "message": {"type": "string"}
+                }
+            }
+        }
+    )
     def get(self, request):
-        # Compte les tokens de session actifs dans la base
         sessions_count = OutstandingToken.objects.filter(user=request.user).count()
         return Response({
             "count": sessions_count,
