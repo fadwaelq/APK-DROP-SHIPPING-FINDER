@@ -20,7 +20,7 @@ class TicketMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TicketMessage
-        fields = ['id', 'sender_name', 'message', 'created_at']
+        fields = ['id', 'sender_name', 'message', 'attachment', 'created_at']
 
 class TicketDetailSerializer(TicketSerializer):
     # "title" dans son tableau, on mappe "subject" vers "title"
