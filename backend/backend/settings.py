@@ -15,9 +15,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # 3. On récupère la clé depuis l'environnement
-# SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 # settings.py
-SECRET_KEY = 'django-insecure-@1#6!8p43r^@sd0trv+6f8qz@3@hs1hr^3rjz@f7fmd5'  # Remplace ceci par une clé sécurisée
 # 4. On récupère le DEBUG depuis l'environnement
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
