@@ -169,7 +169,7 @@ class ContactSupplierAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        product = get_object_or_404(Product, pk=pk)
+        _ = get_object_or_404(Product, pk=pk)
         message = request.data.get('message', '')
         supplier_id = request.data.get('supplier_id')
         
@@ -203,7 +203,7 @@ class ProductReviewsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
-        product = get_object_or_404(Product, pk=pk)
+        _ = get_object_or_404(Product, pk=pk)
         reviews = [
             {"rating": 5, "comment": "Excellent produit !", "source": "AliExpress", "date": "2023-10-25"},
             {"rating": 4, "comment": "Bonne qualité.", "source": "AliExpress", "date": "2023-10-20"},
