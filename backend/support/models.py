@@ -33,8 +33,14 @@ class TicketMessage(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
 
+    attachment = models.FileField(  # 🔥 الجديد
+        upload_to='tickets/',
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ['created_at']
 

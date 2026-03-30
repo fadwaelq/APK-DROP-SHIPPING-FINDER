@@ -15,8 +15,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # 3. On récupère la clé depuis l'environnement
-SECRET_KEY = os.getenv('SECRET_KEY')
-
+# SECRET_KEY = os.getenv('SECRET_KEY')
+# settings.py
+SECRET_KEY = 'django-insecure-@1#6!8p43r^@sd0trv+6f8qz@3@hs1hr^3rjz@f7fmd5'  # Remplace ceci par une clé sécurisée
 # 4. On récupère le DEBUG depuis l'environnement
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
@@ -153,7 +154,9 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '5/minute',   # Max 5 tentatives par minute pour bloquer les bots sur le Login
         'user': '100/minute'  # Max 100 requêtes par minute en navigation normale
-    }
+    },
+     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
 }
 
 # Configuration optionnelle pour Swagger (nom du projet, version, etc.)

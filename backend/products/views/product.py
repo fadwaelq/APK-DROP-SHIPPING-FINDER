@@ -12,21 +12,49 @@ from ..models import Product, ProductWatchlist, ProductHistory
 # MOTEUR DE RECHERCHE & LISTE (Ligne 20)
 # ==========================================
 
+from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
+
+class ProductPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
 class ProductListAPIView(generics.ListCreateAPIView):
     """
-    GET : Liste avec filtres avancés (Catégorie, Concurrence, Winner).
-    POST : Enregistrement de produit par le scraper.
+    GET: Liste des produits avec filtres + search optimisé
+    POST: Création produit (scraper)
     """
-    queryset = Product.objects.all()
+
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+
     filterset_fields = ['category', 'competition_level', 'is_winner']
-    search_fields = ['title', 'description', 'category', 'ai_analysis_summary']
     ordering_fields = ['trend_score', 'potential_profit', 'price', 'created_at']
     ordering = ['-trend_score', '-created_at']
 
+    def get_queryset(self):
+        queryset = Product.objects.all().order_by('-created_at')
+        user = self.request.user
+
+    # 🔒 PAYWALL
+        if not user.is_authenticated:
+            queryset = queryset.filter(is_winner=False)
+
+    # 🔍 SEARCH (قوي + صحيح)
+        search = self.request.query_params.get('search', '').strip()
+
+        if search:
+            print("🔥 SEARCH:", search)
+
+            queryset = queryset.filter(
+            Q(title__iregex=rf'\b{search}\b')
+    )
+
+        return queryset
+    pagination_class = ProductPagination
 # ==========================================
 # DÉTAILS & HISTORIQUE (Ligne 21 & 24)
 # ==========================================
@@ -79,14 +107,16 @@ class ProductWatchlistToggleView(APIView):
 # ==========================================
 # ANALYSES IA & TENDANCES
 # ==========================================
+from ..permissions import IsProUser
+from rest_framework import permissions
+
 class TrendingProductsAPIView(generics.ListAPIView):
-    """ Top 10 produits avec le plus gros Trend Score """
     serializer_class = ProductSerializer
-    permission_classes = [] 
+    permission_classes = [permissions.IsAuthenticated, IsProUser]
 
     def get_queryset(self):
         return Product.objects.filter(is_winner=True).order_by('-trend_score')[:10]
-
+    
 class TopRatedProductsAPIView(generics.ListAPIView):
     """ Produits les plus rentables (Potential Profit) """
     serializer_class = ProductSerializer
