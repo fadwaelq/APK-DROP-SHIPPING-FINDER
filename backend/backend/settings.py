@@ -7,6 +7,10 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv # 1. Ajoute cet import
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -81,6 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 # Database

@@ -14,7 +14,7 @@ urlpatterns = [
     path('benchmark/products/', views.BenchmarkProductsAPIView.as_view(), name='benchmark-products'),
 
     # --- FAVORIS (WATCHLIST) ---
-    path('favorites/', watchlist_views.WatchlistAPIView.as_view(), name='watchlist-list-create'),
+    path('watchlist/', watchlist_views.WatchlistAPIView.as_view(), name='watchlist-list-create'),
     path('watchlist/<int:pk>/', watchlist_views.WatchlistDetailAPIView.as_view(), name='watchlist-delete'),
 
     # --- HISTORIQUE & TENDANCES ---
