@@ -5,6 +5,7 @@ from drf_spectacular.utils import extend_schema
 
 from .models import Ticket, TicketMessage
 from .serializers import TicketSerializer, TicketDetailSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class TicketListCreateView(generics.ListCreateAPIView):
     """ GET: Lister ses tickets | POST: Créer un nouveau ticket """
@@ -39,40 +40,52 @@ class TicketDetailView(generics.RetrieveAPIView):
         return Ticket.objects.filter(user=self.request.user)
 
 class TicketReplyView(APIView):
-    """ POST /api/support/tickets/{id}/reply/ : Ajouter un message à un ticket """
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]  # 🔥 مهم
 
-    @extend_schema(tags=["Support"])
+    @extend_schema(
+        tags=["Support"],
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'attachment': {
+                        'type': 'string',
+                        'format': 'binary'
+                    }
+                },
+                'required': ['message']
+            }
+        }
+    )
     def post(self, request, pk):
         try:
-            # Sécurité : on vérifie que le ticket appartient bien à l'utilisateur
             ticket = Ticket.objects.get(pk=pk, user=request.user)
         except Ticket.DoesNotExist:
-            return Response({"error": "Ticket introuvable ou accès non autorisé"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Ticket introuvable"}, status=404)
 
         message_text = request.data.get('message')
-        if not message_text:
-            return Response({"error": "Le message ne peut pas être vide"}, status=status.HTTP_400_BAD_REQUEST)
+        file = request.FILES.get('attachment')  # 🔥 الجديد
 
-        # Création de la réponse
+        if not message_text:
+            return Response({"error": "Message obligatoire"}, status=400)
+
         reply = TicketMessage.objects.create(
             ticket=ticket,
             sender=request.user,
-            message=message_text
+            message=message_text,
+            attachment=file  # ⚠️ خاص يكون field فـ model
         )
 
-        # Logique métier : si le ticket était fermé, le fait de répondre le rouvre
-        if ticket.status == 'CLOSED' or ticket.status == 'RESOLVED':
+        if ticket.status in ['CLOSED', 'RESOLVED']:
             ticket.status = 'OPEN'
             ticket.save()
 
         return Response({
             "success": True,
-            "reply_id": str(reply.id),
-            "timestamp": reply.created_at,
-            "ticket_status": ticket.status
-        }, status=status.HTTP_201_CREATED)
-
+            "reply_id": str(reply.id)
+        }, status=201)
 # ==========================================
 # NOUVELLE VUE : FERMER UN TICKET
 # ==========================================
