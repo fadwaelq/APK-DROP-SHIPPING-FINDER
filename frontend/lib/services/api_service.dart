@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'connectivity_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -49,12 +50,56 @@ class ApiService {
 
   Map<String, String> get headers => _headers;
 
+  /// Check if device is connected to internet
+  Future<bool> _checkConnectivity() async {
+    final connectivityService = ConnectivityService();
+    if (!connectivityService.isOnline) {
+      await connectivityService.checkConnectivity();
+    }
+    return connectivityService.isOnline;
+  }
+
+  /// Handle API response with proper error handling
+  Map<String, dynamic> _handleResponse(http.Response response) {
+    print('📡 API Response Status: ${response.statusCode}');
+    
+    try {
+      final body = response.body.isEmpty ? '{}' : response.body;
+      final responseData = jsonDecode(body);
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return responseData;
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? responseData['error'] ?? 'HTTP ${response.statusCode}',
+          'status_code': response.statusCode,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Response parsing error: ${e.toString()}',
+        'status_code': response.statusCode,
+      };
+    }
+  }
+
   // Authentication
   Future<Map<String, dynamic>> login(String email, String password,
       {bool rememberMe = false}) async {
     // --------------------------------------
 
     try {
+      // Check connectivity first
+      if (!await _checkConnectivity()) {
+        return {
+          'success': false,
+          'message': 'Pas de connexion internet. Vérifiez votre réseau et réessayez.',
+          'error_code': 'NO_CONNECTION'
+        };
+      }
+
       final response = await client.post(
         Uri.parse('$baseUrl/user/login/'),
         headers: _headers,
@@ -67,7 +112,11 @@ class ApiService {
 
       return _handleResponse(response);
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      return {
+        'success': false,
+        'message': 'Erreur de connexion: ${e.toString()}',
+        'error_code': 'NETWORK_ERROR'
+      };
     }
   }
 
@@ -1442,62 +1491,6 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': e.toString()};
-    }
-  }
-
-  // Helper method to handle responses
-  Map<String, dynamic> _handleResponse(http.Response response) {
-    try {
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final data = jsonDecode(response.body);
-        // Handle both list and map responses
-        if (data is List) {
-          return {'success': true, 'data': data};
-        } else if (data is Map) {
-          // Backend returns {success: true, message_code: ..., data: {...}}
-          // We preserve the structure but ensure success is true
-          if (data.containsKey('success')) {
-            print(data.length);
-            return Map<String, dynamic>.from(data);
-          }
-          return {'success': true, ...data};
-        } else {
-          return {'success': true, 'data': data};
-        }
-      } else {
-        // Try to parse error as JSON
-        try {
-          final error = jsonDecode(response.body);
-          // Backend returns {success: false, message_code: ..., errors: {...}}
-          if (error is Map) {
-            return {
-              'success': false,
-              'message_code': error['message_code'],
-              'message': error['message'] ??
-                  error['detail'] ??
-                  error['message_code'] ??
-                  'Request failed',
-              'errors': error['errors'],
-            };
-          }
-          return {
-            'success': false,
-            'message': error['message'] ?? error['detail'] ?? 'Request failed',
-          };
-        } catch (e) {
-          // If response is not JSON (e.g., HTML error page)
-          return {
-            'success': false,
-            'message':
-                'Server error (${response.statusCode}): ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
-          };
-        }
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Failed to parse response: $e',
-      };
     }
   }
 

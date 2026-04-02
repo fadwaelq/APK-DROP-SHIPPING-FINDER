@@ -279,7 +279,7 @@ Future<void> loadFavorites() async {
 
     // 2️⃣ Synchroniser avec l'API si connecté
     try {
-      final response = await _apiService.getFavorites();
+      final response = await _apiService.getProductsFavorites();
 
       debugPrint('📦 FAVORITES API RESPONSE: $response');
 
@@ -376,7 +376,7 @@ Future<void> loadFavorites() async {
 
       // Try API call (will fail if not authenticated, but that's ok)
       try {
-        final response = await _apiService.toggleFavorite(productId);
+        final response = await _apiService.toggleProductFavorite(productId);
         
         if (!response['success']) {
           debugPrint('API toggle failed (user may not be logged in): ${response['message']}');

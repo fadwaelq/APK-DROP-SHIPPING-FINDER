@@ -88,17 +88,38 @@ class SessionManager extends ChangeNotifier {
   }
 
   Future<void> loadSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString('current_user');
-    final savedToken = prefs.getString('auth_token');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('current_user');
+      final savedToken = prefs.getString('auth_token');
 
-    if (userJson != null) {
-      _user = UserModel.fromJson(jsonDecode(userJson));
-      if (savedToken != null) {
-        _token = savedToken;
-        ApiService().setAuthToken(savedToken);
+      if (userJson != null) {
+        _user = UserModel.fromJson(jsonDecode(userJson));
+        if (savedToken != null) {
+          _token = savedToken;
+          ApiService().setAuthToken(savedToken);
+        }
+        notifyListeners();
       }
+    } catch (e) {
+      debugPrint('❌ Error loading session: $e');
+      // Clear corrupted session data
+      await clearSession();
+    }
+  }
+
+  Future<void> clearSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('current_user');
+      await prefs.remove('auth_token');
+      await prefs.remove('auth_refresh_token');
+      _user = null;
+      _token = null;
+      ApiService().setAuthToken('');
       notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error clearing session: $e');
     }
   }
 

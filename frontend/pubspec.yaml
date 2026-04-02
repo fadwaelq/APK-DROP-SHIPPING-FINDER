@@ -50,6 +50,7 @@ dependencies:
   flutter_verification_code_field: ^1.0.1
   webview_flutter: ^4.13.1
   model_viewer_plus: ^1.10.0
+  connectivity_plus: ^7.1.0
 
 dev_dependencies:
   flutter_test:
