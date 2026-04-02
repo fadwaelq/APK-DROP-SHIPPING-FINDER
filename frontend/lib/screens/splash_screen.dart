@@ -1,7 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/connectivity_service.dart';
+import '../services/session_manager.dart';
+import '../services/language_manager.dart';
+import '../services/currency_manager.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Wait a minimum of 2 seconds for smooth UX
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // Check if all services are ready
+    final sessionManager = Provider.of<SessionManager>(context, listen: false);
+    final languageManager = Provider.of<LanguageManager>(context, listen: false);
+    final connectivityService = Provider.of<ConnectivityService>(context, listen: false);
+    
+    // Navigate based on authentication status
+    if (sessionManager.isLoggedIn) {
+      Navigator.of(context).pushReplacementNamed('/home');
+    } else {
+      Navigator.of(context).pushReplacementNamed('/onboarding');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +69,41 @@ class SplashScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 32),
-            // Optional loading indicator
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+            
+            // App name
+            const Text(
+              'Dropshipping Finder',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Loading indicator with connectivity status
+            Consumer<ConnectivityService>(
+              builder: (context, connectivity, _) {
+                return Column(
+                  children: [
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      connectivity.isChecking 
+                        ? 'Vérification de la connexion...'
+                        : connectivity.isConnected
+                          ? 'Chargement en cours...'
+                          : 'Mode hors ligne',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),

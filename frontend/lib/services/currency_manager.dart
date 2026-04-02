@@ -38,9 +38,16 @@ class CurrencyManager extends ChangeNotifier {
   );
 
   Future<void> loadCurrency() async {
-    final prefs = await SharedPreferences.getInstance();
-    _selectedCurrencyCode = prefs.getString('selected_currency') ?? 'USD';
-    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _selectedCurrencyCode = prefs.getString('selected_currency') ?? 'USD';
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error loading currency: $e');
+      // Fallback to default currency
+      _selectedCurrencyCode = 'USD';
+      notifyListeners();
+    }
   }
 
   Future<void> setCurrency(String code) async {

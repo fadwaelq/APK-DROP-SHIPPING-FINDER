@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/session_manager.dart';
 import '../services/favorites_manager.dart';
+import '../widgets/no_connection_widget.dart';
 import 'home_screen.dart';
 import 'package:dropshipping_app/l10n/app_localizations.dart';
 import 'search_screen.dart';
@@ -23,8 +24,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // Charger les favoris globalement au démarrage de l'app principale
-    FavoritesManager().loadFavorites();
+    // Defer favorites loading to avoid blocking UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FavoritesManager().loadFavorites();
+    });
   }
 
   @override
@@ -71,15 +74,17 @@ class _MainScreenState extends State<MainScreen> {
           ProfileScreen(userName: userName, email: email),
         ];
 
-        return Scaffold(
-          extendBody: true,
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: screens,
-          ),
-          bottomNavigationBar: CustomBottomNavBar(
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
+        return ConnectivityAwareWidget(
+          child: Scaffold(
+            extendBody: true,
+            body: IndexedStack(
+              index: _selectedIndex,
+              children: screens,
+            ),
+            bottomNavigationBar: CustomBottomNavBar(
+              currentIndex: _selectedIndex,
+              onTap: _onItemTapped,
+            ),
           ),
         );
       },

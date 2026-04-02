@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,8 +8,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'services/session_manager.dart';
 import 'services/language_manager.dart';
 import 'services/currency_manager.dart';
+import 'services/connectivity_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/verification_screen.dart';
@@ -48,17 +51,26 @@ import 'providers/product_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load essential services first, defer heavy operations
   await SessionManager().loadSession();
   await LanguageManager().loadLanguage();
   await CurrencyManager().loadCurrency();
-  try {
-    await dotenv.load(fileName: "assets/.env");
-  } catch (e) {
-    // Fallback si le fichier .env est manquant dans assets
-    await dotenv.load(fileName: ".env").catchError((_) => null);
-  }
+  
+  // Initialize connectivity service (fast)
+  await ConnectivityService().initialize();
+  
+  // Load .env file (non-blocking)
+  unawaited(() async {
+    try {
+      await dotenv.load(fileName: "assets/.env");
+    } catch (e) {
+      // Fallback si le fichier .env est manquant dans assets
+      await dotenv.load(fileName: ".env").catchError((_) => null);
+    }
+  }());
+  
   runApp(const DropshippingApp());
-
 }
 
 class DropshippingApp extends StatelessWidget {
@@ -74,6 +86,7 @@ class DropshippingApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider.value(value: LanguageManager()),
         ChangeNotifierProvider.value(value: CurrencyManager()),
+        ChangeNotifierProvider.value(value: ConnectivityService()),
         Provider.value(value: FavoritesManager()),
       ],
       child: ListenableBuilder(
@@ -86,9 +99,10 @@ class DropshippingApp extends StatelessWidget {
             locale: LanguageManager().locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            initialRoute: '/onboarding',
-  
+            initialRoute: '/splash',
+
             routes: {
+              '/splash': (context) => const SplashScreen(),
               '/onboarding': (context) => const OnboardingScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),

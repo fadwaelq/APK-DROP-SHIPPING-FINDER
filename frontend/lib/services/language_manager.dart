@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 
 class LanguageManager extends ChangeNotifier {
   static final LanguageManager _instance = LanguageManager._internal();
@@ -28,7 +29,21 @@ class LanguageManager extends ChangeNotifier {
       _locale = Locale(savedCode);
     } else {
       // Détection automatique de la langue du système
-      String systemLocale = Platform.localeName.split('_')[0];
+      String systemLocale = 'fr'; // Default language
+      
+      // Only use Platform.localeName on non-web platforms
+      if (!kIsWeb) {
+        try {
+          systemLocale = Platform.localeName.split('_')[0];
+        } catch (e) {
+          // If Platform.localeName fails, fallback to 'fr'
+          systemLocale = 'fr';
+        }
+      } else {
+        // For web, try to get language from browser
+        systemLocale = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      }
+      
       List<String> supportedLanguages = ['fr', 'en', 'ar', 'es', 'de'];
       
       if (supportedLanguages.contains(systemLocale)) {
