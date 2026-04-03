@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model, update_session_auth_hash
+from accounts.services.email_service import send_otp_email
 
 # IMPORTANT : Assure-toi d'avoir bien ajouté ces 4 nouveaux serializers dans serializers/auth.py
 from accounts.serializers.auth import (
@@ -34,7 +35,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
         
         otp = user.generate_otp()
-        print(f"\n [SIMULATION EMAIL] - Votre code secret pour {user.email} est : {otp} \n")
+        send_otp_email(user, otp, "emails/otp_email.html", "Code OTP")
         
         return Response({
             "message": "Compte créé ! Vérifiez vos emails pour récupérer votre code à 6 chiffres."
@@ -75,7 +76,7 @@ class ForgotPasswordView(generics.GenericAPIView):
         try:
             user = User.objects.get(email=email)
             otp = user.generate_otp()
-            print(f"\n [RECOVERY] - Code de réinitialisation pour {email} : {otp} \n")
+            send_otp_email(user, otp, "emails/reset_password.html", "Réinitialisation mot de passe")
             return Response({"message": "Un code de récupération a été envoyé à votre adresse email."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"message": "Si cet email existe, un code de récupération a été envoyé."}, status=status.HTTP_200_OK)
