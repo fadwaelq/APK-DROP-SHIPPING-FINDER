@@ -1,0 +1,1 @@
+PRTBL EXT DRIVE 5400.1 5400RPM 8MB CACHEPrimary InformationHard Drive Type :  External Hard Drive Capacity :  TBD Hard Drive Interface Type :  TBD Hard Drive / Average Seek Time :  TBD Hard Drive Spindle Speed :  5400 Rpm Hard DriveBuffer Size :  8 MB Storage Controller Type :  TBD UNSPSC CodeUNSPSC Code :  43201803

@@ -1,0 +1,1 @@
+DDR2 is the next generation of DDR memory. DDR2 memory features faster speeds, greater bandwidth, lower power consumption and enhanced thermal performance. Although DDR2 modules are the same physical dimension as DDR modules, the plug-in connector configuration is different and as such DDR2 modules are not compatible with PCs requiring DDR modules, and vice-versa.

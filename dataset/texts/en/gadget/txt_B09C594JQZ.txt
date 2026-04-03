@@ -1,0 +1,1 @@
+Designed to distribute data, voice and video, featuring 4 pairs of unshielded twisted pair CCA (copper clad aluminum) cable with true 23AWG/0.57mm solid conductor. Each of the four pairs of the cable has differing precise number of twists per inch to minimize crosstalk between the pairs, which insures performance with high speed gigabit Ethernet.
