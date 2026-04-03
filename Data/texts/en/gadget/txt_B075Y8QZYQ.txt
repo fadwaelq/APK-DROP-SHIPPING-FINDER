@@ -1,0 +1,1 @@
+CT4K8G4DFS8213 is a 32GB Kit consisting of (4) 8GB Single Ranked DDR4 desktop modules that operates at speeds up to 2133 MT/s and has a CL15 latency. It is an Unbuffered DIMM . It conforms to the industry standard DDR4 ECC UDIMM layout of 288 pins and is compatible with systems that take DDR4 2133MT/s UDIMM memory.

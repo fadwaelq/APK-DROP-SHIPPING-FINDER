@@ -1,0 +1,1 @@
+VGA,G210,SDDR3,1024MB,D+V+HDMI Core clock: 520MHZ; Memory Clock: 600 MHZ effective, Shader Clock: 1230 MHz, CUDA Cores: 8, Bus Type: PCI-E 2.0, Memory Detail: 1024MB DDR3, Memory Bit Width: 64 Bit, Memory Bandwidth: 4.8 GB/sec.
