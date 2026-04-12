@@ -1,4 +1,4 @@
-import random
+import secrets
 
 class AIProcessor:
     """Analyseur intelligent pour calculer la rentabilité (Devise : MAD)."""
@@ -27,7 +27,7 @@ class AIProcessor:
         if profit_mad > 200: profitability_score += 30
         
         # Simulation de la demande (On pourra lier ça à une API de tendances plus tard)
-        demand_score = random.randint(50, 95) 
+        demand_score = secrets.SystemRandom().randint(50, 95) 
         
         # Score global
         overall_score = int((profitability_score + demand_score) / 2)

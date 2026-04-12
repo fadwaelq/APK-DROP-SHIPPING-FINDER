@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import random
+import secrets
 
 class Badge(models.Model):
     """Modèle pour les badges utilisateurs (ex: Débutant, Top Vendeur, etc.)"""
@@ -30,7 +30,7 @@ class CustomUser(AbstractUser):
 
     def generate_otp(self):
         """Génère un code à 6 chiffres pour la vérification"""
-        self.otp_code = str(random.randint(100000, 999999))
+        self.otp_code = str(secrets.SystemRandom().randint(100000, 999999))
         self.save()
         return self.otp_code
 

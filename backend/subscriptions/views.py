@@ -73,15 +73,13 @@ class VerifyPaymentView(APIView):
     @extend_schema(tags=["Subscriptions"])
     def post(self, request):
         plan_id = request.data.get('plan_id')
-        # transaction_id = request.data.get('transaction_id') # À utiliser avec ton service de paiement
-
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
         except SubscriptionPlan.DoesNotExist:
             return Response({"detail": "Forfait introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
         end_date = timezone.now() + timedelta(days=plan.duration_days)
-        subscription, created = UserSubscription.objects.get_or_create(user=request.user)
+        subscription, _ = UserSubscription.objects.get_or_create(user=request.user)
         subscription.plan = plan
         subscription.start_date = timezone.now()
         subscription.end_date = end_date

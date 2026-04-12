@@ -1,0 +1,6 @@
+projectKey=apk-dropshipping-finder
+serverUrl=http://localhost:9000
+serverVersion=26.3.0.120487
+dashboardUrl=http://localhost:9000/dashboard?id=apk-dropshipping-finder
+ceTaskId=2f38c684-8d68-4dd5-96dc-c7372490865f
+ceTaskUrl=http://localhost:9000/api/ce/task?id=2f38c684-8d68-4dd5-96dc-c7372490865f
