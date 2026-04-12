@@ -20,7 +20,7 @@ class CoinTransaction(models.Model):
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     amount = models.PositiveIntegerField()
     source = models.CharField(max_length=255, help_text="Ex: 'mission', 'achat_produit', 'referral'")
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

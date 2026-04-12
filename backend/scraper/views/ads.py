@@ -17,7 +17,6 @@ class AdsMonitoringAPIView(APIView):
     )
     def get(self, request):
         query = request.query_params.get('query')
-        platform = request.query_params.get('platform', 'tiktok')
         
         # Pour le MVP : On cherche d'abord en base de données
         ads = AdCampaign.objects.filter(title__icontains=query) if query else AdCampaign.objects.all()

@@ -58,7 +58,7 @@ class AliExpressSpider:
             cost_mad = (prix_objet_reel_mad + frais_port) * tva_maroc
             selling_price = cost_mad + 150.0 
 
-            print(f" [SUCCÈS] Image récupérée")
+            print(" [SUCCÈS] Image récupérée")
             return {
                 "title": title,
                 "price_aliexpress_usd": price_usd,

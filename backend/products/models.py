@@ -6,16 +6,16 @@ User = get_user_model()
 class Product(models.Model):
     # --- TES CHAMPS DE BASE ---
     title = models.CharField(max_length=255, verbose_name="Titre du produit")
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    description = models.TextField(blank=True, verbose_name="Description")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix d'achat (MAD)")
     aliexpress_url = models.URLField(max_length=1000, unique=True, verbose_name="Lien AliExpress")
-    image_url = models.URLField(max_length=1000, blank=True, null=True, verbose_name="Lien de l'image principale")
+    image_url = models.URLField(max_length=1000, blank=True, verbose_name="Lien de l'image principale")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date d'ajout")
 
     # --- AJOUTS SIMPLES POUR TES FILTRES (Cahier des charges) ---
-    category = models.CharField(max_length=100, blank=True, null=True, verbose_name="Catégorie (Niche)")
-    competition_level = models.CharField(max_length=50, blank=True, null=True, verbose_name="Niveau de concurrence")
-    video_url = models.URLField(max_length=1000, blank=True, null=True, verbose_name="Lien de la vidéo (Pub TikTok/FB)")
+    category = models.CharField(max_length=100, blank=True, verbose_name="Catégorie (Niche)")
+    competition_level = models.CharField(max_length=50, blank=True, verbose_name="Niveau de concurrence")
+    video_url = models.URLField(max_length=1000, blank=True, verbose_name="Lien de la vidéo (Pub TikTok/FB)")
 
     # --- TES CHAMPS IA ET BUSINESS ---
     suggested_sale_price = models.DecimalField(
@@ -31,7 +31,7 @@ class Product(models.Model):
         default=False, verbose_name="Produit Winner"
     )
     ai_analysis_summary = models.TextField(
-        blank=True, null=True, verbose_name="Résumé de l'IA"
+        blank=True, verbose_name="Résumé de l'IA"
     )
 
     class Meta:
@@ -61,7 +61,7 @@ class AdCampaign(models.Model):
     PLATFORM_CHOICES = [('tiktok', 'TikTok'), ('facebook', 'Facebook'), ('instagram', 'Instagram')]
     
     title = models.CharField(max_length=255)
-    product_link = models.URLField(blank=True, null=True)
+    product_link = models.URLField(blank=True)
     video_url = models.URLField()
     platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
     ad_creative_text = models.TextField(blank=True)

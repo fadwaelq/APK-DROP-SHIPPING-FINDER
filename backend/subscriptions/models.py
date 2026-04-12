@@ -31,7 +31,7 @@ class PaymentMethod(models.Model):
     exp_year = models.IntegerField(verbose_name="Année d'expiration")
     
     # ID fourni par Stripe/CinetPay/etc. pour débiter la carte plus tard
-    provider_token = models.CharField(max_length=255, blank=True, null=True, verbose_name="Token du prestataire")
+    provider_token = models.CharField(max_length=255, blank=True, verbose_name="Token du prestataire")
     
     is_default = models.BooleanField(default=False, verbose_name="Carte par défaut")
     created_at = models.DateTimeField(auto_now_add=True)

@@ -19,6 +19,8 @@ from .serializers import (
 
 User = get_user_model()
 
+INVALID_AMOUNT_ERROR = "Montant invalide"
+
 # ==========================================
 # SOLDE ET HISTORIQUE
 # ==========================================
@@ -57,7 +59,7 @@ class EarnCoinsView(APIView):
         source = request.data.get('source', 'unknown')
         
         if not amount or int(amount) <= 0:
-            return Response({"error": "Montant invalide"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": INVALID_AMOUNT_ERROR}, status=status.HTTP_400_BAD_REQUEST)
 
         wallet, _ = UserWallet.objects.get_or_create(user=request.user)
         wallet.balance += int(amount)
@@ -83,7 +85,7 @@ class SpendCoinsView(APIView):
         item_id = request.data.get('item_id', 'unknown')
         
         if not amount or int(amount) <= 0:
-            return Response({"error": "Montant invalide"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": INVALID_AMOUNT_ERROR}, status=status.HTTP_400_BAD_REQUEST)
 
         wallet, _ = UserWallet.objects.get_or_create(user=request.user)
         
@@ -113,7 +115,7 @@ class TransferCoinsView(APIView):
         receiver_username = request.data.get('receiver_username')
 
         if not amount or int(amount) <= 0:
-            return Response({"error": "Montant invalide."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": INVALID_AMOUNT_ERROR}, status=status.HTTP_400_BAD_REQUEST)
         
         amount = int(amount)
 
@@ -170,7 +172,7 @@ class CheckoutPaymentView(APIView):
         try:
             coins_earned = int(float(amount) * 10)
         except ValueError:
-            return Response({"success": False, "error": "Montant invalide"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "error": INVALID_AMOUNT_ERROR}, status=status.HTTP_400_BAD_REQUEST)
         
         wallet, _ = UserWallet.objects.get_or_create(user=request.user)
         wallet.balance += coins_earned
